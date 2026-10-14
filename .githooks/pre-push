@@ -1,0 +1,21 @@
+#!/bin/sh
+# Reject a push unless the pushed commits change docs/STATE.md.
+# Install: git config core.hooksPath .githooks
+zero=0000000000000000000000000000000000000000
+status=0
+while read local_ref local_sha remote_ref remote_sha; do
+    [ "$local_sha" = "$zero" ] && continue   # branch deletion
+    if [ "$remote_sha" = "$zero" ]; then
+        # New remote branch: check commits not yet on any remote ref.
+        range="$local_sha --not --remotes"
+    else
+        range="$remote_sha..$local_sha"
+    fi
+    # shellcheck disable=SC2086
+    if ! git log --format= --name-only $range -- docs/STATE.md | grep -q 'docs/STATE.md'; then
+        echo "pre-push: rejected $local_ref -> $remote_ref: no commit in the push updates docs/STATE.md." >&2
+        echo "pre-push: update docs/STATE.md (state, open tasks, next step) and commit it." >&2
+        status=1
+    fi
+done
+exit $status
