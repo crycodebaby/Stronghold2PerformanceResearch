@@ -1,0 +1,45 @@
+# NEVER commit original game files, binaries, assets or decompiled code.
+*.exe
+*.dll
+*.asi
+*.pdb
+*.lib
+*.obj
+*.gr2
+*.GR2
+*.dds
+*.DDS
+*.tga
+*.bmp
+*.bik
+*.mp3
+*.wav
+*.s2m
+*.s2c
+*.sh2
+*.aic
+*.bdg
+*.uni
+*.aml
+*.gdp
+*.mms
+*.mma
+*.csc
+*.cab
+*.dat
+# Ghidra databases / exports (may contain decompiled code)
+*.gpr
+*.rep/
+*.gzf
+ghidra/
+decomp/
+# Measurement raw data stays local (summaries go to docs/EXPERIMENTS.md)
+captures/
+*.csv
+*.etl
+*.rdc
+# Build output
+build/
+out/
+.vs/
+__pycache__/
