@@ -10,17 +10,18 @@ Updated: 2026-10-15 · Phase: 0 (measurement infrastructure ready, no measuremen
 - [x] Checks 3a–3d → FINDINGS F030–F033, F041–F049, docs/FORMATS/*
 - [x] AnalyseHub branch `perf-metrics` @ `68de2e2`: counters, timings, histogram, CSV, thread CPU, module dump, CMake, SH2Launcher. Builds clean. **Not yet run in game.**
 - [x] Tools: `pe_info.py`, `laa_patch.py` (guard tested), `variant.py` (baseline↔laa tested), `analyze_frames.py` (synthetic CSV tested), `granny_raw`
-- [x] Ghidra headless: dragonfly.dll analysed (82 vtables / 539 slots exported to `captures/`)
+- [x] Ghidra headless: dragonfly.dll (82 vtables) + Stronghold2.exe (1,585 vtables / 31,865 slots); project `RE-Projects\ghidra-projects\SH2`
+- [x] Hotspot candidate list (17 entries, class-level only) → FUNCTIONS.md
 
 ## In progress
-- [ ] Ghidra headless analysis of `Stronghold2.exe` + `ExportVtables` → `captures/vtables_exe.csv`
+- (none)
 
 ## Open tasks (ordered)
 1. USER: restart Claude Code (REA MCP tools + new PATH)
 2. USER: first smoke test: `SH2Launcher.exe` → overlay visible? log `Stronghold2AnalyseHub.log` OK? module list answers F032
 3. USER: build KNIGHTS scenario (EXPERIMENTS.md) → EXP-001 baseline
 4. EXP-002 LAA, EXP-003 DXVK (`tools/variant.py`)
-5. Ghidra: candidate list for hotspot classes → FUNCTIONS.md (names only, no hooks until EXP-001 says sim-bound)
+5. Ghidra/REA: call graph from `Simulation::vf02` (0x0076ADC0) and `S2Actor::vf20` (0x004E92C0) — only after EXP-001 shows sim-bound
 6. Low prio: GR2 → standard uncompressed GR2 via file-builder API
 
 ## Next step

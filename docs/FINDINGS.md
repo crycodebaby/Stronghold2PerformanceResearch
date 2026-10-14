@@ -32,6 +32,9 @@ IDs are stable; never renumber. Append, don't rewrite history (mark old entries 
 | F026 | [verifiziert] | Formation classes: `BoxFormation`, `ColumnFormation`, `GridFormation`, `KnotFormation`, `LineFormation` | RTTI scan |
 | F027 | [verifiziert] | Render-side classes: `LevelOfDetailManager`, `GroundShadows`, `PostEffects`, `MaterialManager`, `VertexDeclarationPool`, `D3DResourceManager` | RTTI scan |
 
+| F028 | [verifiziert] | Ghidra 12.1.4 RTTI analysis: 1,585 vftables / 31,865 virtual slots in exe; 82 / 539 in dragonfly.dll | `ExportVtables.java` → `captures/vtables_*.csv` |
+| F029 | [verifiziert] | Largest S2Actor virtual function: slot 20 @ 0x004E92C0, 12,783 B | vtables_exe.csv (see FUNCTIONS.md) |
+
 ## Runtime DLLs
 
 | ID | Status | Fact | Evidence |
