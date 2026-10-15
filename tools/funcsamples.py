@@ -3,6 +3,9 @@
 Usage:
   python -I tools/funcsamples.py <..._samples.csv> <..._frames.csv> [--markers 1,3] [--top 15] [--module exe|granny2]
   python -I tools/funcsamples.py --check <hex rva> --module exe|granny2      which function body contains rva
+  python -I tools/funcsamples.py <samples.csv> <frames.csv> --delta-counts --module exe [--markers 1,3]
+      counts for "first marker vs second marker" (running vs paused): known functions with samples only in the
+      first marker, the same incl. unresolved 4 KiB pages, keys with est. ms delta > 0, delta total, top 10, max
 
 Each sample address (module, rva) is counted for the Ghidra function whose body (all address ranges,
 from ghidra_scripts/ExportFunctions.java -> captures/functions/<module>_functions.csv) contains
@@ -92,6 +95,26 @@ def label(key):
     return f"{key[0]} 0x{key[1]:08X} {key[2]} [{key[3]}]"
 
 
+def delta_counts(data, fms, m_run, m_pause, short):
+    """Counts behind 'running-only' statements (EXP-007 F135). Zero samples in a marker is no proof of zero calls."""
+    run, pause = data[m_run], data[m_pause]
+
+    def ms(d, m, k):
+        return d["funcs"].get(k, 0) / d["n"] * fms[m]
+
+    keys = [k for k in set(run["funcs"]) | set(pause["funcs"]) if k[0] == short]
+    known = [k for k in keys if k[1] not in ("unresolved", "module")]
+    only_run = lambda ks: [k for k in ks if run["funcs"].get(k, 0) > 0 and pause["funcs"].get(k, 0) == 0]  # noqa: E731
+    delta = {k: ms(run, m_run, k) - ms(pause, m_pause, k) for k in keys}
+    pos = sorted((v for v in delta.values() if v > 0), reverse=True)
+    print(f"{short}: m{m_run} vs m{m_pause}, est. ms per frame under sampling")
+    print(f"known functions with samples in m{m_run} only:            {len(only_run(known))}")
+    print(f"  incl. unresolved 4 KiB pages:                       {len(only_run(keys))}")
+    print(f"known functions with delta > 0:                      {sum(1 for k in known if delta[k] > 0)}")
+    print(f"  incl. unresolved 4 KiB pages:                       {len(pos)}")
+    print(f"delta total {sum(delta.values()):.2f} ms; top 10 positive {sum(pos[:10]):.2f} ms; max {pos[0] if pos else 0:.2f} ms")
+
+
 def main():
     a = sys.argv[1:]
     if not a:
@@ -106,6 +129,9 @@ def main():
     top = int(a[a.index("--top") + 1]) if "--top" in a else 15
     only = a[a.index("--module") + 1] if "--module" in a else None
     data, fms = per_function(a[0], a[1])
+    if "--delta-counts" in a:
+        delta_counts(data, fms, markers[0], markers[1], only or "exe")
+        return
     keys = defaultdict(float)
     for m in markers:
         d = data.get(m)
