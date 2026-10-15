@@ -2,6 +2,7 @@
 
 Usage: python -I tools/variant.py <baseline|laa|dxvk|laa+dxvk|status>
        python -I tools/variant.py hub <on|off>
+       python -I tools/variant.py sample <off|module|function>
 
 - Only touches the TEST copy (never the original folder).
 - Every variant installs the hub loader (D009): the d3d9.dll proxy and
@@ -13,6 +14,8 @@ Usage: python -I tools/variant.py <baseline|laa|dxvk|laa+dxvk|status>
   if it is byte-identical to the DXVK one.
 - A d3d9.dll that is neither the proxy nor DXVK is never overwritten.
 - hub on|off: switch in SH2Proxy.ini; off = proxy passes everything through, no hub.
+- sample off|module|function: sampling profiler of the hub (render thread, writes *_samples.csv per
+  recording; docs/design/SAMPLING_PROFILER.md). Default off.
 - Ensures steam_appid.txt (40960) exists so SteamAPI_Init works when the game
   is started directly (Steam client must be running).
 """
@@ -76,9 +79,15 @@ def write_ini(**changes):
     """Update keys in SH2Proxy.ini, keeping keys set by hand (hubdll, out)."""
     values = {"target": "system", "hub": "1", **read_ini(), **changes}
     lines = ["; Written by SH2-Perf tools/variant.py; read by the d3d9.dll proxy (D009).",
-             "; target=system | d3d9_dxvk.dll   hub=1 | 0   optional: hubdll=, out=",
+             "; target=system | d3d9_dxvk.dll   hub=1 | 0   sample=off | module | function   optional: hubdll=, out=",
              "[proxy]"] + [f"{k}={v}" for k, v in values.items()]
     (TEST_DIR / INI_NAME).write_text("\r\n".join(lines) + "\r\n", encoding="utf-8")
+
+
+def set_sample(mode):
+    if not is_proxy(TEST_DIR / "d3d9.dll"):
+        sys.exit("proxy not installed - run a variant first, e.g. `variant.py baseline`")
+    write_ini(sample=mode)
 
 
 def install_proxy():
@@ -145,7 +154,7 @@ def status():
     fresh = same(PROXY_SRC, proxy) and same(HUB_SRC, TEST_DIR / "Stronghold2AnalyseHub.dll")
     print(f"TEST={TEST_DIR}\nvariant={current_variant()}  LAA={laa_enabled()}  DXVK={dxvk_active()}")
     print(f"proxy={is_proxy(proxy)} (matches hub build: {fresh})  target={ini.get('target', '-')}"
-          f"  hub={'on' if ini.get('hub', '1') != '0' else 'off'}"
+          f"  hub={'on' if ini.get('hub', '1') != '0' else 'off'}  sample={ini.get('sample', 'off')}"
           f"  steam_appid={(TEST_DIR / 'steam_appid.txt').exists()}")
 
 
@@ -153,6 +162,8 @@ def main():
     args = sys.argv[1:]
     if args[:1] == ["hub"] and len(args) == 2 and args[1] in ("on", "off"):
         set_hub(args[1] == "on")
+    elif args[:1] == ["sample"] and len(args) == 2 and args[1] in ("off", "module", "function"):
+        set_sample(args[1])
     elif len(args) == 1 and args[0] in VARIANTS:
         apply(args[0])
     elif args != ["status"]:

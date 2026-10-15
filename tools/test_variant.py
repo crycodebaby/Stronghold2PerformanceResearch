@@ -95,6 +95,15 @@ class VariantTest(unittest.TestCase):
         variant.set_hub(True)
         self.assertEqual(variant.read_ini()["hub"], "1")
 
+    def test_sample_mode_is_kept_across_variants(self):
+        variant.apply("baseline")
+        variant.set_sample("module")
+        variant.apply("dxvk")
+        variant.set_hub(False)
+        self.assertEqual(variant.read_ini()["sample"], "module")
+        variant.set_sample("off")
+        self.assertEqual(variant.read_ini()["sample"], "off")
+
     def test_hub_switch_needs_proxy(self):
         with self.assertRaises(SystemExit):
             variant.set_hub(False)

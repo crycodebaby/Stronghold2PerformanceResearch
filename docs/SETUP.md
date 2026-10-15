@@ -36,6 +36,7 @@ cmake --build build --config Release
 ```
 If `cmake` is not on PATH yet (new shell needed after winget), use the path from `build\CMakeCache.txt` (`CMAKE_COMMAND`).
 Re-run the configure step after a hub commit: the commit id is baked into `latest.json` at configure time.
+Hub tests (no game needed): `build\Release\sampler_test.exe` (sampler attribution + overhead, ~15 s, exit code 0 = OK) and `build\Release\standin_d3d9.exe` (D3D9 stand-in: copy it with the proxy `d3d9.dll` and the hub DLL into one folder, set `SH2HUB_OUT`, `SH2HUB_AUTORECORD=250`, `SH2HUB_SAMPLE=module`).
 
 ## Test copy
 ```

@@ -49,7 +49,8 @@ Goal: reproducible, separates **simulation cost** from **render cost**, gives a 
 | EXP-001 | baseline | KNIGHTS N=100, P0–P4 | waiting for user run |
 | EXP-001b | baseline | KNIGHTS N=25/50/200, P2 | waiting |
 | EXP-001-REAL-A | baseline | REAL8P_EARLY: 8 players (7 AI), early, ~10 s, no lag | ingested, reference only (no comparison baseline) |
-| EXP-001-REAL | baseline | user save from a real lag situation, protocol "Real save" below | waiting for user save |
+| EXP-001-REAL-B | baseline | REAL_LAG_257: lag save, 217 mounted archers + 20 crossbow + 20 bow, game speed 90 | ingested, first real lag measurement |
+| EXP-001-REAL | baseline | further lag saves, protocol "Real save" below | optional |
 | EXP-002 | laa | KNIGHTS N=100 + N=200 | after EXP-001 |
 | EXP-003 | dxvk | KNIGHTS N=100 | after EXP-001 |
 | EXP-004 | laa+dxvk | KNIGHTS N=100 | if 002/003 help |
@@ -77,6 +78,15 @@ Replaces the KNIGHTS phases for the user's own saves; keeps the camera fixed so 
 4. **F9** off, close the game, then `ingest.py` (skill `messung-auswerten`). Read: R1 vs R0 → sim vs render (Interpretation key); R2 vs R0 → sim-only cost.
 5. **Save the game state whenever the FPS in the overlay have dropped clearly** (before you load/leave it): lag situations are hard to recreate, and such a save is the preferred input for EXP-001-REAL.
 6. Do not start a second recording while the game runs if a capture is still to be ingested: `latest.json` is overwritten by the newest recording (happened 2026-10-15; the extra recording was set aside in `captures/_unassigned_20261015_034411/`).
+
+### Protocol "Profiler run" (render thread by module)
+Goal: decide whether the render thread's time sits in game code or in the graphics stack (F102) and where the +10.7 ms of the running game come from (F101).
+1. `python -I tools/variant.py baseline` (refresh the hub copy), `python -I tools/variant.py sample module`. Same save as EXP-001-REAL-B (LAG_217_Reiter), same graphics settings, V-Sync noted.
+2. Run A (sampler off, `variant.py sample off`): load, wait 10 s, F9, then phases with F8 at each start: army in view **paused** 20 s | **running** 30 s | empty corner 15 s. F9 off. Ingest as `EXP-002P-A`.
+3. Run B (sampler `module`): identical, ingest as `EXP-002P-B`. B's FPS are only compared with A (overhead check); B's `render_modules` per marker is the result.
+4. Read `render_modules` per marker: paused vs running difference in the `exe`/`dragonfly`/`granny2` share = simulation/animation on the render thread; `driver`/`d3d9` share = graphics stack; `system` = waiting.
+5. Optional run C with `function` for the top functions of the dominant module.
+6. Set one F8 marker per phase and keep markers exact; phases are checked with `analyze_frames.py --timeline`.
 
 ## Results
 
@@ -109,3 +119,23 @@ Draw load (F095): triangles ≈ 155,000, SetTexture ≈ 3,540, VS constant calls
 
 - Verdict: **n/a**. Not a baseline for comparisons: too short (9.5 s), a single F8 marker (marker 0 is only 22 frames), no lag, camera/settings not fixed. Use only as reference for the draw load of a real game state.
 - Observation (no inference): even without lag the frame time is ~25 ms with the render thread at 57 % CPU and present 0.3 ms; the menu (EXP-000) showed the same pattern (cpu-side ≫ render CPU %). Cause open.
+
+### EXP-001-REAL-B · 2026-10-15 · baseline · REAL_LAG_257 (lag save, 257 units, game speed 90)
+- capture `20261015_EXP-001-REAL-B_baseline_REAL_LAG_257`, hub `a8c7ad779e03`, 3,734 frames, 88 s. Save: 217 mounted archers + 20 crossbow + 20 bow, medium number of buildings. Graphics settings and V-Sync not noted.
+- Actual sequence (from the time line, not from the markers): marker 1 set at once and the game paused → **paused ~25 s** (5–25 s) | unpaused, camera on an empty minimap corner (marker 2, ~25–60 s) | back to the army (marker 3, ~60–70 s) | army marching (marker 4, ~70–88 s). The markers are hand-set and do not sit on the phase borders; `ingest.py` therefore writes `timeline.md` (5 s windows). Phase 0 "running, army in view" is only the first ~3 s.
+
+| Situation (window) | FPS | frame ms (p50) | present ms | DIP | triangles | SetTexture | render thread CPU |
+|---|---|---|---|---|---|---|---|
+| army, paused (8–24 s) | 37.1 | 24.5 (mean 26.9) | 0.24 | 2,467 | 517,000 | 4,410 | 98 % |
+| empty corner, running (33–57 s) | 57.7 | 16.67 (pinned) | 6.46 | 567 | 53,000 | 1,980 | 67 % |
+| army, running/marching (66–88 s) | 26.6 | 34.6 (mean 37.6) | 0.26 | 2,690 | 520,000 | 5,020 | 98 % |
+
+Whole recording: 42.4 FPS avg, 1 % low 12.8, p99 68.5 ms; VA 1,568–1,573 MB. Findings F096–F102.
+
+- **Observation:** with the army in view the render thread is at 98 % in both the paused and the running state; running costs ≈ +10.7 ms per frame (26.9 → 37.6 ms) at nearly the same draw load; GPU wait (`present`) stays at 0.25 ms. In the empty corner the frame is pinned at 16.67 ms with `present` 6.5 ms.
+- Verdict per phase (Interpretation key; inference = **Hypothese**):
+  - paused, army: **render-side CPU-bound** (render thread 98 %, `present` low); module split open (F102).
+  - empty corner: **unclear / capped** (V-Sync or 60 FPS limiter, F100): no cost information.
+  - running, army: **CPU-bound on the render thread**; the extra ≈ 10.7 ms vs pause are probably simulation on that thread (F101, Hypothese). Neither GPU-bound nor a pure draw-call limit explains the difference.
+- Not yet answered: how much of the paused 26.9 ms is game code vs graphics driver → sampling profiler (design/SAMPLING_PROFILER.md).
+- Limits: one run, hand-set markers, unknown V-Sync/graphics settings, camera position differs between phases, "paused" identified from constant counters.

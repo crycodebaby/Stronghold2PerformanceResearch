@@ -1,12 +1,15 @@
 """Summarize AnalyseHub capture CSVs (SH2Perf_*_frames.csv / *_threads.csv).
 
 Usage: python -I tools/analyze_frames.py <..._frames.csv> [--from-marker N] [--to-marker M]
+       python -I tools/analyze_frames.py <..._frames.csv> --timeline [--window 5]
 
 Frames are filtered by the `marker` column (F8 in game): --from-marker 1
 keeps frames recorded after the first marker press. The matching
 *_threads.csv (same prefix) is summarized if present.
 Output is Markdown (<= 30 lines), ready to paste into docs/EXPERIMENTS.md.
-Library use: summarize(path, lo, hi) -> dict (used by tools/ingest.py).
+--timeline: fixed time windows (default 5 s) with FPS, DIP, triangles, render-thread CPU and the
+markers seen in the window; for hand-set markers whose phases blur.
+Library use: summarize(path, lo, hi) -> dict, timeline(path, width) -> list (used by tools/ingest.py).
 """
 import csv
 import os
@@ -67,6 +70,44 @@ def thread_summary(frames_path, t0, t1, top=4):
              "render": t in render} for t, v in ranked]
 
 
+def timeline(path, width=5.0):
+    """Per fixed window of `width` s: frames, FPS, mean DIP/prims per frame, render-thread CPU %, markers."""
+    rows = list(csv.DictReader(open(path, newline="")))
+    if not rows:
+        return []
+    t0 = float(rows[0]["t_s"])
+    win = defaultdict(list)
+    for r in rows:
+        win[int((float(r["t_s"]) - t0) // width)].append(r)
+    cpu = defaultdict(list)
+    threads = path.replace("_frames.csv", "_threads.csv")
+    if os.path.exists(threads):
+        for r in csv.DictReader(open(threads, newline="")):
+            if r["is_render_thread"] == "1":
+                cpu[int((float(r["t_s"]) - t0) // width)].append(float(r["cpu_pct"]))
+    out = []
+    for i in sorted(win):
+        w = win[i]
+        mean = lambda k: statistics.fmean(float(r[k]) for r in w)
+        span = float(w[-1]["t_s"]) - float(w[0]["t_s"])
+        out.append({
+            "t_start": round(i * width), "frames": len(w),
+            "fps": round((len(w) - 1) / span, 1) if span > 0 else None,
+            "dip": round(mean("dip")), "prims": round(mean("prims")),
+            "render_cpu": round(statistics.fmean(cpu[i])) if cpu[i] else None,
+            "markers": sorted({int(r["marker"]) for r in w}),
+        })
+    return out
+
+
+def format_timeline(tl, width):
+    lines = [f"| t (s) | frames | FPS | DIP | triangles | render CPU % | marker |", "|---|---|---|---|---|---|---|"]
+    for w in tl:
+        lines.append(f"| {w['t_start']}-{w['t_start'] + width:g} | {w['frames']} | {w['fps']} | {w['dip']} | {w['prims']}"
+                     f" | {w['render_cpu']} | {','.join(map(str, w['markers']))} |")
+    return lines
+
+
 def markers(path):
     return sorted({int(r["marker"]) for r in csv.DictReader(open(path, newline=""))})
 
@@ -79,6 +120,10 @@ def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
     path = sys.argv[1]
+    if "--timeline" in sys.argv:
+        width = float(sys.argv[sys.argv.index("--window") + 1]) if "--window" in sys.argv else 5.0
+        print(chr(10).join(format_timeline(timeline(path, width), width)))
+        return
     lo, hi = arg("--from-marker", 0), arg("--to-marker", 1 << 30)
     m = summarize(path, lo, hi)
     if not m:
