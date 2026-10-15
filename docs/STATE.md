@@ -2,12 +2,12 @@
 
 > Kurzfassung: Aktueller Stand, offene Aufgaben, nächster Schritt. Immer zuerst lesen.
 
-Updated: 2026-10-15 · Phase: 0 → 1 (tooling verified in game via EXP-000; first real measurement EXP-001 pending)
+Updated: 2026-10-15 · Phase: 0 → 1 (tooling verified in game via EXP-000 and EXP-001-REAL-A; first controlled measurement EXP-001 pending)
 
 ## Done
 - [x] Tools installed + verified (SETUP.md); REA doctor: Ghidra `available`, registration `aligned`; MCP tools loaded
 - [x] Checks 3a–3d → FINDINGS F030–F033, F041–F050, docs/FORMATS/*
-- [x] Hub `perf-metrics` @ `a8c7ad779e03`, built and copied to TEST: counters, timings, histogram, CSV, thread CPU, module dump, output dir, `latest.json` with hub commit, `SH2HUB_AUTORECORD`, caller chain of `Direct3DCreate9` in `SH2Proxy.log`. Runs in game since EXP-000 (`7a9e511`); `a8c7ad779e03` load-checked with the TEST copies in the stand-in program, not yet in game
+- [x] Hub `perf-metrics` @ `a8c7ad779e03`, built and copied to TEST: counters, timings, histogram, CSV, thread CPU, module dump, output dir, `latest.json` with hub commit, `SH2HUB_AUTORECORD`, caller chain of `Direct3DCreate9` in `SH2Proxy.log`. Runs in game (EXP-000 with `7a9e511`, EXP-001-REAL-A with `a8c7ad779e03`)
 - [x] Ghidra: exe + dragonfly.dll analysed; vtables exported; `data/vtables.db` via `sym.py build` (31,865 slots / 6,218 functions)
 - [x] Data architecture (D006): captures/ → data/index.jsonl → docs/; `ingest.py` (real capture EXP-000 OK)
 - [x] `sym.py` (addr/class), `fbrief.py` + `FunctionBrief.java` (tested on 0x0076ADC0 → F070)
@@ -24,12 +24,14 @@ Updated: 2026-10-15 · Phase: 0 → 1 (tooling verified in game via EXP-000; fir
 - [x] Module list → F032 verified, F084/F085 (Steam overlay loaded, F086 hypothesis); device flags 0x44, 2× `Direct3DCreate9` (F087/F088)
 - [x] `va_used_mb` = reserved + committed, limit 2048/4096 MB (F089); menu 1,351 MB (F090 hypothesis)
 - [x] Counter hooks verified (slot static_asserts + counter test, system d3d9 + DXVK) (F091); menu uses DrawPrimitive only (F092)
+- [x] EXP-001-REAL-A ingested (`20261015_EXP-001-REAL-A_baseline_REAL8P_EARLY`, 8 players, no lag, 9.5 s): reference only, verdict n/a; draw load per frame in a real game F095, hub counters work in real game (F091), `Direct3DCreate9` callers F088 partly verified, VA 1,497 MB F090; hub `a8c7ad779e03` now also run in game
+- [x] EXPERIMENTS.md: protocol "Real save" (fixed camera, R0 rest / R1 pause / R2 look-away) + hint to save the game on a clear FPS drop
 - [x] dxrenderer.dll classified: Dragonfly D3D9 render plugin, structure only (F093/F094)
 
 ## Open tasks (ordered)
 1. USER: build KNIGHTS scenario (EXPERIMENTS.md, Scenario Editor; fallback Kingmaker) — note graphics settings
 2. EXP-001 baseline KNIGHTS N=100, phases P0–P4 → skill `messung-auswerten`; judge with render-thread CPU %, not `cpu-side` alone. Check `SH2Proxy.log` caller chain (F088)
-   - optional EXP-001-REAL: user's own save from a real lag situation, same protocol (EXPERIMENTS.md)
+   - optional EXP-001-REAL: user's own save from a real lag situation, protocol "Real save" (EXPERIMENTS.md); save the game as soon as the FPS overlay drops clearly
 3. EXP-002 LAA, EXP-003 DXVK (`tools/variant.py`, proxy chains to `d3d9_dxvk.dll`); optional: Steam overlay off vs. on (F086)
 4. If EXP-001 = sim-bound: implement sampling profiler per design; `ExportFunctions.java` for full symbol coverage
 5. Import `dxrenderer.dll` into Ghidra (vtables, `fbrief`) if the render path matters (F094)
@@ -40,10 +42,11 @@ Updated: 2026-10-15 · Phase: 0 → 1 (tooling verified in game via EXP-000; fir
 USER builds the KNIGHTS scenario (optionally also EXP-001-REAL with a real lag save), then EXP-001 (baseline, N=100, P0–P4 with F8 markers) → `ingest.py --exp EXP-001 --scenario KNIGHTS --troops 100`.
 
 ## Risks / unknowns
+- `latest.json` is overwritten by every new recording; a second recording before ingest displaces the first (2026-10-15: extra recording `captures/_unassigned_20261015_034411/`, 88 s, 4 markers, not yet assigned to an EXP; the hub log of the REAL-A capture is the later session's log)
 - F082 (cause of launcher crash) unconfirmed: launcher not re-run with fixed hub (low priority, proxy is default)
 - DXVK behind the proxy only tested in the stand-in program
 - Steam overlay hooks D3D9 as well (F086): may distort `present_ms`
-- Menu already at 1,351 / 2,048 MB VA (F090): watch `va_used_mb` in big battles
+- Menu 1,351 MB, early 8-player game 1,497 MB of 2,048 MB VA (F090): watch `va_used_mb` in big battles
 - Whether direct start needs the Steam client running: untested (F057)
 - Scenario editor may not allow enemy units → fallback in EXPERIMENTS.md
 - `sym.py addr` only knows virtual functions until ExportFunctions exists

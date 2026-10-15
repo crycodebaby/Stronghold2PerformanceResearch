@@ -48,7 +48,8 @@ Goal: reproducible, separates **simulation cost** from **render cost**, gives a 
 |---|---|---|---|
 | EXP-001 | baseline | KNIGHTS N=100, P0–P4 | waiting for user run |
 | EXP-001b | baseline | KNIGHTS N=25/50/200, P2 | waiting |
-| EXP-001-REAL | baseline | user save from a real lag situation (optional) | waiting for user save |
+| EXP-001-REAL-A | baseline | REAL8P_EARLY: 8 players (7 AI), early, ~10 s, no lag | ingested, reference only (no comparison baseline) |
+| EXP-001-REAL | baseline | user save from a real lag situation, protocol "Real save" below | waiting for user save |
 | EXP-002 | laa | KNIGHTS N=100 + N=200 | after EXP-001 |
 | EXP-003 | dxvk | KNIGHTS N=100 | after EXP-001 |
 | EXP-004 | laa+dxvk | KNIGHTS N=100 | if 002/003 help |
@@ -60,6 +61,22 @@ Goal: confirm that KNIGHTS reproduces the lag the user actually sees, not just a
 - Ingest: `python -I tools/ingest.py --exp EXP-001-REAL --scenario REAL --troops <estimate per player> --note "<map, situation>"`.
 - Compare with EXP-001 per phase (FPS, render-thread CPU %, present ms, DIP, VA). Same verdict pattern → KNIGHTS is representative; different → use the real save as the main scenario.
 - Saves are user data: keep them out of the repo (local only, like captures/).
+
+### Protocol "Real save" (real game states, from EXP-001-REAL on)
+Replaces the KNIGHTS phases for the user's own saves; keeps the camera fixed so runs are comparable.
+1. Variant `baseline`, same graphics settings and V-Sync off as before (note them). Load the save, wait 10 s.
+2. Fix the camera (same position and zoom for the whole run) and keep the mouse in the screen centre (no edge scrolling).
+3. **F9** on, then phases with **F8** at each start:
+
+| Phase | Duration | Action |
+|---|---|---|
+| R0 rest | 20–30 s | game running, camera fixed, no input |
+| R1 pause | 15 s | pause the game |
+| R2 look-away | 15 s | unpause, point the camera at an empty corner (same zoom) |
+
+4. **F9** off, close the game, then `ingest.py` (skill `messung-auswerten`). Read: R1 vs R0 → sim vs render (Interpretation key); R2 vs R0 → sim-only cost.
+5. **Save the game state whenever the FPS in the overlay have dropped clearly** (before you load/leave it): lag situations are hard to recreate, and such a save is the preferred input for EXP-001-REAL.
+6. Do not start a second recording while the game runs if a capture is still to be ingested: `latest.json` is overwritten by the newest recording (happened 2026-10-15; the extra recording was set aside in `captures/_unassigned_20261015_034411/`).
 
 ## Results
 
@@ -78,3 +95,17 @@ VA used 1,348–1,355 MB (F090); frame ms min 16.66, max 118; 2 scenes/frame; DI
 - Verdict: **smoke test passed** (proxy start, hub ready before `Direct3DCreate9`, overlay, F9 recording, ingest). Confirms F083 in game (system d3d9). F082 stays a hypothesis: the launcher was not re-run with the fixed hub.
 - Performance verdict: **unclear / not applicable**. Menu frames are ~22 ms while the render thread uses only ~12 % CPU → the time outside Present is mostly waiting, not work [Hypothese: menu frame pacing]. No conclusion for battles.
 - Follow-ups: F032 verified via module list (F084); `Direct3DCreate9` twice (F087/F088, caller logged from next hub build).
+
+### EXP-001-REAL-A · 2026-10-15 · baseline · REAL8P_EARLY (Skirmish, 8 players with 7 AI, early, no lag)
+- capture `20261015_EXP-001-REAL-A_baseline_REAL8P_EARLY`, hub `a8c7ad779e03` (first in-game run of this hub build), troops 0 (field unused), F9 on, F8 after ~1 s, F9 off, 376 frames, 9.5 s. Graphics settings and camera not noted.
+
+| Range | Frames | FPS avg | 1% low | p50 / p99 ms | cpu-side ms | present ms | DIP per frame | render thread CPU |
+|---|---|---|---|---|---|---|---|---|
+| total | 376 | 39.5 | 17.7 | 24.98 / 52.71 | 25.12 | 0.34 | 1,740 | 57 % mean, 70 % max |
+| marker 0 | 22 | 42.5 | – | 24.7 / 57.88 | 25.88 | 0.25 | 1,638 | |
+| marker 1 | 354 | 39.4 | – | 24.98 / 52.38 | 25.07 | 0.35 | 1,746 | |
+
+Draw load (F095): triangles ≈ 155,000, SetTexture ≈ 3,540, VS constant calls ≈ 5,250 per frame. VA 1,497 MB constant (F090).
+
+- Verdict: **n/a**. Not a baseline for comparisons: too short (9.5 s), a single F8 marker (marker 0 is only 22 frames), no lag, camera/settings not fixed. Use only as reference for the draw load of a real game state.
+- Observation (no inference): even without lag the frame time is ~25 ms with the render thread at 57 % CPU and present 0.3 ms; the menu (EXP-000) showed the same pattern (cpu-side ≫ render CPU %). Cause open.
