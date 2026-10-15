@@ -9,7 +9,8 @@ Hub source: `Stronghold2AnalyseHub/core/granny_observer.{h,cpp}`; reader: `tools
 - On: at hub start six slots of the **exe's import address table for granny2.dll** are pointed at stdcall thunks. All-or-nothing: if a slot is missing or does not hold the granny2 export address (someone else redirected it), nothing is patched and the log says so. END restores every slot that still holds our thunk.
 - A thunk calls the original exactly once with the arguments it received (the clock as its raw 32 bits) and returns the original's return value. Bookkeeping only while a recording runs and only on the render thread (`owner_tid`, the thread that calls Present); no file, heap, lock or wait. Calls on other threads are counted (`foreign_thread_calls`) and not aggregated.
 - Only memory read of game data: the 64-byte offset matrix argument of the sample call, which the exe fills immediately before the call (F137), copied as raw bits under SEH; a fault is counted (`offset_read_faults`), never hidden.
-- Tables are allocated at recording start (`VirtualAlloc`, ≈ 6.6 MB committed while observing, freed at stop): 4,096 instances, 8,192 deformers, 4,096 world poses / composite pointers, 8,192 frame rows. Full = counted in `losses`, the call itself is still forwarded.
+- Tables are allocated at recording start (`VirtualAlloc`, freed at stop). Version 2 reserves 8,929,560 bytes (8.52 MiB; compile-time ceiling 12 MiB): 8,192 instance keys, 8,192 deformers, 4,096 world poses / composite pointers, 8,192 frame rows. Version 1 had 4,096 instance keys. Keys retain history until recording stop; freed keys are not silently evicted. A longer recording can still exhaust this finite budget.
+- Version 2 mixes all pointer bits and probes at most 128 slots (v1: 32). `table_usage` separately reports occupancy, maximum probe length, probe exhaustion before full capacity, capacity exhaustion and invalid null keys. The legacy `losses.*_table_full` fields count all failed aggregations, not necessarily a physically full table. Original calls are still forwarded.
 
 ## Observed functions (exe import → arguments used)
 | Fn | Import (decorated) | Arguments as verified (F137) | Recorded |
@@ -24,7 +25,7 @@ Hub source: `Stronghold2AnalyseHub/core/granny_observer.{h,cpp}`; reader: `tools
 Not observed (examples, all imported by the exe as well): `GrannySetControlClock`, `GrannySetControlRawLocalClock`, `GrannySetControlSpeed`, `GrannySetControlWeight`, `GrannyPlayControlledAnimation`, `GrannyFreeCompletedModelControls`, `GrannyBuildCompositeTransform4x4` — the control clocks/speeds/weights are further inputs of the sampling that this contract does **not** see. Internal granny2 calls (e.g. the B-spline helpers of F134) are not seen at all.
 
 ## Identity, "same", and what it does not mean
-- Object id = pointer value, valid within one session. Reuse after a free is flagged (`frees`, `used_after_free`); reuse without an observed free cannot be excluded.
+- Object key = pointer value within a recording, not proof of one object lifetime. Reuse after an observed free is flagged (`frees`, `used_after_free`). Version 2 resets prior-input comparisons at free and invalidates old pose links using an internal generation. CSV rows still aggregate lifetimes at that address; the reader excludes rows with any observed free/reuse from stable-instance statistics. Reuse without an observed free cannot be excluded.
 - clock *same*: the 32 bits equal those of the previous clock call on that instance (any earlier frame). *changed* / *noprev* (first call seen in this recording) accordingly.
 - sample inputs *same*: bone count, offset matrix bits, local-pose and world-pose pointers all equal to the previous sample call on that instance. Pointers equal ≠ pointed-to data equal.
 - `all_observed_same` (per sample call): this frame's latest clock call on the instance was *same* **and** the sample inputs are *same*. It says "repeated with unchanged observed values" — not "identical results", not "all inputs unchanged" (control clocks etc. are not observed), not "computation unnecessary".
@@ -36,16 +37,22 @@ Chain: deform `matrix buffer` == pointer **returned** by the composite getter fo
 |---|---|
 | `link_frame` | both observations happened in the same frame as the deform call, W sampled by exactly one instance in that frame |
 | `link_older` | chain exists but at least one observation is from an earlier frame |
-| `link_none` | matrix pointer never returned by an observed getter, or W never sampled |
+| `link_none` | chain absent, instance detail unavailable, or observed free/generation mismatch invalidated it |
 | `link_ambiguous` | W was sampled by two different instances in its last sample frame |
 Static support: both exe deform call sites pass `GrannyGetWorldPoseComposite4x4Array([[obj+0x4c]+4])` as the matrix buffer, the same `+0x4c` holder whose `[+0]` is passed to clock/sample and `[+4]` as world pose (F138). The link is pointer equality within a session, not a proof that the deformed mesh belongs to that instance.
 
 ## Files per recording (roles in the manifest)
 | File | Role | Content |
 |---|---|---|
-| `<stem>_granny.json` | `granny_meta` | schema `sh2perf.granny-observer` v1, hub, owner tid, the six slots (iat rva, target rva in granny2, patched), calls and foreign-thread calls per fn, capacities, `losses` (table full, frame rows dropped, offset faults), composite pointer conflicts, frame rows written, coverage text |
+| `<stem>_granny.json` | `granny_meta` | schema `sh2perf.granny-observer` v2 (reader also accepts v1), hub, owner tid, the six slots, calls and foreign-thread calls per fn, capacities, allocated_bytes, table_usage, owner_detail_complete, losses, composite pointer conflicts, frame rows written, coverage text |
 | `<stem>_granny_frames.csv` | `granny_frames` | one row per frame: `frame` (= `frames.csv` frame), `marker`, `partial` (1 = first frame after start), calls per fn, distinct instances clocked/sampled, clock same/changed/noprev, sample same/changed/noprev, `all_observed_same`, distinct deformers, deform same/changed/noprev, link classes, `drops` |
 | `<stem>_granny_instances.csv` | `granny_instances` | one row per (instance, marker slot 0–3, 4 = ≥ 4): first/last frame, clock frames/calls/same/changed/noprev/repeat_in_frame/change_in_frame/min/max, sample frames/calls/same/changed/noprev/repeat, per-input change counts (`ch_bone_count`, `ch_offset`, `ch_local_pose`, `ch_world_pose`), `all_observed_same`, `offset_faults`, last bone count + world pose, frees, used_after_free, exe call sites (rva, `0xFFFFFFFF` = not from the exe), multi_site |
 | `<stem>_granny_deformers.csv` | `granny_deformers` | one row per (deformer, marker slot): first/last frame, frames, calls, same/changed/noprev/repeat_in_frame, per-argument change counts, vertex count min/max, link classes, link instance changes, last linked instance, frees, used_after_free, call site, multi_site |
 
 A recording with the observer active but without its files is `capture_ok = false`. Per-object rows use the marker at call time; frame rows the marker at frame end (they differ only on the F8 frame).
+
+## Completeness is separate from frame integrity
+- `owner_detail_complete` requires zero table failures, frame-row losses and matrix-read faults; it covers observed imports on the owner thread only. Other-thread counts and unobserved calls remain separate limits. Zero losses in v1 can establish aggregation completeness but do not repair its earlier lifetime semantics.
+- Silver 2.2.0 records `quality.granny_observer` as complete / partial / unknown. Partial or unknown blocks benchmark release even when all file hashes and frame records are intact; it does not rewrite raw `capture_ok` or frame integrity.
+- `grannyobs.py` suppresses per-instance conclusions for incomplete detail. Boundary call counters are incremented before table lookups; object counts can be partial. Missing frame rows also limit phase call totals.
+- The last linked-instance pointer in a deformer row is not a historical model assignment. No per-model deformer count is derived from it. Vertex min/max do not establish the total number of processed vertices.

@@ -23,8 +23,9 @@ from pathlib import Path
 import analyze_frames
 import capture_manifest as cm
 import samples
+import grannyobs
 
-TOOL = {"name": "sh2perf-silver", "version": "2.1.0"}
+TOOL = {"name": "sh2perf-silver", "version": "2.2.0"}
 SILVER_SCHEMA = 3
 REFERENCE_PROFILE = "reference-v1"
 ANNOTATION_SCHEMA = "sh2perf.annotations"
@@ -180,6 +181,8 @@ _REJECTION_TEXTS = {
     "pause_unknown": "it is not known whether the game was paused",
     "not_released": "nobody has released the recording as a reference benchmark",
     "released_unsuitable": "the user judged the recording not suitable",
+    "observer_detail_partial": "Granny observer detail aggregation lost observations; frame files may still be intact",
+    "observer_detail_unknown": "Granny observer detail completeness cannot be established",
 }
 
 
@@ -318,6 +321,13 @@ def derive(cdir, ann=None):
     integrity = {"status": technical["status"] if reasons else "ok", "reasons": reasons}
 
     missing = []
+    observer_quality = None
+    observer_file = _role_file(cdir, imp, latest, "granny_meta", "granny_meta")
+    observer_switch = ((manifest or {}).get("switches") or {}).get("granny") or {}
+    if observer_file or observer_switch.get("value") is True:
+        observer_quality = grannyobs.quality(_read_json(observer_file) or {}) if observer_file else {"status": "unknown"}
+        if observer_quality["status"] != "complete":
+            missing.append("observer_detail_" + observer_quality["status"])
     for code, value in (("experiment_unknown", lab["exp"]), ("scenario_unknown", lab["scenario"]), ("variant_unknown", lab["variant"])):
         if not value:
             missing.append(code)
@@ -363,7 +373,7 @@ def derive(cdir, ann=None):
                    "imported_utc": (imp or {}).get("imported_utc")},
         "start": start, "labels": lab, "game": game, "software": soft,
         "switches": {"modes": modes, "basis": modes_basis, "known": switches_known},
-        "quality": {"technical": technical, "benchmark_suitability": suit},
+        "quality": {"technical": technical, "benchmark_suitability": suit, "granny_observer": observer_quality},
         "flags": sorted(set(flags)), "hardware": hardware,
         "total": total, "phases": phases, "render_modules": render_modules,
         "_timeline": tl,
@@ -399,6 +409,8 @@ def index_line(s):
         line["render_modules"] = s["render_modules"]
     if s["flags"]:
         line["flags"] = s["flags"]
+    if s["quality"].get("granny_observer"):
+        line["granny_observer"] = s["quality"]["granny_observer"]
     line["silver"] = f"{s['tool']['name']} {s['tool']['version']}"
     return line
 

@@ -1,10 +1,18 @@
 # HANDOFF
 
-> Kurzfassung: Übergabe an den nächsten Agenten: aktueller Auftrag EXP-008 (Granny-Beobachter vorbereitet und installiert, Spielaufnahmen stehen aus; EXP-007 korrigiert und gesichert), darunter ältere Aufträge (EXP-007, EXP-006, Abnahme). Projekthistorie steht in STATE.md, nicht hier.
+> Kurzfassung: Aktueller Auftrag EXP-008R: korrigierter Granny-Beobachter, neuer Vergleich mit demselben Build; altes G1 ist unvollständig. Nur der oberste aktuelle Abschnitt steuert den nächsten Lauf. Darunter stehen historische Übergaben, deren Zustände nicht mehr aktuell sind.
 
 Updated: 2026-10-15. Read [STATE.md](STATE.md) for history and open tasks; this file only covers the current order.
 
-## Current order (2026-10-15, newest): close EXP-007, prepare EXP-008 — **prepared, no game run yet**
+## Current order — EXP-008R, corrected observer
+- Evidence and exact restart protocol: [evidence/EXP-008_OBSERVER_CORRECTION.md](evidence/EXP-008_OBSERVER_CORRECTION.md). Hub `32ebc38a05ea`, metadata v2; Silver 2.2.0. All changes local; no push, no optimisation or gameplay change.
+- Old A1 `rec-20261015T110452Z-e10a0594` remains historical control. Old G1 `rec-20261015T111010Z-d6bf1a9b` is manifest-verified but has 498,935 instance aggregation failures. No complete per-instance conclusions; F136 stays hypothesis. Fresh controls after observer code change.
+- Next sequence: EXP-008R-A1 **off** → EXP-008R-G1 **on** → EXP-008R-G2 **on** → EXP-008R-A2 **off**. Sampler off, full, speed 90, same save/camera. Agent verifies/imports each run before switching for the next; stop for diagnosis if G1 detail is incomplete.
+- **TEST ready for EXP-008R-A1**: installed hub `32ebc38a05ea`, SHA-256 `4a56b62e…` matches build; baseline/system, hub on, granny off, sample off, full, plan EXP-008R-A1 / GRANNY_OBS_R1 / REAL_LAG_257 / 90. No corrected-build game capture yet. Old proxy unchanged. Backup `_backup_before_EXP-008R_20261015` contains old DLL, proxy, ini, prepared record + SHA256SUMS; restore those four with game closed to roll back. Original untouched.
+- User per run: load LAG_217_Reiter, speed 90, unchanged camera, centred mouse, wait 10 s; F9 → ~5 s → F8 → running 20 s → F8 → game pause → ~3 s → F8 → paused 20 s → F9 → wait for recording completion → quit normally. F8 only marks phases. Confirm actual speed and any deviations.
+- User has confirmed speed 90 for old G1. Pause inferred from frozen counters is not automatically a user-confirmed pause annotation. No reference release has been added on the user's behalf.
+
+## Historical order (2026-10-15): close EXP-007, prepare EXP-008
 Order: A) correct and secure EXP-007; B) read-only Granny boundary observer, then four game runs. No optimisation, cache, skipping, clock or simulation change, publishing.
 
 | Step | State |
@@ -19,12 +27,12 @@ Order: A) correct and secure EXP-007; B) read-only Granny boundary observer, the
 | B7 checks without the game | done: F140 (`granny_observer_test` 3/3 + mutation check, `capture_test`, `lifecycle_test`, `sampler_test`, `e2e_standin` off and on, Python suites, lint) |
 | B7 install in TEST | done, game closed: DLL `54de688f…` (build `e3ea53e5d9f7`), proxy unchanged `13c89519…`, exe unchanged `f3ccdf9b…`; `granny=0`, `sample=off`, profile full, plan `EXP-008-A1` / `GRANNY_OBS` / REAL_LAG_257 / 90. Original folder untouched |
 | B8 protocol | fixed before any run: [EXPERIMENTS.md](EXPERIMENTS.md) "Protocol EXP-008" (A1 off, G1 on, G2 on, A2 off; sampler off) |
-| Game runs | **open — waiting for the user** |
+| Game runs | A1 imported/verified; G1 partial (F141/F142); G2/A2 deferred until observer correction |
 
 | Run | `granny` | plan id | State |
 |---|---|---|---|
-| A1 | off | EXP-008-A1 | **TEST prepared**, waiting |
-| G1 | on | EXP-008-G1 | open |
+| A1 | off | EXP-008-A1 | done: rec-20261015T110452Z-e10a0594, imported/verified, no losses; marker 1/3 33.113/25.673 ms; pause consistent with frozen counters; speed 90 remains planned in metadata |
+| G1 | on | EXP-008-G1 | recorded rec-20261015T111010Z-d6bf1a9b; imported/verified; 498,935 instance-table failures, partial detail evidence only |
 | G2 | on | EXP-008-G2 | open |
 | A2 | off | EXP-008-A2 | open |
 
@@ -123,3 +131,9 @@ User actions needed: start the game from the TEST folder, load LAG_217_Reiter (R
 ## Acceptance result — supersedes the open rows above
 User completed the simplified check and confirms speed 90 throughout. Three captures imported/verified and annotated; see EXPERIMENTS.md EXP-INGAME and F118–F121. Sources retained. Pause annotations false follow the user-confirmed instructions; F8 was only a marker. No benchmark release.
 Passed in this session: F9, second recording, Alt-Tab with logged reset, END without active recording. Not performed: END during recording or process exit during recording. No sampler capture and no controlled performance gain. Next prepare a fixed-camera pause/run and sampler-off/on protocol; do not repeat generic hardening. Old acceptance rows and Next action above describe the pre-session state.
+
+## Latest operational handoff — A1 checked, G1 ready
+A1 rec-20261015T110452Z-e10a0594 is archived and verified; see EXPERIMENTS.md. TEST configuration is now EXP-008-G1 / granny on / sampler off / full / planned speed 90. User should restart TEST, reload the same save and repeat the protocol. Do not run variant.py again before this G1 unless a mismatch is found. No game process was running during configuration. Do not report the final-linked-instance grouping as historical per-model deform counts (see EXPERIMENTS caveat); this derived statistic is excluded from the experiment interpretation. No observer game data exists yet. Sources retained, original untouched.
+
+## Latest operational checkpoint — G1 partial, do not run G2 yet
+G1 rec-20261015T111010Z-d6bf1a9b is imported/verified, user confirms speed 90. Raw frame integrity is good, but 498,935 instance-table failures make complete per-instance conclusions invalid. Details in EXPERIMENTS and F141/F142. Diagnose bounded instance table/lifetimes/probe saturation before repeating observation. Counters before lookup are useful; tracked subset is not representative by default. TEST now granny off / sample off / full, experiment and protocol cleared, planned speed 90 retained; no game process running. No G2 prepared, no binary changed. All source files retained. After changing observer code, use fresh matching controls rather than silently reusing old A1.

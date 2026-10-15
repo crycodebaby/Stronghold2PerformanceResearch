@@ -2,8 +2,9 @@
 
 > Kurzfassung: Aktueller Stand, offene Aufgaben, nächster Schritt. Immer zuerst lesen.
 
-Updated: 2026-10-15 · Phase: 1 · **Current order and handoff: [HANDOFF.md](HANDOFF.md)** (EXP-007 corrected and secured; **EXP-008 prepared and installed in TEST, no game run yet** — waiting for the user's four runs). Hub `e822e7f19019` (D011–D013) is installed in TEST (real-game recording, repeat recording, Alt-Tab/reset and END-without-recording verified in EXP-INGAME; F118–F121); no performance gain shown.
+Updated: 2026-10-15 · Phase: 1 · **Current order: [HANDOFF.md](HANDOFF.md)**. EXP-008 A1 archived; G1 has intact frames but partial instance detail (F141/F142). Corrected observer hub `32ebc38a05ea` built/tested; fresh same-build EXP-008R controls required. No performance gain shown. [Correction and restart evidence](evidence/EXP-008_OBSERVER_CORRECTION.md).
 
+- Current operational checkpoint: G1 `rec-20261015T111010Z-d6bf1a9b` partial; do not continue old G2. Corrected hub installed in TEST, verified against build; **ready for fresh EXP-008R-A1 (observer off)**. Then G1(on), G2(on), A2(off), speed 90. See HANDOFF; old captures preserved. Original untouched, backup `_backup_before_EXP-008R_20261015`.
 ## Done
 - [x] EXP-008 **preparation only** (no in-game measurement yet): signatures F137, deform call without model instance F138, clock sources F139; data contract FORMATS/GRANNY_OBSERVER.md + D014; hub `e3ea53e` observer (switch `granny`, default off) + `grannyobs.py` + `variant.py granny`; checks without the game F140 (incl. ingest stem fix); installed in TEST with `granny=0`, plan EXP-008-A1, backup `_backup_before_EXP-008_20261015`; protocol fixed in EXPERIMENTS.md
 - [x] EXP-007 closed: wording corrected, F135 recount 134/120 (was 169/146 = keys with Δ > 0 incl. pages), `funcsamples.py --delta-counts`; analysis state evidence/ANALYSIS_STATE_EXP-007.md; Ghidra project backup (zip, sha256 `48d50246…`); commits `68b8868`, `a31a5c7`
@@ -43,7 +44,7 @@ Updated: 2026-10-15 · Phase: 1 · **Current order and handoff: [HANDOFF.md](HAN
 - [x] Protection fixes (work order "Schutzluecken", D013, F114–F116, evidence `docs/evidence/ACCEPTANCE_2026-10-15.md`): benchmark use = integrity + description (`reference-v1`) + user release, apart, with coded rejections; pause per phase; one integrity check before every use of bronze (damaged → exit 4, silver kept but `INVALID`); write lock `data/.sh2perf.lock` (real-process tests); manifest names/roles validated, cleanup contained; hub threads must really end before unload (`Lifecycle`), unload crash fixed (8/8 in the stand-in, was 1/4). Tests: `test_hardening` 31, `test_import_safety` 45, `lifecycle_test`, `capture_test`, `e2e_standin`; patches `pipeline_protections.patch` / `hub_lifecycle.patch` for separate review. Silver of the 3 old captures re-derived with 2.1.0 (bronze identical)
 
 ## Open tasks (ordered)
-0000. **EXP-008: user runs A1 (off) → G1 (on) → G2 (on) → A2 (off)** per EXPERIMENTS.md "Protocol EXP-008" and the guide in HANDOFF.md; agent imports/validates between runs and switches `granny`. Nothing measured yet; F136 stays a hypothesis.
+0000. **EXP-008R: fresh A1 (off) → G1 (on) → G2 (on) → A2 (off)** with corrected hub `32ebc38a05ea`; same protocol, save and speed 90. [Restart evidence](evidence/EXP-008_OBSERVER_CORRECTION.md). Inspect G1 detail completeness before G2; F136 remains a hypothesis. Old EXP-008 is historical/partial.
 000. **EXP-007 done** (F130–F136): granny2 SSE deform loop `FUN_50008810` large cost in both states (paused 4.39/4.46 ms well repeated, running 3.61/4.93 ms), curve helpers ≈ 2 ms; in flat samples the exe running-only cost is spread over 134/120 known functions (corrected from 169/146), a shared call path is not excluded. EXP-008 prepared (task 0000).
 000b. **EXP-006 done (previous)** (4 valid runs + pilot, F125–F129): sampler bias 2–5 %; running +7.7 ms vs paused (A runs); running − paused ≈ 5.5 ms in Stronghold2.exe; granny2 ≈ 11 ms per frame in both states. **Next: EXP-007 function mode, 2 runs** (HANDOFF.md), then function analysis of reproduced exe/granny2 candidates only.
 00. Basic in-game acceptance passed (EXP-INGAME, F118–F121). Still untested in game: END during recording, process exit while recording, startup/stop overhead. These are separate from the next engine measurement. See HANDOFF.md.
@@ -81,3 +82,6 @@ Previous next step, still open: USER builds the KNIGHTS scenario (optionally als
 - Whether direct start needs the Steam client running: untested (F057)
 - Scenario editor may not allow enemy units → fallback in EXPERIMENTS.md
 - `sym.py addr` only knows virtual functions until ExportFunctions exists
+
+## Latest operational checkpoint — EXP-008 correction
+G1 `rec-20261015T111010Z-d6bf1a9b` remains preserved and partial. First table failures preceded capacity exhaustion (3,176 retained keys by first drop), independently reproduced by collision tests. Corrected hub `32ebc38a05ea`, metadata v2, 8.52 MiB allocation, lifetime resets and stale-link rejection. Silver 2.2.0 re-derived 20 captures after integrity checks (0 damaged); G1 now carries `observer_detail_partial`. No raw files changed. See HANDOFF for fresh A1 preparation; no corrected-build game result yet.

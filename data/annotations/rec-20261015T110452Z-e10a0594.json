@@ -1,0 +1,30 @@
+{
+  "schema": "sh2perf.annotations",
+  "version": 1,
+  "capture_id": "rec-20261015T110452Z-e10a0594",
+  "labels": {
+    "exp": "EXP-008-A1",
+    "scenario": "REAL_LAG_257",
+    "troops": 257
+  },
+  "history": [
+    {
+      "at": "2026-10-15T11:07:14Z",
+      "field": "labels.exp",
+      "old": null,
+      "new": "EXP-008-A1"
+    },
+    {
+      "at": "2026-10-15T11:07:14Z",
+      "field": "labels.scenario",
+      "old": null,
+      "new": "REAL_LAG_257"
+    },
+    {
+      "at": "2026-10-15T11:07:14Z",
+      "field": "labels.troops",
+      "old": null,
+      "new": 257
+    }
+  ]
+}

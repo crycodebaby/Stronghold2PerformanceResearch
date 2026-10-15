@@ -1,0 +1,65 @@
+{
+  "schema": "sh2perf.annotations",
+  "version": 1,
+  "capture_id": "rec-20261015T111010Z-d6bf1a9b",
+  "labels": {
+    "exp": "EXP-008-G1",
+    "scenario": "REAL_LAG_257",
+    "troops": 257,
+    "note": "EXP-008 G1 pilot with observer detail loss: 4096 instance slots occupied, 498935 failed instance lookups/insertions. Do not use as complete per-instance evidence; see EXPERIMENTS."
+  },
+  "history": [
+    {
+      "at": "2026-10-15T11:11:58Z",
+      "field": "labels.exp",
+      "old": null,
+      "new": "EXP-008-G1"
+    },
+    {
+      "at": "2026-10-15T11:11:58Z",
+      "field": "labels.scenario",
+      "old": null,
+      "new": "REAL_LAG_257"
+    },
+    {
+      "at": "2026-10-15T11:11:58Z",
+      "field": "labels.troops",
+      "old": null,
+      "new": 257
+    },
+    {
+      "at": "2026-10-15T11:12:43Z",
+      "field": "game_speed",
+      "old": null,
+      "new": 90
+    },
+    {
+      "at": "2026-10-15T11:12:43Z",
+      "field": "suitability",
+      "old": null,
+      "new": "not_suitable"
+    },
+    {
+      "at": "2026-10-15T11:12:57Z",
+      "field": "labels.note",
+      "old": null,
+      "new": "EXP-008 G1 pilot with observer detail loss: 4096 instance slots occupied, 498935 failed instance lookups/insertions. Do not use as complete per-instance evidence; see EXPERIMENTS."
+    },
+    {
+      "at": "2026-10-15T11:12:57Z",
+      "field": "suitability",
+      "old": "not_suitable",
+      "new": "unknown"
+    }
+  ],
+  "game_speed": {
+    "value": 90,
+    "origin": "user_confirmed",
+    "at": "2026-10-15T11:12:43Z"
+  },
+  "suitability": {
+    "verdict": "unknown",
+    "reason": "No user suitability release. Analyst: G1 has 498935 instance-table failures and is excluded from complete per-instance EXP-008 conclusions; frame data and total call counts retained.",
+    "at": "2026-10-15T11:12:57Z"
+  }
+}
