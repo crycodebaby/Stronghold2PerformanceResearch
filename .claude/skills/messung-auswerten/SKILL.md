@@ -7,12 +7,13 @@ description: Evaluate a new Stronghold 2 performance recording (hub CSVs, SH2Per
 
 Raw CSVs and logs stay in their files: every number comes from tool output of ≤ 30 lines.
 
-1. **Identify** the experiment: EXP id, scenario, troops per player, variant (auto-detected unless the user says otherwise). Take them from the user's message or `docs/EXPERIMENTS.md` (planned table); ask only if the EXP id or troop count is unknown.
-   Done when: all four values are named.
-2. **Ingest** (game must be closed):
-   `python -I tools/ingest.py --exp <EXP> --scenario <S> --troops <N> [--note "..."]`
-   Done when: the tool printed `ingested <capture_id>`. On "no latest.json": the user has to stop the recording with F9 first.
-3. **Compare** with earlier captures of the same scenario/troops: read only the matching lines of `data/index.jsonl` (e.g. `grep '"scenario":"KNIGHTS"' data/index.jsonl | grep '"troops":100'`), comparing `total` and `phases` per variant.
+1. **Identify** the experiment: EXP id, scenario, troops per player and the **game speed** (a number the user saw or planned; never guessed, never parsed out of a note). Take them from the user's message or `docs/EXPERIMENTS.md`; ask only if the EXP id or troop count is unknown. The variant comes from the recording's prepared record, not from the folder state now.
+   Done when: the values are named, and the game speed is either named or explicitly left unknown.
+2. **Ingest** (game must be closed): `python -I tools/ingest.py list`, then
+   `python -I tools/ingest.py import --recording <timestamp> --exp <EXP> --scenario <S> --troops <N> [--note "..."]`
+   Confirmed facts afterwards: `ingest.py annotate <capture_id> --game-speed <N> [--paused true|false]`.
+   Done when: the tool printed `imported <capture_id>` (or `already imported`) and the lines `technical quality` / `game speed` were read. Exit 3 = conflict, 4 = damaged or incomplete recording, 5 = interrupted or no manifest (`--allow-interrupted` / `--legacy` only on the user's word): report it, do not work around it. Sources are not deleted; tell the user.
+3. **Compare** with earlier captures of the same scenario/troops **and the same game speed**: read only the matching lines of `data/index.jsonl` (e.g. `grep '"scenario":"KNIGHTS"' data/index.jsonl | grep '"troops":100'`), comparing `total` and `phases` per variant. Captures with different or unknown `game_speed`, `technical` not `ok`, or `usable_as_benchmark: false` are named as such, not mixed in silently (`ab_compare.py` warns).
    Done when: a delta table (FPS avg, 1% low, cpu-side ms, present ms) exists for every earlier capture with the same scenario and troops, or it is stated that none exist.
 4. **Interpret** with the key in `docs/EXPERIMENTS.md` ("Interpretation key"). Separate observation (numbers) from inference (cause).
    Done when: every phase has a one-line verdict (sim-bound / render-bound / GPU-bound / unclear) citing the numbers it rests on.

@@ -36,7 +36,7 @@ cmake --build build --config Release
 ```
 If `cmake` is not on PATH yet (new shell needed after winget), use the path from `build\CMakeCache.txt` (`CMAKE_COMMAND`).
 Re-run the configure step after a hub commit: the commit id is baked into `latest.json` at configure time.
-Hub tests (no game needed): `build\Release\sampler_test.exe` (sampler attribution + overhead, ~15 s, exit code 0 = OK) and `build\Release\standin_d3d9.exe` (D3D9 stand-in: copy it with the proxy `d3d9.dll` and the hub DLL into one folder, set `SH2HUB_OUT`, `SH2HUB_AUTORECORD=250`, `SH2HUB_SAMPLE=module`).
+Hub tests (no game needed): `build\Release\capture_test.exe` (capture ring, overflow, open/write errors, lifecycle, Push cost, manifests/provenance D012; ~20 s, exit code 0 = OK), `build\Release\sampler_test.exe` (sampler attribution + overhead, ~15 s, exit code 0 = OK) and `build\Release\standin_d3d9.exe` (D3D9 stand-in: copy it with the proxy `d3d9.dll` and the hub DLL into one folder, set `SH2HUB_OUT`, `SH2HUB_AUTORECORD=250`, `SH2HUB_SAMPLE=module`).
 
 ## Test copy
 ```
@@ -44,7 +44,20 @@ robocopy "Stronghold 2" "Stronghold 2 - TEST" /E      # robocopy exit 1 = copied
 python -I tools/variant.py baseline                   # proxy + hub copy + SH2Proxy.ini + steam_appid.txt (40960)
 python -I tools/variant.py status
 python -I tools/test_variant.py                       # unit tests (temp folder, never touches TEST)
+python -I tools/variant.py plan game_speed=90 experiment=EXP-001   # planned conditions of the next recordings (SH2Proxy.ini [plan])
 ```
+`variant.py` also writes `SH2Prepared.json` (prepared state: variant + SHA-256 of exe/hub/proxy/ini + plan); the hub copies it into every recording.
+
+## Import and provenance checks (D012)
+```
+python -I tools/test_import_safety.py ; python -I tools/test_ingest.py     # import, conflicts, interruption, speed origins (temp folders)
+python -I tools/e2e_standin.py                        # real proxy + hub DLL + stand-in: 3 sessions -> manifests -> import (needs the hub build)
+python -I tools/ingest.py list                        # recordings in SH2Perf_out with manifest state
+python -I tools/ingest.py import --recording <timestamp>      # verify -> stage -> atomic commit; sources stay
+python -I tools/ingest.py annotate <capture_id> --game-speed 90   # user-confirmed value (never written into the raw manifest)
+python -I tools/ingest.py verify <capture_id> ; python -I tools/ingest.py rebuild   # re-hash bronze / compare silver (add --write to replace)
+```
+Format and rules: [FORMATS/CAPTURE_MANIFEST.md](FORMATS/CAPTURE_MANIFEST.md).
 TEST folder after `variant.py` (D009): `d3d9.dll` (proxy), `Stronghold2AnalyseHub.dll`, `SH2Proxy.ini`, with DXVK also `d3d9_dxvk.dll`.
 Re-run the variant after every hub rebuild (refreshes the copies; `status` shows `matches hub build`).
 Hub off without rebuild: `variant.py hub off` (or `hub=0` in `SH2Proxy.ini`, or env `SH2HUB_DISABLE=1`).

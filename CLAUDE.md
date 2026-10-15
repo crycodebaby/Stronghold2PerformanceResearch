@@ -16,6 +16,9 @@ Problem: 2×~100 knights ≈ 20 FPS, more troops/melee → 1–2 FPS. Cause unme
 | Named functions (mittel/hoch) | [docs/FUNCTIONS.md](docs/FUNCTIONS.md) |
 | File formats | [docs/FORMATS/](docs/FORMATS/) |
 | Rebuild tools/environment | [docs/SETUP.md](docs/SETUP.md) |
+| Overview of all folders in `RE-Projects` | [../README.md](../README.md) |
+| Hub capture files, switches, `latest.json` | [docs/FORMATS/HUB_CAPTURE.md](docs/FORMATS/HUB_CAPTURE.md) |
+| Per-recording manifest, provenance, safe import | [docs/FORMATS/CAPTURE_MANIFEST.md](docs/FORMATS/CAPTURE_MANIFEST.md) |
 | Sampling profiler design | [docs/design/SAMPLING_PROFILER.md](docs/design/SAMPLING_PROFILER.md) |
 | Write or change a tool | [tools/CLAUDE.md](tools/CLAUDE.md) |
 | Ghidra scripts | [ghidra_scripts/CLAUDE.md](ghidra_scripts/CLAUDE.md) |
@@ -25,7 +28,7 @@ Problem: 2×~100 knights ≈ 20 FPS, more troops/melee → 1–2 FPS. Cause unme
 | Layer | Where | Git | Content |
 |---|---|---|---|
 | Bronze | `captures/` | ignored | raw CSV/logs, Ghidra exports, briefs — read only through tools |
-| Silver | `data/` | `index.jsonl` tracked, `*.db` rebuilt | one metrics line per capture; `vtables.db` (`sym.py build`) |
+| Silver | `data/` | `index.jsonl` + `annotations/` tracked, `silver/` + `*.db` rebuilt | one metrics line per capture, derived from bronze + annotations by `ingest.py` (tool version recorded; `rebuild`); `vtables.db` (`sym.py build`) |
 | Gold | `docs/` | tracked | curated facts, decisions, experiments |
 
 ## Sibling folders (relative to repo)

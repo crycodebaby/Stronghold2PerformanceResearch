@@ -45,3 +45,6 @@ out/
 __pycache__/
 # Silver layer: rebuildable databases (python -I tools/sym.py build)
 *.db
+# Silver summaries are re-derived from bronze by `ingest.py rebuild --write` (D012); data/index.jsonl and
+# data/annotations/ (user facts) stay tracked
+data/silver/

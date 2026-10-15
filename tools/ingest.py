@@ -1,231 +1,316 @@
-"""Ingest one hub recording: bronze capture folder + silver index line.
+"""Import hub recordings safely (bronze) and derive silver results (D012).
 
-Usage:
-  python -I tools/ingest.py --exp EXP-001 --scenario KNIGHTS --troops 100 [--note "..."]
-         [--variant auto] [--src <hub out dir>] [--recording <timestamp, e.g. 20261015_034411>]
+Usage (every command also prints this text with --help):
+  python -I tools/ingest.py list      [--src <hub out dir>]
+  python -I tools/ingest.py import    [--recording <timestamp>] [--exp E] [--scenario S] [--troops N] [--variant V]
+                                      [--note "..."] [--legacy] [--allow-interrupted] [--src DIR] [--game-dir DIR]
+  python -I tools/ingest.py annotate  <capture_id> [--game-speed N] [--paused true|false] [--suitability suitable|not_suitable|unknown
+                                      --reason "..."] [--exp E] [--scenario S] [--troops N] [--variant V] [--note "..."]
+  python -I tools/ingest.py verify    <capture_id>
+  python -I tools/ingest.py rebuild   [--write]
+`import` is the default command: `ingest.py --exp EXP-001 --scenario KNIGHTS --troops 100` still works.
 
-Steps:
-  1. Find the recordings in <src> (default TEST/SH2Perf_out) by their *_frames.csv files. Exactly one
-     recording -> take it. Several -> NOTHING is touched: the tool lists them (start, frames, size)
-     and exits; rerun with --recording <timestamp>. latest.json is only used when it names the chosen
-     recording (otherwise it is left alone and a replacement is written from the CSV name).
-  2. Copy the recording's CSVs, the log and latest.json to
-     captures/<YYYYMMDD>_<EXP>_<variant>_<scenario>/ (bronze, gitignored); the sources are deleted only
-     after meta.json and the index line are written. Other recordings are never moved.
-  3. Write meta.json there (hashes of exe/DLLs, variant, scenario, troops, CPU/GPU, hub commit).
-  4. Append one metrics line to data/index.jsonl (silver; no absolute paths), write timeline.md
-     (5 s windows) into the capture folder.
-  5. Print a summary of at most 30 lines.
-  Sampler output (*_samples.csv, listed as samples_csv in latest.json) is copied too and summarized
-  per module group into the index line (render_modules).
+import: verify (manifest finalized, every file present with the listed size and SHA-256) -> stage a copy in
+  captures/.staging/<id>/ -> one atomic rename to captures/<capture_id>/ -> derive silver (data/silver/<id>/,
+  data/index.jsonl). Source files are NEVER deleted or moved. Importing the same recording again changes nothing;
+  the same capture id with different content is a conflict. Several recordings in the folder: nothing is touched
+  until --recording is given. A recording without a manifest needs --legacy and stays marked unverified.
+annotate: user-confirmed facts (game speed, pause, suitability, labels) go to data/annotations/<id>.json, never
+  into the raw data; silver is re-derived.
+verify: re-hash a committed capture against its import record (detects changed raw data).
+rebuild: re-derive silver for every capture from bronze + annotations with the current tool versions
+  (without --write only compares and reports).
+Exit codes: 0 ok / already imported, 2 choose a recording, 3 conflict, 4 verification failed, 5 refused, 6 write error.
 Run after the game has exited (the hub keeps its log open while running).
 """
 import argparse
 import datetime
-import hashlib
 import json
-import shutil
+import math
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import analyze_frames  # noqa: E402
+import bronze  # noqa: E402
+import capture_manifest as cm  # noqa: E402
 import paths  # noqa: E402
-import samples  # noqa: E402
-import variant as variant_tool  # noqa: E402
+import silver  # noqa: E402
 
-
-def sha256(path):
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
+ANNOTATIONS = paths.DATA / "annotations"
+SILVER = paths.DATA / "silver"
 
 
 def hardware():
-    """CPU and GPU names via CIM; empty strings if unavailable."""
+    """CPU and GPU names via CIM; empty strings if unavailable. Skipped with SH2PERF_NO_HARDWARE=1 (tests)."""
+    if os.environ.get("SH2PERF_NO_HARDWARE") == "1":
+        return {"cpu": None, "gpu": None}
+
     def cim(cls):
         try:
             out = subprocess.run(
                 ["powershell", "-NoProfile", "-Command",
                  f"(Get-CimInstance {cls} | Select-Object -First 1 -ExpandProperty Name)"],
                 capture_output=True, text=True, timeout=30)
-            return out.stdout.strip()
+            return out.stdout.strip() or None
         except (OSError, subprocess.TimeoutExpired):
-            return ""
+            return None
     return {"cpu": cim("Win32_Processor"), "gpu": cim("Win32_VideoController")}
 
 
-def binaries_meta():
-    """Hashes identify the exact build measured (exe, d3d9 proxy, optional DXVK, hub).
-
-    The proxy loads the hub copy in the TEST folder (D009), so that one is hashed.
-    """
-    files = {
-        "Stronghold2.exe": paths.TEST / "Stronghold2.exe",
-        "d3d9.dll (TEST folder)": paths.TEST / "d3d9.dll",
-        "d3d9_dxvk.dll (TEST folder)": paths.TEST / "d3d9_dxvk.dll",
-        "Stronghold2AnalyseHub.dll (TEST folder)": paths.TEST / "Stronghold2AnalyseHub.dll",
-    }
-    return {name: sha256(p)[:16] for name, p in files.items() if p.exists()}
-
-
-def recording_info(frames_csv):
-    """Start timestamp (from the file name), frame count and size of one recording."""
-    stamp = frames_csv.name[len("SH2Perf_"):-len("_frames.csv")]
-    with open(frames_csv, "rb") as f:
-        n = max(0, sum(1 for _ in f) - 1)
-    return stamp, n, frames_csv.stat().st_size
+def observer(game_dir):
+    """What is true at import time: hardware and the hashes of the game folder now. Observations, never provenance."""
+    def observe(p):
+        obs = {"observed_utc": bronze._utc_now(), "hardware": hardware(), "flags": []}
+        if p["manifest"]:
+            recorded = cm.software_by_name(p["manifest"], comparable=True)
+            current = {n: (cm.sha256_file(game_dir / n) if (game_dir / n).is_file() else None) for n in recorded}
+            changes = cm.software_changes(recorded, current)
+            obs["game_dir_hashes"] = current
+            obs["software_changes"] = changes
+        return obs
+    return observe
 
 
-def choose_recording(src, wanted):
-    """Return the latest.json-like dict of exactly one unambiguous recording, or exit without touching anything."""
-    csvs = sorted(src.glob("SH2Perf_*_frames.csv"))
-    if not csvs:
-        sys.exit(f"no *_frames.csv in {src} - record with F9 (start) and F9 (stop) first")
-    stamps = {recording_info(c)[0]: c for c in csvs}
-    if wanted:
-        if wanted not in stamps:
-            sys.exit(f"recording {wanted} not in {src}; found: {', '.join(stamps)}")
-        stamp = wanted
-    elif len(stamps) == 1:
-        stamp = next(iter(stamps))
-    else:
-        print(f"{len(stamps)} recordings in {src}; nothing was touched. Rerun with --recording <timestamp>:")
-        for s, c in stamps.items():
-            _, n, size = recording_info(c)
-            print(f"  {s}  {n} frames  {size // 1024} KiB")
-        sys.exit(2)
-    frames = stamps[stamp]
-    latest = {}
-    lp = src / "latest.json"
-    if lp.exists():
-        try:
-            latest = json.loads(lp.read_text())
-        except ValueError:
-            latest = {}
-    if latest.get("frames_csv") == frames.name:
-        latest["_from_latest_json"] = True
-        return latest
-    d, tm = stamp.split("_")
-    start = f"{d[:4]}-{d[4:6]}-{d[6:]}T{tm[:2]}:{tm[2:4]}:{tm[4:]}"
-    stop = datetime.datetime.fromtimestamp(frames.stat().st_mtime).isoformat(timespec="seconds")
-    threads = frames.name.replace("_frames.csv", "_threads.csv")
-    rec = {"frames_csv": frames.name, "threads_csv": threads, "log": "Stronghold2AnalyseHub.log",
-           "start": start, "stop": stop, "frames": recording_info(frames)[1],
-           "hub_commit": "unknown",                      # latest.json belongs to another recording
-           "reconstructed": "latest.json missing or names another recording"}
-    samples_csv = frames.name.replace("_frames.csv", "_samples.csv")
-    if (src / samples_csv).exists():
-        rec["samples_csv"] = samples_csv
-    return rec
+def utc_now():
+    return datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def parse_number(text):
+    """Strict number for a game speed: any finite number is accepted; the range and the meaning are not judged."""
+    try:
+        v = float(text)
+    except ValueError:
+        sys.exit(f"game speed {text!r} is not a number")
+    if not math.isfinite(v):
+        sys.exit(f"game speed {text!r} is not a finite number")
+    return int(v) if v == int(v) else v
+
+
+def apply_annotation(capture_id, a):
+    """Merge the given facts into data/annotations/<id>.json (with history); returns True if anything changed."""
+    ann = silver.load_annotations(ANNOTATIONS, capture_id) or silver.empty_annotations(capture_id)
+    at, changed = utc_now(), False
+
+    def record(field, old, new):
+        ann["history"].append({"at": at, "field": field, "old": old, "new": new})
+
+    for key in ("exp", "scenario", "troops", "variant", "note"):
+        val = getattr(a, key, None)
+        if val is not None and ann["labels"].get(key) != val:
+            record(f"labels.{key}", ann["labels"].get(key), val)
+            ann["labels"][key] = val
+            changed = True
+    speed = getattr(a, "game_speed", None)
+    if speed is not None:
+        value = parse_number(speed)
+        if (ann.get("game_speed") or {}).get("value") != value:
+            record("game_speed", (ann.get("game_speed") or {}).get("value"), value)
+            ann["game_speed"] = {"value": value, "origin": "user_confirmed", "at": at}
+            changed = True
+    paused = getattr(a, "paused", None)
+    if paused is not None:
+        value = {"true": True, "false": False}[paused]
+        if (ann.get("paused") or {}).get("value") != value:
+            record("paused", (ann.get("paused") or {}).get("value"), value)
+            ann["paused"] = {"value": value, "origin": "user_confirmed", "at": at}
+            changed = True
+    suit = getattr(a, "suitability", None)
+    if suit is not None:
+        new = {"verdict": suit, "reason": getattr(a, "reason", None), "at": at}
+        old = ann.get("suitability") or {}
+        if (old.get("verdict"), old.get("reason")) != (new["verdict"], new["reason"]):
+            record("suitability", old.get("verdict"), suit)
+            ann["suitability"] = new
+            changed = True
+    if changed:
+        silver.save_annotations(ANNOTATIONS, capture_id, ann)
+    return changed
+
+
+def refresh_silver(capture_dir):
+    """Derive silver for one committed capture and update its index line. Safe to repeat."""
+    cid = (bronze._read_json(capture_dir / "import.json") or {}).get("capture_id", capture_dir.name)
+    s = silver.derive(capture_dir, silver.load_annotations(ANNOTATIONS, cid))
+    silver.write_silver(s, SILVER)
+    silver.update_index(paths.INDEX, silver.index_line(s))
+    return s
+
+
+def na(v):
+    return "n/a" if v is None else v
+
+
+def print_summary(s, state, captures):
+    t, q = s["total"], s["quality"]
+    gs, ps = s["game"]["game_speed"]["resolved"], s["game"]["paused"]["resolved"]
+    print(f"{state} {s['capture_id']}  ({s['provenance']}, captures/{s['capture_id']})")
+    print(f"technical quality: {q['technical']['status']} ({q['technical']['basis']}) | benchmark: {q['benchmark_suitability']['verdict']}"
+          f"{' | blockers: ' + ', '.join(q['benchmark_suitability']['blockers']) if q['benchmark_suitability']['blockers'] else ''}")
+    print(f"game speed: {na(gs['value'])} ({gs['origin']}{', CONFLICT' if gs['conflict'] else ''}) | paused: {na(ps['value'])} ({ps['origin']})"
+          f" | missing: {', '.join(q['benchmark_suitability']['missing_info']) or 'nothing'}")
+    if not t:
+        print("fewer than 2 frames recorded: no metrics")
+        return
+    print(f"total: {t['frames']} frames, {t['duration_s']} s, {t['avg_fps']} FPS avg, 1% low {t['low1_fps']}, p50/p99 {t['p50_ms']}/{t['p99_ms']} ms")
+    print(f"       present {na(t['present_ms'])} ms, cpu-side {na(t['cpu_side_ms'])} ms, DIP {na(t['dip'])}/frame, VA max {na(t['va_max_mb'])} MB")
+    for th in t["threads"][:2]:
+        print(f"       thread {th['tid']}{' (render)' if th['render'] else ''}: {th['cpu_mean']}% mean, {th['cpu_max']}% max")
+    print("marker | frames | FPS  | p50 ms | p99 ms | cpu-side ms | present ms | DIP")
+    for p in s["phases"][:10]:
+        print(f"{p['marker']:>6} | {p['frames']:>6} | {p['avg_fps']:>4} | {p['p50_ms']:>6} | {p['p99_ms']:>6} |"
+              f" {na(p['cpu_side_ms']):>11} | {na(p['present_ms']):>10} | {na(p['dip'])}")
+    if len(s["phases"]) > 10:
+        print(f"... {len(s['phases']) - 10} more phases in data/silver/{s['capture_id']}/summary.json")
+    if s["flags"]:
+        print("flags: " + ", ".join(s["flags"]))
+
+
+def fail(e):
+    print(e.message, file=sys.stderr)
+    for d in e.details[:12]:
+        print(f"  - {d}", file=sys.stderr)
+    if len(e.details) > 12:
+        print(f"  ... {len(e.details) - 12} more", file=sys.stderr)
+    sys.exit(e.code)
+
+
+def cmd_list(a):
+    recs = bronze.find_recordings(Path(a.src))
+    if not recs:
+        print(f"no recording in {a.src}")
+    for r in recs:
+        print(bronze.describe(r))
+
+
+def cmd_import(a):
+    src, captures = Path(a.src), Path(a.captures)
+    try:
+        rec = bronze.select(src, a.recording)
+        result = bronze.import_recording(rec, captures, legacy=a.legacy, allow_interrupted=a.allow_interrupted,
+                                         observed=observer(Path(a.game_dir)))
+    except bronze.ImportFailure as e:
+        if e.code == bronze.EXIT_SELECT:
+            print(e.message)
+            for d in e.details:
+                print(f"  {d}")
+            sys.exit(e.code)
+        fail(e)
+    cid = result["capture_id"]
+    apply_annotation(cid, a)
+    s = refresh_silver(result["dest"])
+    if result["state"] == "already_imported":
+        print("already imported: bronze unchanged, silver refreshed (no duplicate)")
+    print_summary(s, "imported" if result["state"] == "imported" else "present", captures)
+    print(f"source files left in place: {src.name}/{rec.stem}_* (delete them yourself when you no longer need them)")
+
+
+def cmd_annotate(a):
+    d = Path(a.captures) / a.capture_id
+    if not (d / "import.json").exists() and not (d / "meta.json").exists():
+        sys.exit(f"{a.capture_id}: not a committed capture in {a.captures}")
+    changed = apply_annotation(a.capture_id, a)
+    s = refresh_silver(d)
+    print(("annotations updated" if changed else "nothing to change") + f": data/annotations/{a.capture_id}.json")
+    print_summary(s, "silver refreshed", Path(a.captures))
+
+
+def cmd_verify(a):
+    d = Path(a.captures) / a.capture_id
+    imp = bronze._read_json(d / "import.json")
+    if not imp:
+        sys.exit(f"{a.capture_id}: no import record (legacy folder or not a capture)")
+    problems = []
+    for f in imp["files"]:
+        p = d / f["name"]
+        if not p.is_file():
+            problems.append(f"{f['name']}: missing")
+        elif cm.sha256_file(p) != f["sha256"]:
+            problems.append(f"{f['name']}: sha256 differs from the import record (raw data changed!)")
+    m = imp.get("manifest")
+    if m and (not (d / m["name"]).is_file() or cm.sha256_file(d / m["name"]) != m["sha256"]):
+        problems.append("manifest.json differs from the import record")
+    if problems:
+        print("\n".join(problems), file=sys.stderr)
+        sys.exit(bronze.EXIT_VERIFY)
+    print(f"{a.capture_id}: {len(imp['files'])} files and manifest match the import record")
+
+
+def cmd_rebuild(a):
+    captures = Path(a.captures)
+    summaries = []
+    for d in sorted(captures.iterdir()):
+        if d.is_dir() and not d.name.startswith(".") and ((d / "import.json").exists() or (d / "meta.json").exists()):
+            cid = (bronze._read_json(d / "import.json") or bronze._read_json(d / "meta.json") or {}).get("capture_id", d.name)
+            summaries.append(silver.derive(d, silver.load_annotations(ANNOTATIONS, cid)))
+    existing = silver.read_index(paths.INDEX)
+    same, differ, new = 0, [], []
+    for s in summaries:
+        text = json.dumps(silver.index_line(s), separators=(",", ":"))
+        old = existing.get(s["capture_id"])
+        if old is None:
+            new.append(s["capture_id"])
+        elif old == text:
+            same += 1
+        else:
+            differ.append(s["capture_id"])
+    print(f"{len(summaries)} captures derived with {silver.TOOL['name']} {silver.TOOL['version']}: "
+          f"{same} index lines identical, {len(differ)} differ, {len(new)} missing")
+    for cid in differ[:8]:
+        print(f"  differs: {cid}")
+    if not a.write:
+        print("nothing written (use --write to replace the index lines and write data/silver/)")
+        return
+    for s in summaries:
+        silver.write_silver(s, SILVER)
+        silver.update_index(paths.INDEX, silver.index_line(s))
+    print(f"written: data/silver/ ({len(summaries)} captures) and {len(differ) + len(new)} index lines")
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--exp", required=True, help="experiment id, e.g. EXP-001")
-    ap.add_argument("--scenario", required=True, help="e.g. KNIGHTS")
-    ap.add_argument("--troops", type=int, required=True, help="troops per player")
-    ap.add_argument("--variant", default="auto", help="auto = detect from TEST folder")
-    ap.add_argument("--note", default="")
-    ap.add_argument("--src", default=str(paths.HUB_OUT))
-    ap.add_argument("--recording", default="", help="timestamp of the recording, e.g. 20261015_034411")
-    ap.add_argument("--captures", default=str(paths.CAPTURES), help=argparse.SUPPRESS)
-    ap.add_argument("--index", default=str(paths.INDEX), help=argparse.SUPPRESS)
-    a = ap.parse_args()
-
-    src = Path(a.src)
-    latest_path = src / "latest.json"
-    latest = choose_recording(src, a.recording)
-
-    var = variant_tool.current_variant() if a.variant == "auto" else a.variant
-    day = latest["start"][:10].replace("-", "")
-    capture_id = f"{day}_{a.exp}_{var}_{a.scenario}"
-    dest = Path(a.captures) / capture_id
-    n = 2
-    while dest.exists():                       # same exp/variant/scenario twice a day
-        dest = Path(a.captures) / f"{capture_id}_{n}"
-        n += 1
-    capture_id = dest.name
-    dest.mkdir(parents=True)
-
-    to_remove = []                              # sources are deleted only at the very end
-    for key in ("frames_csv", "threads_csv", "samples_csv", "log"):
-        f = src / latest[key] if key in latest else None
-        if f and f.exists():
-            shutil.copy2(f, dest / f.name)
-            if key != "log":
-                to_remove.append(f)
-    meta_latest = {k: v for k, v in latest.items() if k != "_from_latest_json"}
-    (dest / "latest.json").write_text(json.dumps(meta_latest, indent=2))
-    if latest.get("_from_latest_json"):
-        to_remove.append(latest_path)
-
-    meta = {
-        "capture_id": capture_id, "exp": a.exp, "variant": var, "scenario": a.scenario,
-        "troops": a.troops, "note": a.note, "start": latest["start"], "stop": latest["stop"],
-        "hub_commit": latest.get("hub_commit", "unknown"), "binaries_sha256_16": binaries_meta(),
-        **hardware(),
-        "ingested": datetime.datetime.now().isoformat(timespec="seconds"),
-    }
-    (dest / "meta.json").write_text(json.dumps(meta, indent=2))
-
-    frames = dest / latest["frames_csv"]
-    (dest / "timeline.md").write_text(
-        "\n".join(analyze_frames.format_timeline(analyze_frames.timeline(str(frames), 5.0), 5.0)) + "\n")
-    total = analyze_frames.summarize(str(frames))
-    if not total:
-        sys.exit(f"{capture_id}: fewer than 2 frames recorded; meta.json written, no index line")
-    phases = []
-    for m in analyze_frames.markers(str(frames)):
-        s = analyze_frames.summarize(str(frames), m, m + 1)
-        if s:
-            phases.append({"marker": m, "frames": s["frames"], "avg_fps": s["avg_fps"],
-                           "p50_ms": s["p50_ms"], "p99_ms": s["p99_ms"], "cpu_side_ms": s["cpu_side_ms"],
-                           "present_ms": s["present_ms"], "dip": s["dip"]})
-    line = {k: meta[k] for k in ("capture_id", "exp", "variant", "scenario", "troops", "start",
-                                 "hub_commit", "cpu", "gpu")}
-    line.update({"total": total, "phases": phases})
-    sample_groups = None
-    if latest.get("samples_csv") and (dest / latest["samples_csv"]).exists():
-        g = samples.groups(str(dest / latest["samples_csv"]))
-        sample_groups = {"all": samples.shares(g[-1])[0], "n": samples.shares(g[-1])[1],
-                         "by_marker": {str(m): samples.shares(c)[0] for m, c in g.items() if m >= 0}}
-        line["render_modules"] = sample_groups
-    index = Path(a.index)
-    index.parent.mkdir(parents=True, exist_ok=True)
-    with open(index, "a", encoding="utf-8") as f:
-        f.write(json.dumps(line, separators=(",", ":")) + "\n")
-
-    for f in to_remove:
-        f.unlink()
-    log = src / latest["log"]                   # the hub log is shared by all recordings of a session
-    if log.exists() and not list(src.glob("*_frames.csv")):
-        try:
-            log.unlink()
-        except OSError:
-            pass                                # still open by a running game
-
-    # Summary (<= 30 lines).
-    t = total
-    print(f"ingested {capture_id}  ({t['frames']} frames, {t['duration_s']} s, hub {meta['hub_commit']})")
-    print(f"total: {t['avg_fps']} FPS avg, 1% low {t['low1_fps']}, p50/p99 {t['p50_ms']}/{t['p99_ms']} ms")
-    print(f"       present {t['present_ms']} ms, cpu-side {t['cpu_side_ms']} ms, DIP {t['dip']}/frame, VA max {t['va_max_mb']} MB")
-    for th in t["threads"][:3]:
-        print(f"       thread {th['tid']}{' (render)' if th['render'] else ''}: {th['cpu_mean']}% mean, {th['cpu_max']}% max")
-    print("marker | frames | FPS  | p50 ms | p99 ms | cpu-side ms | present ms | DIP")
-    for p in phases[:18]:
-        print(f"{p['marker']:>6} | {p['frames']:>6} | {p['avg_fps']:>4} | {p['p50_ms']:>6} | {p['p99_ms']:>6} |"
-              f" {p['cpu_side_ms']:>11} | {p['present_ms']:>10} | {p['dip']}")
-    if len(phases) > 18:
-        print(f"... {len(phases) - 18} more phases in data/index.jsonl")
-    if sample_groups:
-        print(f"render thread by module (samples.py): {samples.format_shares(g[-1])}")
-        for m in sorted(k for k in g if k >= 0)[:6]:
-            print(f"  marker {m}: {samples.format_shares(g[m])}")
-    print(f"timeline (5 s windows): captures/{capture_id}/timeline.md")
+    argv = sys.argv[1:]
+    commands = ("list", "import", "annotate", "verify", "rebuild")
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__)
+        return
+    if argv[0] not in commands:
+        argv = ["import"] + argv
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--src", default=str(paths.HUB_OUT))
+    common.add_argument("--captures", default=str(paths.CAPTURES), help=argparse.SUPPRESS)
+    common.add_argument("--index", default=str(paths.INDEX), help=argparse.SUPPRESS)
+    labels = argparse.ArgumentParser(add_help=False)
+    labels.add_argument("--exp")
+    labels.add_argument("--scenario")
+    labels.add_argument("--troops", type=int)
+    labels.add_argument("--variant")
+    labels.add_argument("--note")
+    ap = argparse.ArgumentParser(prog="ingest.py", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("list", parents=[common])
+    p = sub.add_parser("import", parents=[common, labels])
+    p.add_argument("--recording", default="", help="timestamp, e.g. 20261015_034411")
+    p.add_argument("--legacy", action="store_true", help="accept a recording without manifest as unverified")
+    p.add_argument("--allow-interrupted", action="store_true", help="keep a recording whose manifest never reached 'finalized'")
+    p.add_argument("--game-dir", default=str(paths.TEST), help="folder whose files are compared with the recorded identity")
+    p = sub.add_parser("annotate", parents=[common, labels])
+    p.add_argument("capture_id")
+    p.add_argument("--game-speed", help="number, as the user saw it in the game; recorded as user_confirmed")
+    p.add_argument("--paused", choices=("true", "false"))
+    p.add_argument("--suitability", choices=("suitable", "not_suitable", "unknown"))
+    p.add_argument("--reason")
+    p = sub.add_parser("verify", parents=[common])
+    p.add_argument("capture_id")
+    p = sub.add_parser("rebuild", parents=[common])
+    p.add_argument("--write", action="store_true")
+    a = ap.parse_args(argv)
+    global ANNOTATIONS, SILVER
+    # test hooks: --index lives in data/, annotations and silver sit next to it
+    paths.INDEX = Path(a.index)
+    ANNOTATIONS = paths.INDEX.parent / "annotations"
+    SILVER = paths.INDEX.parent / "silver"
+    {"list": cmd_list, "import": cmd_import, "annotate": cmd_annotate, "verify": cmd_verify, "rebuild": cmd_rebuild}[a.cmd](a)
 
 
 if __name__ == "__main__":

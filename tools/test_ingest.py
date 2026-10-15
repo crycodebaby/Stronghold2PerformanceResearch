@@ -1,88 +1,100 @@
-"""Tests for ingest.py (recording choice) and samples.py (module groups), in a temp folder.
+"""Tests for ingest.py (recording choice, legacy recordings, old command line) and samples.py (module groups).
 
-Run: python -I tools/test_ingest.py
+Safety, provenance and manifest behaviour is covered by test_import_safety.py.
+Run: python -I tools/test_ingest.py   (temp folders only)
 """
-import csv
 import json
-import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS))
 import samples  # noqa: E402
-
-HEADER = ("frame,t_s,frame_ms,present_ms,endscene_ms,between_endscene_ms,overlay_ms,scenes,dip,dp,dpup,dipup,"
-          "prims,settex,vsconst_calls,vsconst_vec4,psconst_calls,psconst_vec4,va_used_mb,marker\n")
-
-
-def make_recording(folder, stamp, frames=20, samples_csv=False):
-    rows = "".join(f"{i},{i * 0.02:.4f},20.0,0.5,0.0,19.0,0.1,2,100,10,0,0,5000,50,60,200,5,20,1500,0\n"
-                   for i in range(frames))
-    (folder / f"SH2Perf_{stamp}_frames.csv").write_text(HEADER + rows)
-    (folder / f"SH2Perf_{stamp}_threads.csv").write_text("t_s,tid,cpu_pct,is_render_thread\n0.5,1,90.0,1\n")
-    if samples_csv:
-        (folder / f"SH2Perf_{stamp}_samples.csv").write_text(
-            "marker,module,rva,count\n0,Stronghold2.exe,0x00000000,60\n0,nvwgf2um.dll,0x00000000,30\n"
-            "0,ntdll.dll,0x00000000,10\n")
+import testkit as tk  # noqa: E402
 
 
 class IngestTest(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        root = Path(self.tmp.name)
-        self.src, self.cap, self.index = root / "out", root / "cap", root / "index.jsonl"
-        self.src.mkdir()
+        self.L = tk.Layout()
 
     def tearDown(self):
-        self.tmp.cleanup()
+        self.L.cleanup()
 
-    def ingest(self, *extra):
-        return subprocess.run(
-            [sys.executable, "-I", str(TOOLS / "ingest.py"), "--exp", "T", "--scenario", "S", "--troops", "1",
-             "--variant", "baseline", "--src", str(self.src), "--captures", str(self.cap), "--index", str(self.index),
-             *extra], capture_output=True, text=True)
-
-    def test_single_recording_without_latest_json(self):
-        make_recording(self.src, "20261015_100000")
-        r = self.ingest()
+    def test_single_legacy_recording_keeps_its_sources(self):
+        tk.make_legacy_recording(self.L.src, "20261015_100000")
+        before = tk.tree_hashes(self.L.src)
+        r = self.L.run("import", "--legacy")
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(list(self.src.glob("*_frames.csv")), [])
-        self.assertEqual(len(self.index.read_text().splitlines()), 1)
+        self.assertEqual(tk.tree_hashes(self.L.src), before, "no source is deleted any more")
+        self.assertEqual(len(self.L.index.read_text().splitlines()), 1)
+
+    def test_old_command_line_without_subcommand_still_works(self):
+        tk.make_legacy_recording(self.L.src, "20261015_100000")
+        r = self.L.run("--legacy", "--exp", "T", "--scenario", "S", "--troops", "1")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        line = self.L.index_lines()[0]
+        self.assertEqual((line["exp"], line["scenario"], line["troops"]), ("T", "S", 1))
 
     def test_two_recordings_are_not_touched_without_choice(self):
-        make_recording(self.src, "20261015_100000")
-        make_recording(self.src, "20261015_110000")
-        (self.src / "latest.json").write_text(json.dumps({"frames_csv": "SH2Perf_20261015_110000_frames.csv"}))
-        before = sorted(p.name for p in self.src.iterdir())
-        r = self.ingest()
+        tk.make_legacy_recording(self.L.src, "20261015_100000")
+        tk.make_legacy_recording(self.L.src, "20261015_110000")
+        (self.L.src / "latest.json").write_text(json.dumps({"frames_csv": "SH2Perf_20261015_110000_frames.csv"}))
+        before = tk.tree_hashes(self.L.src)
+        r = self.L.run("import", "--legacy")
         self.assertEqual(r.returncode, 2)
         self.assertIn("--recording", r.stdout)
-        self.assertEqual(sorted(p.name for p in self.src.iterdir()), before)
-        self.assertFalse(self.cap.exists())
-        self.assertFalse(self.index.exists())
+        self.assertEqual(tk.tree_hashes(self.L.src), before)
+        self.assertFalse(self.L.captures.exists())
+        self.assertFalse(self.L.index.exists())
 
-    def test_chosen_recording_moves_only_its_own_files(self):
-        make_recording(self.src, "20261015_100000", samples_csv=True)
-        make_recording(self.src, "20261015_110000")
-        (self.src / "latest.json").write_text(json.dumps(
-            {"frames_csv": "SH2Perf_20261015_110000_frames.csv", "threads_csv": "SH2Perf_20261015_110000_threads.csv"}))
-        r = self.ingest("--recording", "20261015_100000")
+    def test_chosen_recording_with_samples_and_its_own_latest_json_untouched(self):
+        tk.make_legacy_recording(self.L.src, "20261015_100000", samples=True)
+        tk.make_legacy_recording(self.L.src, "20261015_110000")
+        (self.L.src / "latest.json").write_text(json.dumps({"frames_csv": "SH2Perf_20261015_110000_frames.csv"}))
+        r = self.L.run("import", "--legacy", "--recording", "20261015_100000")
         self.assertEqual(r.returncode, 0, r.stderr)
-        left = sorted(p.name for p in self.src.iterdir())
-        self.assertIn("SH2Perf_20261015_110000_frames.csv", left)
-        self.assertIn("latest.json", left)                 # belongs to the other recording
-        self.assertNotIn("SH2Perf_20261015_100000_frames.csv", left)
-        line = json.loads(self.index.read_text().splitlines()[0])
+        self.assertTrue((self.L.src / "latest.json").exists())
+        line = self.L.index_lines()[0]
         self.assertEqual(line["render_modules"]["all"], {"exe": 60.0, "driver": 30.0, "system": 10.0})
+        self.assertTrue(list((self.L.captures / "legacy-SH2Perf_20261015_100000").glob("*_samples.csv")))
 
     def test_unknown_recording_is_refused(self):
-        make_recording(self.src, "20261015_100000")
-        r = self.ingest("--recording", "20200101_000000")
-        self.assertNotEqual(r.returncode, 0)
-        self.assertEqual(len(list(self.src.glob("*_frames.csv"))), 1)
+        tk.make_legacy_recording(self.L.src, "20261015_100000")
+        r = self.L.run("import", "--legacy", "--recording", "20200101_000000")
+        self.assertEqual(r.returncode, 2)
+        self.assertFalse(self.L.captures.exists())
+
+    def test_empty_folder_is_reported(self):
+        r = self.L.run("import")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("no recording", r.stdout)
+
+    def test_list_shows_manifest_state_and_legacy(self):
+        tk.make_recording(self.L.src, "20261015_100000")
+        tk.make_recording(self.L.src, "20261015_110000", status="recording")
+        tk.make_legacy_recording(self.L.src, "20261015_120000")
+        out = self.L.run("list").stdout
+        self.assertIn("manifest finalized", out)
+        self.assertIn("manifest interrupted", out)
+        self.assertIn("legacy (no manifest)", out)
+
+    def test_hub_v2_modes_and_health_in_a_legacy_latest_json(self):
+        tk.make_legacy_recording(self.L.src, "20261015_100000", counters=False, overlay=False, poll=False)
+        (self.L.src / "latest.json").write_text(json.dumps({
+            "frames_csv": "SH2Perf_20261015_100000_frames.csv", "start": "2026-10-15T10:00:00", "stop": "2026-10-15T10:00:01",
+            "capture_version": 2, "capture_ok": False, "frames_dropped": 7, "frames_lost_write": 0, "write_errors": 0,
+            "modes": {"frametime": True, "counters": False, "poll": False, "overlay": False, "sample": False}}))
+        r = self.L.run("import", "--legacy")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        line = self.L.index_lines()[0]
+        self.assertIsNone(line["total"]["dip"])                 # counters off: null, not 0
+        self.assertIsNone(line["total"]["cpu_side_ms"])         # no EndScene timing without overlay
+        self.assertIsNone(line["total"]["va_max_mb"])
+        self.assertEqual(line["total"]["threads"], [])
+        self.assertIsNotNone(line["total"]["present_ms"])       # always measured
+        self.assertFalse(line["capture_ok"])
+        self.assertEqual(line["capture_loss"]["dropped"], 7)
 
 
 class SamplesTest(unittest.TestCase):

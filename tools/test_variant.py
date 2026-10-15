@@ -104,6 +104,30 @@ class VariantTest(unittest.TestCase):
         variant.set_sample("off")
         self.assertEqual(variant.read_ini()["sample"], "off")
 
+    def test_hub_measurement_switches(self):
+        variant.apply("baseline")
+        variant.set_switch("overlay", "off")
+        variant.set_switch("counters", "on")
+        ini = variant.read_ini()
+        self.assertEqual((ini["overlay"], ini["counters"]), ("0", "1"))
+        variant.set_mode("min")                       # profile replaces single switches
+        ini = variant.read_ini()
+        self.assertEqual(ini["profile"], "min")
+        self.assertFalse(any(k in ini for k in variant.SWITCHES))
+        variant.set_switch("poll", "on")
+        variant.set_switch("poll", "default")        # removes the key again
+        self.assertNotIn("poll", variant.read_ini())
+        variant.set_sample("module")
+        variant.set_mode("full")
+        self.assertEqual(variant.read_ini()["sample"], "module")   # unrelated keys survive
+        self.assertEqual(variant.read_ini()["target"], "system")
+
+    def test_hub_measurement_switches_need_proxy(self):
+        with self.assertRaises(SystemExit):
+            variant.set_mode("min")
+        with self.assertRaises(SystemExit):
+            variant.set_switch("overlay", "off")
+
     def test_hub_switch_needs_proxy(self):
         with self.assertRaises(SystemExit):
             variant.set_hub(False)
@@ -118,6 +142,51 @@ class VariantTest(unittest.TestCase):
         self.proxy_src.unlink()
         with self.assertRaises(SystemExit):
             variant.apply("baseline")
+
+    def test_plan_is_stored_as_written_and_kept_across_other_commands(self):
+        variant.apply("baseline")
+        variant.set_plan(["game_speed=90", "experiment=EXP-1", "protocol=Real save", "paused=true"])
+        self.assertEqual(variant.read_plan(), {"game_speed": "90", "experiment": "EXP-1", "protocol": "Real save", "paused": "1"})
+        variant.set_mode("min")
+        variant.set_sample("module")
+        variant.set_hub(True)
+        self.assertEqual(variant.read_plan()["game_speed"], "90")            # not lost when the proxy keys are rewritten
+        self.assertEqual(variant.read_ini()["profile"], "min")
+        variant.set_plan(["game_speed=30", "paused="])
+        self.assertEqual(variant.read_plan()["game_speed"], "30")
+        self.assertNotIn("paused", variant.read_plan())                       # pause is independent of the speed
+        variant.set_plan(["game_speed=1.5"])
+        self.assertEqual(variant.read_plan()["game_speed"], "1.5")
+        variant.set_plan(["clear"])
+        self.assertEqual(variant.read_plan(), {})
+        self.assertNotIn("[plan]", (self.test / "SH2Proxy.ini").read_text())
+
+    def test_plan_rejects_what_is_not_a_number_but_not_any_range(self):
+        variant.apply("baseline")
+        for bad in ("game_speed=fast", "game_speed=nan", "game_speed=inf", "paused=maybe", "colour=red", "game_speed"):
+            with self.assertRaises(SystemExit, msg=bad):
+                variant.set_plan([bad])
+        variant.set_plan(["game_speed=-3"])                                    # the valid range is not guessed
+        variant.set_plan(["game_speed=100000"])
+        self.assertEqual(variant.read_plan()["game_speed"], "100000")
+
+    def test_prepared_record_names_the_software_at_prepare_time(self):
+        import json
+        import hashlib
+        variant.apply("baseline")
+        rec = json.loads((self.test / "SH2Prepared.json").read_text())
+        self.assertEqual(rec["schema"], "sh2perf.prepared-start")
+        by_role = {f["role"]: f for f in rec["files"]}
+        hub = (self.test / "Stronghold2AnalyseHub.dll").read_bytes()
+        self.assertEqual(by_role["hub_dll"]["sha256"], hashlib.sha256(hub).hexdigest())      # full 64-digit SHA-256
+        self.assertEqual(len(by_role["game_exe"]["sha256"]), 64)
+        self.assertEqual(rec["variant"], "baseline")
+        self.hub_src.write_bytes(b"MZ hub v2")
+        variant.apply("baseline")
+        rec2 = json.loads((self.test / "SH2Prepared.json").read_text())
+        self.assertNotEqual({f["role"]: f["sha256"] for f in rec2["files"]}["hub_dll"], by_role["hub_dll"]["sha256"])
+        variant.set_plan(["game_speed=90"])
+        self.assertEqual(json.loads((self.test / "SH2Prepared.json").read_text())["plan"], {"game_speed": "90"})
 
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ Goal: reproducible, separates **simulation cost** from **render cost**, gives a 
 3. Load save → wait 10 s → **F9** (record on).
 4. At each phase start press **F8** (marker). ~30 s per phase.
 5. **F9** (record off). Hub writes CSVs + `latest.json` to `TEST\SH2Perf_out\` (`out=` in `SH2Proxy.ini` or env `SH2HUB_OUT` overrides).
-6. Close the game, then `python -I tools/ingest.py --exp <EXP> --scenario KNIGHTS --troops <N>` (skill `messung-auswerten`): moves files to `captures/<date>_<EXP>_<variant>_KNIGHTS/`, appends `data/index.jsonl`, prints per-marker phases.
+6. Close the game, then `python -I tools/ingest.py import --recording <timestamp> --exp <EXP> --scenario KNIGHTS --troops <N>` (skill `messung-auswerten`): verifies the recording against its manifest, copies it to `captures/<capture_id>/` (sources stay; delete them yourself), writes silver + `data/index.jsonl`, prints per-marker phases. Before the run `python -I tools/variant.py plan game_speed=<N> experiment=<EXP> scenario=KNIGHTS` (planned values go into the manifest as `planned`); after looking at the game: `ingest.py annotate <capture_id> --game-speed <N>` (user-confirmed).
 
 ### Interpretation key
 | Observation | Points to |
@@ -51,6 +51,7 @@ Goal: reproducible, separates **simulation cost** from **render cost**, gives a 
 | EXP-001-REAL-A | baseline | REAL8P_EARLY: 8 players (7 AI), early, ~10 s, no lag | ingested, reference only (no comparison baseline) |
 | EXP-001-REAL-B | baseline | REAL_LAG_257: lag save, 217 mounted archers + 20 crossbow + 20 bow, game speed 90 | ingested, first real lag measurement |
 | EXP-001-REAL | baseline | further lag saves, protocol "Real save" below | optional |
+| EXP-005 | baseline | REAL_LAG_257, hub overhead A/B: `full` vs `min` (protocol "Hub overhead A/B") | prepared, waiting for user run |
 | EXP-002 | laa | KNIGHTS N=100 + N=200 | after EXP-001 |
 | EXP-003 | dxvk | KNIGHTS N=100 | after EXP-001 |
 | EXP-004 | laa+dxvk | KNIGHTS N=100 | if 002/003 help |
@@ -59,7 +60,7 @@ Goal: reproducible, separates **simulation cost** from **render cost**, gives a 
 Goal: confirm that KNIGHTS reproduces the lag the user actually sees, not just a synthetic load.
 - Input: a save game from a real situation with heavy lag (user, any map). Copy the save into the TEST copy's save folder; note map, troop counts per side (estimate), what happens on screen.
 - Protocol: identical to KNIGHTS (variant `baseline`, same graphics settings, V-Sync off, load → wait 10 s → F9, F8 at each phase change, ~30 s per phase, F9). Phases as far as they apply: P0 as loaded (paused if the save starts paused, then unpause), P2 the laggy action, P3 pause during the lag, P4 camera on an empty area during the lag.
-- Ingest: `python -I tools/ingest.py --exp EXP-001-REAL --scenario REAL --troops <estimate per player> --note "<map, situation>"`.
+- Ingest: `python -I tools/ingest.py import --recording <timestamp> --exp EXP-001-REAL --scenario REAL --troops <estimate per player> --note "<map, situation>"`; set the game speed first (`variant.py plan game_speed=<N>`) or confirm it afterwards (`ingest.py annotate`), otherwise it stays unknown.
 - Compare with EXP-001 per phase (FPS, render-thread CPU %, present ms, DIP, VA). Same verdict pattern → KNIGHTS is representative; different → use the real save as the main scenario.
 - Saves are user data: keep them out of the repo (local only, like captures/).
 
@@ -77,7 +78,7 @@ Replaces the KNIGHTS phases for the user's own saves; keeps the camera fixed so 
 
 4. **F9** off, close the game, then `ingest.py` (skill `messung-auswerten`). Read: R1 vs R0 → sim vs render (Interpretation key); R2 vs R0 → sim-only cost.
 5. **Save the game state whenever the FPS in the overlay have dropped clearly** (before you load/leave it): lag situations are hard to recreate, and such a save is the preferred input for EXP-001-REAL.
-6. Do not start a second recording while the game runs if a capture is still to be ingested: `latest.json` is overwritten by the newest recording (happened 2026-10-15; the extra recording was set aside in `captures/_unassigned_20261015_034411/`).
+6. Several recordings in one out folder are fine since D012: each has its own manifest, `latest.json` is only a pointer. `ingest.py import` without `--recording` lists them and touches nothing. (Before D012 `latest.json` described only the newest recording; the extra one of 2026-10-15 was set aside by hand.)
 
 ### Protocol "Profiler run" (render thread by module)
 Goal: decide whether the render thread's time sits in game code or in the graphics stack (F102) and where the +10.7 ms of the running game come from (F101).
@@ -87,6 +88,17 @@ Goal: decide whether the render thread's time sits in game code or in the graphi
 4. Read `render_modules` per marker: paused vs running difference in the `exe`/`dragonfly`/`granny2` share = simulation/animation on the render thread; `driver`/`d3d9` share = graphics stack; `system` = waiting.
 5. Optional run C with `function` for the top functions of the dominant module.
 6. Set one F8 marker per phase and keep markers exact; phases are checked with `analyze_frames.py --timeline`.
+
+### Protocol "Hub overhead A/B" (EXP-005, D011)
+Goal: how much of the periodic long frames (F104) and of the frame time is caused by the hub itself (F107)? Compares the hub profile `full` (frame time + counters + polls + overlay, now with the work off the render thread) against `min` (frame time only). This measures **the cost of measuring**, not a game speedup; do not report either as a performance gain.
+1. Same save as EXP-001-REAL-B (lag save, game speed 90), same graphics settings, V-Sync/limiter state written down, same camera spots, Steam overlay state unchanged between runs. `python -I tools/variant.py baseline` (refresh the hub copy after the hub is committed and CMake re-run), `variant.py sample off`.
+2. Order **A1, B1, B2, A2** (A = `variant.py mode full`, B = `variant.py mode min`; the game reads the profile at start, so restart the game for every run; check `variant.py status`). The repeats give the run-to-run noise.
+3. Each run: load the save, wait 10 s, **F9**, then phases with **F8 at the start of each**: army in view **paused** 20 s | **running** 30 s | **empty corner** 15 s, **F9** off, quit the game. In `min` there is no overlay: F9 gives a high tone on start and a low tone on stop (`beep`), and the log says `Recording started/stopped`.
+4. After each run read `Stronghold2AnalyseHub.log`: line `Config:` shows the mode, `Recording stopped: ... -> capture OK`. A run with `CAPTURE INCOMPLETE`, dropped frames or write errors is invalid and is repeated. Then `python -I tools/ingest.py import --exp EXP-005-A1 --scenario REAL_LAG_257 --troops 257 --recording <timestamp>` (and B1, B2, A2); the effective switches are read from each manifest, the game speed (90 for this save) set with `variant.py plan game_speed=90` before or `ingest.py annotate` after.
+5. `python -I tools/ab_compare.py A1=<id> B1=<id> B2=<id> A2=<id> --marker <N>` per phase (and once without `--marker`). Only `frame_ms`/`present_ms` are compared: `min` has no EndScene timing, so `cpu-side` differs by definition.
+6. Reading rules, fixed before the run: an effect of the mode is claimed only if |A − B| (mean of the pairs) exceeds twice the larger of |A1 − A2| and |B1 − B2| and has the same sign in both pairs. "long-frame gaps ~period %" is compared with the random control row: a value far above control in **both** modes means the clock is not (only) the hub; a value that falls to the control level in `min` points to the hub's overlay/counters/poll (then switch them on one by one: `variant.py switch overlay on` etc., one switch per run).
+7. Lifecycle check in the same session (once, `min`): F9 on/off three times in a row, F9 within a second of the previous stop, F8 while stopped, END to unload with a recording open. Expected: each recording has its own files, the last one is closed and `latest.json` says `capture_ok: true`.
+8. Record the result in the Results section with: runs and order, graphics settings, the `ab_compare` table, the noise estimate, and the verdict per rule 6. Update F107 (`verifiziert`/`widerlegt`) only from this table.
 
 ## Results
 

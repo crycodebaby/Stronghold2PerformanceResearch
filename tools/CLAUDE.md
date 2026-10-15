@@ -5,13 +5,18 @@ Run every tool as `python -I tools/<name>.py` from the repo root; `--help`/no ar
 | Tool | Purpose |
 |---|---|
 | `paths.py` | single source for all locations (relative to repo); import it, never hardcode paths |
-| `ingest.py` | hub recording → `captures/<id>/` + `meta.json` + `timeline.md` + line in `data/index.jsonl`; several recordings in the out dir → lists them and needs `--recording <timestamp>`, never moves foreign files |
+| `ingest.py` | `list` / `import` / `annotate` / `verify` / `rebuild` (D012): verify against the manifest → stage → atomic commit to `captures/<capture_id>/`; sources are never deleted; same id + different content = conflict; silver in `data/silver/` + `data/index.jsonl`; user facts in `data/annotations/` |
+| `bronze.py`, `silver.py`, `capture_manifest.py` | libraries behind `ingest.py`: import transaction, silver derivation (tool version in every result), manifest contract + compatibility rules |
+| `testkit.py`, `test_import_safety.py` | fixtures and tests for provenance/import (manifests, interruption, conflicts, write errors, speed origins) |
+| `e2e_standin.py` | real proxy + hub DLL + stand-in → manifests → import, in a temp folder (needs the hub build) |
 | `analyze_frames.py` | metrics for one CSV / marker range (library: `summarize()`); `--timeline [--window 5]` = 5 s windows (FPS, DIP, triangles, render CPU) |
 | `samples.py` | sampler output: module groups per marker, top functions (`SH2Perf_*_samples.csv`) |
+| `ab_compare.py` | frame-time distributions of several captures side by side (A/B/repeat), long frames per minute, 1 s clock share vs random control; compares only columns valid in every hub mode |
+| `test_ab_compare.py` | unit tests for `ab_compare.py` (synthetic series) |
 | `test_ingest.py` | unit tests for the recording choice of `ingest.py` and the module groups |
 | `sym.py` | vtable symbol DB: `build`, `addr <hex>`, `class <name>` |
 | `fbrief.py` | structural brief of one function via Ghidra headless (no decompiled code) |
-| `variant.py` | TEST copy: baseline / laa / dxvk / laa+dxvk; installs d3d9 proxy + hub (D009); `hub on/off`, `sample off/module/function` |
+| `variant.py` | TEST copy: baseline / laa / dxvk / laa+dxvk; installs d3d9 proxy + hub (D009); `hub on/off`, `sample off/module/function`, `mode full/min`, `switch <frametime\|counters\|poll\|overlay\|beep> on/off/default` (D011), `plan key=value…` (planned experiment/protocol/scenario/game_speed/paused, D012); writes `SH2Prepared.json` |
 | `test_variant.py` | unit tests for `variant.py` (temp folder) |
 | `laa_patch.py` | LARGE_ADDRESS_AWARE flag; refuses the original folder |
 | `pe_info.py` | PE header/imports/exports |

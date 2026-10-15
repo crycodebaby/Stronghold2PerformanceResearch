@@ -27,7 +27,8 @@ def pct(values, p):
 
 def summarize(path, lo=0, hi=1 << 30):
     """Metrics for frames with lo <= marker < hi; None if no frames."""
-    rows = [r for r in csv.DictReader(open(path, newline="")) if lo <= int(r["marker"]) < hi]
+    with open(path, newline="") as fh:
+        rows = [r for r in csv.DictReader(fh) if lo <= int(r["marker"]) < hi]
     if len(rows) < 2:
         return None
     ft = [float(r["frame_ms"]) for r in rows]
@@ -60,11 +61,12 @@ def thread_summary(frames_path, t0, t1, top=4):
     if not os.path.exists(threads):
         return []
     per_tid, render = defaultdict(list), set()
-    for r in csv.DictReader(open(threads, newline="")):
-        if t0 <= float(r["t_s"]) <= t1:
-            per_tid[r["tid"]].append(float(r["cpu_pct"]))
-            if r["is_render_thread"] == "1":
-                render.add(r["tid"])
+    with open(threads, newline="") as fh:
+        for r in csv.DictReader(fh):
+            if t0 <= float(r["t_s"]) <= t1:
+                per_tid[r["tid"]].append(float(r["cpu_pct"]))
+                if r["is_render_thread"] == "1":
+                    render.add(r["tid"])
     ranked = sorted(per_tid.items(), key=lambda kv: -statistics.fmean(kv[1]))[:top]
     return [{"tid": int(t), "cpu_mean": round(statistics.fmean(v)), "cpu_max": round(max(v)),
              "render": t in render} for t, v in ranked]
@@ -72,7 +74,8 @@ def thread_summary(frames_path, t0, t1, top=4):
 
 def timeline(path, width=5.0):
     """Per fixed window of `width` s: frames, FPS, mean DIP/prims per frame, render-thread CPU %, markers."""
-    rows = list(csv.DictReader(open(path, newline="")))
+    with open(path, newline="") as fh:
+        rows = list(csv.DictReader(fh))
     if not rows:
         return []
     t0 = float(rows[0]["t_s"])
@@ -82,9 +85,10 @@ def timeline(path, width=5.0):
     cpu = defaultdict(list)
     threads = path.replace("_frames.csv", "_threads.csv")
     if os.path.exists(threads):
-        for r in csv.DictReader(open(threads, newline="")):
-            if r["is_render_thread"] == "1":
-                cpu[int((float(r["t_s"]) - t0) // width)].append(float(r["cpu_pct"]))
+        with open(threads, newline="") as fh:
+            for r in csv.DictReader(fh):
+                if r["is_render_thread"] == "1":
+                    cpu[int((float(r["t_s"]) - t0) // width)].append(float(r["cpu_pct"]))
     out = []
     for i in sorted(win):
         w = win[i]
@@ -109,7 +113,8 @@ def format_timeline(tl, width):
 
 
 def markers(path):
-    return sorted({int(r["marker"]) for r in csv.DictReader(open(path, newline=""))})
+    with open(path, newline="") as fh:
+        return sorted({int(r["marker"]) for r in csv.DictReader(fh)})
 
 
 def arg(name, default):
