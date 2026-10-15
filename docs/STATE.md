@@ -2,7 +2,7 @@
 
 > Kurzfassung: Aktueller Stand, offene Aufgaben, nächster Schritt. Immer zuerst lesen.
 
-Updated: 2026-10-15 · Phase: 1 (D013 protections closed, ready for acceptance: reference profile, verified bronze, write lock, name rules, safe deactivation (END) — stand-in only, **not yet run in Stronghold 2**; first real lag measurement EXP-001-REAL-B done; sampling profiler step 1 built; measurement path moved off the render thread (D011), per-recording manifest + safe import (D012) — built and tested without the game (stand-in end to end OK), **not yet run in Stronghold 2, hub changes uncommitted**)
+Updated: 2026-10-15 · Phase: 1 · **Current order and handoff: [HANDOFF.md](HANDOFF.md)** (in-game acceptance of the measurement instrumentation). Hub `e822e7f19019` (D011–D013) is installed in TEST (prepared + stand-in checked, **not yet checked in Stronghold 2**); no performance gain shown.
 
 ## Done
 - [x] Tools installed + verified (SETUP.md); REA doctor: Ghidra `available`, registration `aligned`; MCP tools loaded
@@ -38,7 +38,7 @@ Updated: 2026-10-15 · Phase: 1 (D013 protections closed, ready for acceptance: 
 - [x] Protection fixes (work order "Schutzluecken", D013, F114–F116, evidence `docs/evidence/ACCEPTANCE_2026-10-15.md`): benchmark use = integrity + description (`reference-v1`) + user release, apart, with coded rejections; pause per phase; one integrity check before every use of bronze (damaged → exit 4, silver kept but `INVALID`); write lock `data/.sh2perf.lock` (real-process tests); manifest names/roles validated, cleanup contained; hub threads must really end before unload (`Lifecycle`), unload crash fixed (8/8 in the stand-in, was 1/4). Tests: `test_hardening` 31, `test_import_safety` 45, `lifecycle_test`, `capture_test`, `e2e_standin`; patches `pipeline_protections.patch` / `hub_lifecycle.patch` for separate review. Silver of the 3 old captures re-derived with 2.1.0 (bronze identical)
 
 ## Open tasks (ordered)
-00. USER: install the prepared hub build and run the in-game check (SETUP.md "Prepared build" + "Check in Stronghold 2"): hub commit `e822e7f` (build id `e822e7f19019`, clean tree; DLL sha256 `591e6375…89e5`, proxy `13c89519…4801`, full values in SETUP.md), `variant.py baseline`, `variant.py plan game_speed=<N> …`, F9 recording, second recording, Alt-Tab, END (deactivation), import; also one session that quits the game while recording to confirm the documented limit (F117). Hub changes are committed (`ce07db2` D011/D012, `e822e7f` D013); the hub is NOT yet installed in TEST. Afterwards EXP-005 A/B (EXPERIMENTS.md "Hub overhead A/B", with its checklist), order A1 B1 B2 A2 on the lag save. Until then no performance statement about the new build is allowed
+00. USER: run the in-game check (install done 2026-10-15 by the agent via `variant.py baseline`, verified; old TEST hub `a98bea10ad6e` backed up, see HANDOFF.md) (SETUP.md "Prepared build" + "Check in Stronghold 2"): hub commit `e822e7f` (build id `e822e7f19019`, clean tree; DLL sha256 `591e6375…89e5`, proxy `13c89519…4801`, full values in SETUP.md), `variant.py baseline`, `variant.py plan game_speed=<N> …`, F9 recording, second recording, Alt-Tab, END (deactivation), import; also one session that quits the game while recording to confirm the documented limit (F117). Hub changes are committed (`ce07db2` D011/D012, `e822e7f` D013); SH2-Perf D013 = `4f86008`. Afterwards EXP-005 A/B (EXPERIMENTS.md "Hub overhead A/B", with its checklist), order A1 B1 B2 A2 on the lag save. Until then no performance statement about the new build is allowed
 0. USER: profiler runs on the lag save LAG_217_Reiter (EXPERIMENTS.md "Profiler run"): run A `sample off`, run B `sample module`, same phases with exact F8 markers (paused 20 s | running 30 s | empty corner 15 s), V-Sync/graphics settings noted. Then `ingest.py ... --recording <timestamp>` for each and read `render_modules` per marker (module split of the render thread decides F101/F102)
 1. USER: build KNIGHTS scenario (EXPERIMENTS.md, Scenario Editor; fallback Kingmaker) — note graphics settings
 2. EXP-001 baseline KNIGHTS N=100, phases P0–P4 → skill `messung-auswerten`; judge with render-thread CPU %, not `cpu-side` alone. Check `SH2Proxy.log` caller chain (F088)
@@ -50,6 +50,7 @@ Updated: 2026-10-15 · Phase: 1 (D013 protections closed, ready for acceptance: 
 7. Low prio: GR2 → standard uncompressed GR2 via file-builder API
 
 ## Next step
+See [HANDOFF.md](HANDOFF.md) for the current order, step table and the next concrete action.
 In-game check of the prepared build (open task 00), then the hub overhead A/B (EXP-005) and F107 from its table. Then the profiler runs on the lag save (open task 0) with the `min` profile, so that the sampled run is not disturbed by hub work.
 
 Previous next step, still open: USER builds the KNIGHTS scenario (optionally also EXP-001-REAL with a real lag save), then EXP-001 (baseline, N=100, P0–P4 with F8 markers) → `ingest.py --exp EXP-001 --scenario KNIGHTS --troops 100`.
