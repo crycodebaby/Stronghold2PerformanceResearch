@@ -9,8 +9,12 @@ import os
 import shutil
 import struct
 import sys
+from pathlib import Path
 
-ORIGINAL_DIR = os.path.normcase(os.path.abspath(r"<RE-Projects>\Stronghold 2"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import ORIGINAL, is_inside  # noqa: E402
+
+
 LAA = 0x0020
 
 
@@ -32,8 +36,7 @@ def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
     path = os.path.abspath(sys.argv[1])
-    if os.path.normcase(os.path.dirname(path)).startswith(ORIGINAL_DIR + os.sep) or \
-            os.path.normcase(os.path.dirname(path)) == ORIGINAL_DIR:
+    if is_inside(path, ORIGINAL):
         sys.exit("refusing to patch the ORIGINAL game folder; use the TEST copy")
     data = bytearray(open(path, "rb").read())
     pe = struct.unpack_from("<I", data, 0x3C)[0]

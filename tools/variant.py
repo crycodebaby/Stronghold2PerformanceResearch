@@ -15,10 +15,13 @@ import shutil
 import struct
 import subprocess
 import sys
+from pathlib import Path
 
-TEST_DIR = r"<RE-Projects>\Stronghold 2 - TEST"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import DXVK_D3D9, TEST  # noqa: E402
+
+TEST_DIR = str(TEST)
 EXE = os.path.join(TEST_DIR, "Stronghold2.exe")
-DXVK_D3D9 = r"%USERPROFILE%\Tools\dxvk-3.1.1\x32\d3d9.dll"
 LAA_TOOL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "laa_patch.py")
 STEAM_APPID = "40960"
 
@@ -50,6 +53,13 @@ def ensure_steam_appid():
     if not os.path.exists(path):
         with open(path, "w") as f:
             f.write(STEAM_APPID)
+
+
+def current_variant():
+    """Variant name derived from the TEST folder state."""
+    dxvk = os.path.exists(os.path.join(TEST_DIR, "d3d9.dll"))
+    return {(False, False): "baseline", (True, False): "laa",
+            (False, True): "dxvk", (True, True): "laa+dxvk"}[(laa_enabled(), dxvk)]
 
 
 def status():

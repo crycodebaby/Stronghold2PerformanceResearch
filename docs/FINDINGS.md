@@ -1,5 +1,7 @@
 # FINDINGS
 
+> Kurzfassung: Fakten (F###) mit Status [verifiziert | Hypothese | widerlegt] und Beleg. Engine, Binary, Formate, Performance.
+
 Status: `[verifiziert]` = directly observed with evidence · `[Hypothese]` = inference, unproven · `[widerlegt]` = disproven.
 IDs are stable; never renumber. Append, don't rewrite history (mark old entries `[widerlegt]` instead).
 
@@ -34,6 +36,11 @@ IDs are stable; never renumber. Append, don't rewrite history (mark old entries 
 
 | F028 | [verifiziert] | Ghidra 12.1.4 RTTI analysis: 1,585 vftables / 31,865 virtual slots in exe; 82 / 539 in dragonfly.dll | `ExportVtables.java` → `captures/vtables_*.csv` |
 | F029 | [verifiziert] | Largest S2Actor virtual function: slot 20 @ 0x004E92C0, 12,783 B | vtables_exe.csv (see FUNCTIONS.md) |
+| F070 | [verifiziert] | `Simulation::vf02` (0x0076ADC0) has 3 blocks, no loop, 1 direct callee (0x0076AC40) and 13 indirect calls | `tools/fbrief.py 0x0076ADC0` |
+| F071 | [Hypothese] | `Simulation::vf02` is the sim tick, dispatching to subsystems via virtual calls | F070 shape only; confirm with profiler samples (design/SAMPLING_PROFILER.md) |
+| F072 | [Hypothese] | `S2Actor::vf20` is the per-actor update/think function | size only (F029) |
+| F073 | [Hypothese] | `BiDiPathfinder::vf05` is the path search step | largest pathfinder vfunc |
+| F074 | [Hypothese] | `ProximityLayer` serves target search (nearest enemy) | class name only |
 
 ## Runtime DLLs
 

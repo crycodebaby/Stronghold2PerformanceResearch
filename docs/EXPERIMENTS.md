@@ -1,5 +1,7 @@
 # EXPERIMENTS
 
+> Kurzfassung: Testszenario KNIGHTS, Messprotokoll, geplante und ausgewertete Messungen (EXP-###). Rohdaten: captures/, Kennzahlen: data/index.jsonl.
+
 Each entry: ID · date · variant · setup · scenario · result · conclusion. Raw CSVs stay in `captures/` (gitignored); paste `tools/analyze_frames.py` output here.
 
 ## Standard test scenario "KNIGHTS" (proposal, not yet built)
@@ -26,8 +28,8 @@ Goal: reproducible, separates **simulation cost** from **render cost**, gives a 
 2. Fixed settings: same resolution/graphics preset each run (note them), V-Sync OFF, window mode noted.
 3. Load save → wait 10 s → **F9** (record on).
 4. At each phase start press **F8** (marker). ~30 s per phase.
-5. **F9** (record off). CSVs appear next to `Stronghold2.exe` (`SH2Perf_<timestamp>_frames.csv`, `_threads.csv`).
-6. Move CSVs to `SH2-Perf/captures/<EXP-ID>/`; run `tools/analyze_frames.py <csv> --from-marker k --to-marker k+1` per phase.
+5. **F9** (record off). Hub writes CSVs + `latest.json` to `TEST\SH2Perf_out\` (launcher `--out` overrides).
+6. Close the game, then `python -I tools/ingest.py --exp <EXP> --scenario KNIGHTS --troops <N>` (skill `messung-auswerten`): moves files to `captures/<date>_<EXP>_<variant>_KNIGHTS/`, appends `data/index.jsonl`, prints per-marker phases.
 
 ### Interpretation key
 | Observation | Points to |

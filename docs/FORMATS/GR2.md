@@ -1,5 +1,7 @@
 # GR2 — Granny 3D (RAD Game Tools, proprietary)
 
+> Kurzfassung: Granny-3D-Modelle (proprietär, v6, Oodle-komprimiert). Für Performance unwichtig.
+
 | Field | Value | Status |
 |---|---|---|
 | Count | 3,326 (`meshes/**`) | [verifiziert] |

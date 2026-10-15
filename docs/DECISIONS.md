@@ -1,5 +1,7 @@
 # DECISIONS
 
+> Kurzfassung: Warum wir etwas so machen (D###): Entscheidung, Begründung, verworfene Alternativen.
+
 Format: ID · date · decision · rationale · rejected alternatives.
 
 ## D001 · 2026-10-15 · Patch/hook the original, not reimplement
@@ -26,3 +28,18 @@ Format: ID · date · decision · rationale · rejected alternatives.
 - Decision: phase 1 instruments only D3D9 (counters, timings). No hooks into game functions until profiling data (EXP-001) points at a hotspot.
 - Rationale: user requirement; avoids guesswork.
 - Rejected: speculative hooks on pathfinder.
+
+## D006 · 2026-10-15 · Bronze / silver / gold data layers
+- Decision: `captures/` (bronze: raw CSV, logs, Ghidra exports; gitignored) → `data/` (silver: `index.jsonl` one metrics line per capture, tracked; `vtables.db` rebuilt by `sym.py build`) → `docs/` (gold: curated). Tools move data between layers (`ingest.py`, `sym.py`); the hub writes into a configurable dir (`SH2Launcher --out`, default `TEST\SH2Perf_out`) plus `latest.json`.
+- Rationale: raw data never enters agent context; comparisons run on small structured lines; captures are reproducible via `meta.json` (hashes, variant, hub commit, CPU/GPU).
+- Rejected: CSVs in git (size, personal data); a database server (overkill); hub writing next to the exe (mixes game and data files).
+
+## D007 · 2026-10-15 · Remove personal paths before publishing raw data
+- Decision: raw logs/CSVs (`captures/`) may contain absolute paths (the hub log lists every loaded module path incl. user name). Before any upload, issue attachment or release they are scrubbed (replace `<drive>:\Users\<name>` with `%USERPROFILE%`). `data/` and all `*.md` must never contain absolute user paths — enforced by `lint_docs.py`.
+- Rationale: privacy; repo may become public.
+- Rejected: stripping paths in the hub (module paths are the evidence for F032 locally).
+
+## D008 · 2026-10-15 · Function analysis through structural briefs
+- Decision: agents analyse functions via `tools/sym.py` + `tools/fbrief.py` (addresses, sizes, callers/callees, loops, strings). Decompiled code stays inside Ghidra — not in the repo, not in agent context.
+- Rationale: legal (no decompiled code in repo/releases), context budget, briefs are diffable facts.
+- Rejected: pasting pseudocode into docs/context.

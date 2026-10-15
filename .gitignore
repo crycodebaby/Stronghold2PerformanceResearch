@@ -43,3 +43,5 @@ build/
 out/
 .vs/
 __pycache__/
+# Silver layer: rebuildable databases (python -I tools/sym.py build)
+*.db

@@ -1,5 +1,7 @@
 # Textures & terrain
 
+> Kurzfassung: Texturen sind Standard (DDS DXT1/3, TGA); Terrain-Texturen + landtex.txt.
+
 ## Textures
 | Format | Count | Notes | Status |
 |---|---|---|---|

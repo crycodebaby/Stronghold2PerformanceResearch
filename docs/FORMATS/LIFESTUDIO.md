@@ -1,5 +1,7 @@
 # LifeStudio Head (facial animation middleware) — rough classification only
 
+> Kurzfassung: Gesichtsanimations-Formate (.gdp OLE, .mms, .mma). Nur eingeordnet.
+
 Scope: classify, do NOT decode (low perf relevance).
 
 | Ext | Location | Magic | Guess | Status |

@@ -1,5 +1,7 @@
 # S2M / S2C / SH2 — maps, castles, cutscene maps
 
+> Kurzfassung: Karten/Burgen: Key/Value-Kopf + 3 zlib-Streams (MapHeader, RadarMap, Body).
+
 Extensions share one layout (S2M skirmish/sandbox maps, S2C campaign castles, SH2 cutscene maps). [verifiziert: same header start]
 
 ## Layout (sample: `maps/Arena of Kings.s2m`, 843,825 B)

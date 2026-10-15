@@ -5,7 +5,8 @@ Usage: python -I tools/analyze_frames.py <..._frames.csv> [--from-marker N] [--t
 Frames are filtered by the `marker` column (F8 in game): --from-marker 1
 keeps frames recorded after the first marker press. The matching
 *_threads.csv (same prefix) is summarized if present.
-Output is Markdown, ready to paste into docs/EXPERIMENTS.md.
+Output is Markdown (<= 30 lines), ready to paste into docs/EXPERIMENTS.md.
+Library use: summarize(path, lo, hi) -> dict (used by tools/ingest.py).
 """
 import csv
 import os
@@ -13,19 +14,65 @@ import statistics
 import sys
 from collections import defaultdict
 
+COUNTERS = ("dip", "dp", "dpup", "dipup", "prims", "settex", "vsconst_calls", "psconst_calls")
+
 
 def pct(values, p):
-    if not values:
-        return float("nan")
     s = sorted(values)
-    k = min(len(s) - 1, max(0, round(p / 100 * (len(s) - 1))))
-    return s[k]
+    return s[min(len(s) - 1, max(0, round(p / 100 * (len(s) - 1))))]
+
+
+def summarize(path, lo=0, hi=1 << 30):
+    """Metrics for frames with lo <= marker < hi; None if no frames."""
+    rows = [r for r in csv.DictReader(open(path, newline="")) if lo <= int(r["marker"]) < hi]
+    if len(rows) < 2:
+        return None
+    ft = [float(r["frame_ms"]) for r in rows]
+    mean = lambda k: statistics.fmean(float(r[k]) for r in rows)
+    duration = float(rows[-1]["t_s"]) - float(rows[0]["t_s"])
+    worst1 = sorted(ft)[-max(1, len(ft) // 100):]
+    m = {
+        "frames": len(ft),
+        "duration_s": round(duration, 2),
+        "avg_fps": round(len(ft) / duration, 1) if duration > 0 else None,
+        "p50_ms": round(pct(ft, 50), 2), "p95_ms": round(pct(ft, 95), 2),
+        "p99_ms": round(pct(ft, 99), 2), "max_ms": round(max(ft), 2),
+        "low1_fps": round(1000 / statistics.fmean(worst1), 1),
+        "present_ms": round(mean("present_ms"), 2),
+        "endscene_ms": round(mean("endscene_ms"), 2),
+        "between_endscene_ms": round(mean("between_endscene_ms"), 2),
+        "overlay_ms": round(mean("overlay_ms"), 2),
+        "cpu_side_ms": round(mean("frame_ms") - mean("present_ms") - mean("endscene_ms"), 2),
+        "va_max_mb": round(max(float(r["va_used_mb"]) for r in rows)),
+    }
+    for k in COUNTERS:
+        m[k] = round(mean(k))
+    m["threads"] = thread_summary(path, float(rows[0]["t_s"]), float(rows[-1]["t_s"]))
+    return m
+
+
+def thread_summary(frames_path, t0, t1, top=4):
+    """Top threads by mean CPU% (of one core) within [t0, t1]."""
+    threads = frames_path.replace("_frames.csv", "_threads.csv")
+    if not os.path.exists(threads):
+        return []
+    per_tid, render = defaultdict(list), set()
+    for r in csv.DictReader(open(threads, newline="")):
+        if t0 <= float(r["t_s"]) <= t1:
+            per_tid[r["tid"]].append(float(r["cpu_pct"]))
+            if r["is_render_thread"] == "1":
+                render.add(r["tid"])
+    ranked = sorted(per_tid.items(), key=lambda kv: -statistics.fmean(kv[1]))[:top]
+    return [{"tid": int(t), "cpu_mean": round(statistics.fmean(v)), "cpu_max": round(max(v)),
+             "render": t in render} for t, v in ranked]
+
+
+def markers(path):
+    return sorted({int(r["marker"]) for r in csv.DictReader(open(path, newline=""))})
 
 
 def arg(name, default):
-    if name in sys.argv:
-        return int(sys.argv[sys.argv.index(name) + 1])
-    return default
+    return int(sys.argv[sys.argv.index(name) + 1]) if name in sys.argv else default
 
 
 def main():
@@ -33,43 +80,20 @@ def main():
         sys.exit(__doc__)
     path = sys.argv[1]
     lo, hi = arg("--from-marker", 0), arg("--to-marker", 1 << 30)
-    rows = [r for r in csv.DictReader(open(path, newline="")) if lo <= int(r["marker"]) < hi]
-    if not rows:
+    m = summarize(path, lo, hi)
+    if not m:
         sys.exit("no frames in selected marker range")
-
-    ft = [float(r["frame_ms"]) for r in rows]
-    duration = float(rows[-1]["t_s"]) - float(rows[0]["t_s"])
-    mean = lambda k: statistics.fmean(float(r[k]) for r in rows)
-    worst1 = sorted(ft)[-max(1, len(ft) // 100):]
-
     print(f"### {os.path.basename(path)}  markers [{lo},{hi})")
-    print(f"| metric | value |\n|---|---|")
-    print(f"| frames / duration | {len(ft)} / {duration:.1f} s |")
-    print(f"| avg FPS (frames/time) | {len(ft) / duration:.1f} |" if duration > 0 else "| avg FPS | n/a |")
-    print(f"| frame ms p50 / p95 / p99 / max | {pct(ft, 50):.1f} / {pct(ft, 95):.1f} / {pct(ft, 99):.1f} / {max(ft):.1f} |")
-    print(f"| 1% low FPS | {1000 / statistics.fmean(worst1):.1f} |")
-    for k in ("present_ms", "endscene_ms", "between_endscene_ms", "overlay_ms"):
-        print(f"| mean {k} | {mean(k):.2f} |")
-    print(f"| mean cpu-side ms (frame - present - endscene) | "
-          f"{mean('frame_ms') - mean('present_ms') - mean('endscene_ms'):.2f} |")
-    for k in ("dip", "dp", "dpup", "dipup", "prims", "settex", "vsconst_calls", "psconst_calls"):
-        print(f"| mean {k}/frame | {mean(k):.0f} |")
-    print(f"| VA used MB max | {max(float(r['va_used_mb']) for r in rows):.0f} |")
-
-    threads = path.replace("_frames.csv", "_threads.csv")
-    if os.path.exists(threads):
-        t0, t1 = float(rows[0]["t_s"]), float(rows[-1]["t_s"])
-        per_tid = defaultdict(list)
-        render = set()
-        for r in csv.DictReader(open(threads, newline="")):
-            if t0 <= float(r["t_s"]) <= t1:
-                per_tid[r["tid"]].append(float(r["cpu_pct"]))
-                if r["is_render_thread"] == "1":
-                    render.add(r["tid"])
-        top = sorted(per_tid.items(), key=lambda kv: -statistics.fmean(kv[1]))[:6]
-        print("\n| thread | mean CPU % of one core | max | render thread |\n|---|---|---|---|")
-        for tid, v in top:
-            print(f"| {tid} | {statistics.fmean(v):.0f} | {max(v):.0f} | {'yes' if tid in render else ''} |")
+    print("| metric | value |\n|---|---|")
+    print(f"| frames / duration | {m['frames']} / {m['duration_s']} s |")
+    print(f"| avg FPS / 1% low | {m['avg_fps']} / {m['low1_fps']} |")
+    print(f"| frame ms p50 / p95 / p99 / max | {m['p50_ms']} / {m['p95_ms']} / {m['p99_ms']} / {m['max_ms']} |")
+    print(f"| ms present / endscene / cpu-side | {m['present_ms']} / {m['endscene_ms']} / {m['cpu_side_ms']} |")
+    print(f"| draws/frame DIP / DP / DPUP / DIPUP | {m['dip']} / {m['dp']} / {m['dpup']} / {m['dipup']} |")
+    print(f"| prims / settex / vsconst / psconst | {m['prims']} / {m['settex']} / {m['vsconst_calls']} / {m['psconst_calls']} |")
+    print(f"| VA used MB max | {m['va_max_mb']} |")
+    for t in m["threads"]:
+        print(f"| thread {t['tid']}{' (render)' if t['render'] else ''} CPU% mean/max | {t['cpu_mean']} / {t['cpu_max']} |")
 
 
 if __name__ == "__main__":

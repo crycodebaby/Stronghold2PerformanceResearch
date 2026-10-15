@@ -1,5 +1,7 @@
 # Other formats (inventory)
 
+> Kurzfassung: Inventar der übrigen Formate (Bink, Audio, Deskriptoren, Skripte).
+
 | Ext | Count | Magic / start | Meaning | Status |
 |---|---|---|---|---|
 | `.bik` | 89 | `BIKi` | Bink 1 video (ffmpeg decodes) | [verifiziert] magic |

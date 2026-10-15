@@ -1,5 +1,7 @@
 # SETUP — rebuild the environment
 
+> Kurzfassung: Werkzeuge, Versionen, Umgebungsvariablen, Builds — Umgebung neu aufbauen.
+
 Host: Windows 10/11 x64. Install via winget (as done 2026-10-15):
 
 | Tool | winget id / source | Version | Path |
