@@ -1,0 +1,43 @@
+{
+  "schema": "sh2perf.annotations",
+  "version": 1,
+  "capture_id": "rec-20261015T072526Z-f1d856a1",
+  "labels": {
+    "exp": "EXP-007-A0",
+    "scenario": "REAL_LAG_257",
+    "troops": 257,
+    "note": "excluded: Alt-Tab at 47 s (4007 ms frame, device reset) and camera moved; marker 3 shows another view (DIP 2799 vs 2474-2576); marker 1 clean; manifest plan id says EXP-007-A1"
+  },
+  "history": [
+    {
+      "at": "2026-10-15T07:27:42Z",
+      "field": "labels.exp",
+      "old": null,
+      "new": "EXP-007-A1"
+    },
+    {
+      "at": "2026-10-15T07:27:42Z",
+      "field": "labels.scenario",
+      "old": null,
+      "new": "REAL_LAG_257"
+    },
+    {
+      "at": "2026-10-15T07:27:42Z",
+      "field": "labels.troops",
+      "old": null,
+      "new": 257
+    },
+    {
+      "at": "2026-10-15T07:27:58Z",
+      "field": "labels.exp",
+      "old": "EXP-007-A1",
+      "new": "EXP-007-A0"
+    },
+    {
+      "at": "2026-10-15T07:27:58Z",
+      "field": "labels.note",
+      "old": null,
+      "new": "excluded: Alt-Tab at 47 s (4007 ms frame, device reset) and camera moved; marker 3 shows another view (DIP 2799 vs 2474-2576); marker 1 clean; manifest plan id says EXP-007-A1"
+    }
+  ]
+}

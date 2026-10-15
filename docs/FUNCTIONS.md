@@ -26,5 +26,10 @@ Name `Class::vfNN` = virtual slot NN of the RTTI vftable (structural, says nothi
 | 0x00723920 | `ProximityLayer::vf02` | exe (GlowWorm) | hoch | slot 2; 133 B |
 | 0x007CED60 | `LevelOfDetailManager::vf04` | exe (GlowWorm) | hoch | slot 4; 492 B |
 | 0x007CD700 | `SyncCheck::vf01` | exe (GlowWorm) | hoch | slot 1; 145 B |
+| 0x500092E0 | `SseDeformPWNT3432I` | granny2.dll (sha256 `94d56fd7…`, base 0x50000000) | hoch | its own assert string "SseDeformPWNT3432I" next to "x86_granny_accelerated_deformers.cpp", "MatrixBuffer4x4", "DestVertices"; pointer stored by `FUN_5000BFD0` (deformer table, F133); named in Ghidra |
+| 0x50008810 | `SseDeformPWNT3432I_loop` (working name, Ghidra keeps FUN_) | granny2.dll | mittel | only caller `SseDeformPWNT3432I`; one SSE loop, `movntps` stores; EXP-007 F1/F2 3.6–4.9 ms/frame (F132) |
+| 0x500166E0 | `BSpline2x4n_eval` (working name) | granny2.dll | mittel | only static caller export `GrannySampleBSpline2x4n`; x87 single block (F134) |
+| 0x50017600 | `FindKnot_search` (working name) | granny2.dll | mittel | callers incl. export `GrannyFindKnot`; 2 loops with float compares (F134) |
+| 0x0078E4D0 | `exe_GrannySampleModel_call` (working name) | exe | mittel | reads IAT slots of `GrannySetModelClock` (0x0078E6B1) and `GrannySampleModelAnimationsAccelerated` (0x0078E6D9); purpose beyond these calls not analysed (F134) |
 
-Source: `ghidra_scripts/ExportVtables.java` → `captures/vtables_exe.csv` → `data/vtables.db`. Size/refs are static, not measured cost.
+Source: `ghidra_scripts/ExportVtables.java` → `captures/vtables_exe.csv` → `data/vtables.db`; granny2 and EXP-007 rows: `fbrief.py`, `AddressContext.java`, `InstructionStats.java` (captures/functions/). Working names are not set in Ghidra (plate comments only). Size/refs are static, not measured cost.

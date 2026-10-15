@@ -11,6 +11,7 @@ Run every tool as `python -I tools/<name>.py` from the repo root; `--help`/no ar
 | `e2e_standin.py` | real proxy + hub DLL + stand-in → manifests → import → END-key deactivation, in a temp folder (needs the hub build; `--deactivate-only --repeat N`, `--hub-build`) |
 | `analyze_frames.py` | metrics for one CSV / marker range (library: `summarize()`); `--timeline [--window 5]` = 5 s windows (FPS, DIP, triangles, render CPU) |
 | `samples.py` | sampler output: module groups per marker, top functions (`SH2Perf_*_samples.csv`) |
+| `funcsamples.py` | function-mode samples → Ghidra function bodies (`captures/functions/<module>_functions.csv` from `ExportFunctions.java`), est. ms/frame per marker; unresolved addresses stay unresolved; `--check <rva> --module exe\|granny2` |
 | `ab_compare.py` | frame-time distributions of several captures side by side (A/B/repeat), long frames per minute, 1 s clock share vs random control; compares only columns valid in every hub mode |
 | `test_ab_compare.py` | unit tests for `ab_compare.py` (synthetic series) |
 | `test_ingest.py` | unit tests for the recording choice of `ingest.py` and the module groups |

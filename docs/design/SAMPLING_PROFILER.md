@@ -9,7 +9,7 @@ Original rule: build only if EXP-001 shows render thread ≈ 100 % of one core a
 | Step | What | State |
 |---|---|---|
 | 1 | per (marker, module) counts, render thread only | **built** (hub `core/sampler.cpp`), validated without the game (F103); not yet run in the game |
-| 2 | per (marker, module, rva) counts (`function` mode, same code, `rva` filled) | built, output in `samples.csv`; Ghidra names only for exe vtable slots (`tools/samples.py`), `ExportFunctions.java` still open |
+| 2 | per (marker, module, rva) counts (`function` mode, same code, `rva` filled) | built and run in the game (EXP-007, F130); addresses → Ghidra function bodies with `ExportFunctions.java` + `tools/funcsamples.py` (exe, granny2) |
 | 3 | EBP call stacks | not built (design below) |
 
 ## Use

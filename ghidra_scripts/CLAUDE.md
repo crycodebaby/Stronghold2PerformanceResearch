@@ -1,11 +1,16 @@
 # ghidra_scripts/
 
 Java GhidraScripts, run headless against the project `../ghidra-projects/SH2`
-(programs `Stronghold2.exe`, `dragonfly.dll`; already analysed — use `-process <prog> -noanalysis -readOnly`).
+(programs `Stronghold2.exe`, `dragonfly.dll`, `granny2.dll` (imported 2026-10-15 for EXP-007); already analysed — use `-process <prog> -noanalysis -readOnly`).
 
 | Script | Args | Output |
 |---|---|---|
 | `ExportVtables.java` | `<out.csv>` | RTTI vtable slots: class, slot, address, size, callers → feed `tools/sym.py build` |
+| `ExportFunctions.java` | `<out.csv>` | every function: entry, body min/max, all body ranges, name, name source, thunk → `captures/functions/<module>_functions.csv` for `tools/funcsamples.py` |
+| `AddressContext.java` | `<out.txt> <addr>...` | read-only: containing / previous / next function, instruction or data, references to the address or its function |
+| `InstructionStats.java` | `<out.txt> <addr>...` | read-only: instruction count, mnemonic histogram, loop back edges, indirect calls per function |
+| `CreateFunctionsAt.java` | `<out.txt> <addr>...` | **writes**: creates a function where code starts and none exists (entries only reached via data pointers) |
+| `AnnotateFunctions.java` | `<out.txt> addr#name#comment...` | **writes**: name and/or plate comment for FUNCTIONS.md knowledge; no spaces, commas or `\|` in arguments (the .bat goes through cmd) |
 | `FunctionBrief.java` | `<addr hex> <out.txt>` | ≤ 30-line structural summary; wrapper `tools/fbrief.py` |
 
 Rules:

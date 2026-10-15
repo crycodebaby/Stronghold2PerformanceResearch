@@ -1,0 +1,41 @@
+{
+  "schema": "sh2perf.annotations",
+  "version": 1,
+  "capture_id": "rec-20261015T073119Z-a7148666",
+  "labels": {
+    "exp": "EXP-007-A1",
+    "scenario": "REAL_LAG_257",
+    "troops": 257
+  },
+  "history": [
+    {
+      "at": "2026-10-15T07:32:43Z",
+      "field": "labels.exp",
+      "old": null,
+      "new": "EXP-007-A1"
+    },
+    {
+      "at": "2026-10-15T07:32:43Z",
+      "field": "labels.scenario",
+      "old": null,
+      "new": "REAL_LAG_257"
+    },
+    {
+      "at": "2026-10-15T07:32:43Z",
+      "field": "labels.troops",
+      "old": null,
+      "new": 257
+    },
+    {
+      "at": "2026-10-15T07:32:55Z",
+      "field": "game_speed",
+      "old": null,
+      "new": 90
+    }
+  ],
+  "game_speed": {
+    "value": 90,
+    "origin": "user_confirmed",
+    "at": "2026-10-15T07:32:55Z"
+  }
+}

@@ -1,8 +1,44 @@
 # HANDOFF
 
-> Kurzfassung: Übergabe an den nächsten Agenten: aktueller Auftrag (Abnahme der Messinstrumentierung in Stronghold 2), geprüfte Stände, Abnahmeschritte erledigt/offen, nächste Aktion. Projekthistorie steht in STATE.md, nicht hier.
+> Kurzfassung: Übergabe an den nächsten Agenten: aktueller Auftrag (EXP-006 Profiling der Armeeansicht; davor Abnahme der Messinstrumentierung), geprüfte Stände, Abnahmeschritte erledigt/offen, nächste Aktion. Projekthistorie steht in STATE.md, nicht hier.
 
 Updated: 2026-10-15. Read [STATE.md](STATE.md) for history and open tasks; this file only covers the current order.
+
+## Current order (2026-10-15, latest): EXP-007 function hotspots — done; supersedes EXP-006 below
+Protocol and candidate rules fixed in advance: [EXPERIMENTS.md](EXPERIMENTS.md) "Protocol EXP-007". Prerequisite added: `ghidra_scripts/ExportFunctions.java` (all function bodies) and `granny2.dll` imported into the Ghidra project.
+
+| Run | `sample` | plan id | State |
+|---|---|---|---|
+| A0 | off | (plan id EXP-007-A1) | 09:25, `rec-20261015T072526Z-f1d856a1`, **excluded**: Alt-Tab in marker 2 (4,007 ms frame, device reset), camera moved, marker 3 another view (DIP 2,799, > 10 % off); marker 1 clean (34.4 ms mean) |
+| A1 | off | EXP-007-A1 | done 09:31, `rec-20261015T073119Z-a7148666`, valid: m1 running 19.8 s (mean 34.98 ms), m3 paused 18.8 s (25.35 ms), DIP 2,445–2,495; speed 90 user-confirmed + annotated |
+| F1 | function | EXP-007-F1 | done 09:34, `rec-20261015T073402Z-bf15a427`, valid: m1 running 22.1 s, m3 paused 21.8 s; 5,595 samples (0 failed/dropped), 3,187 rows, ≈ 95/s; speed 90 user-confirmed + annotated |
+| X | function | (plan id EXP-007-F2) | 09:36/09:37, `rec-20261015T073630Z-6e960aca` + `rec-20261015T073721Z-e6a4bc3e`, **excluded**: out of sequence (marker 1 at +19 s, F9 before marker 3, second 14 s recording); 3× F10 before (histogram only) |
+| F2 | function | EXP-007-F2 | done 09:39, `rec-20261015T073915Z-387fcc8e`, valid: m1 running 18.4 s, m3 paused 22.8 s, DIP 2,544–2,625; 5,158 samples (0 failed/dropped), 2,886 rows, ≈ 95/s; speed 90 user-confirmed + annotated |
+| A2 | off | EXP-007-A2 | **TEST prepared** (`sample=off`), waiting for the user |
+
+- **Result (EXPERIMENTS.md EXP-007, F130–F136, FUNCTIONS.md)**: 4 candidates by the fixed rules — granny2 `FUN_50008810` (SSE deform loop under `SseDeformPWNT3432I`, 3.6–4.9 ms/frame running and paused), `FUN_500166E0` (B-spline eval helper, 1.2–1.4 ms), `FUN_50017600` (knot search, 0.7–0.9 ms), exe `FUN_004E3530` (x87 helper, +0.2/+0.4 ms running-only). The exe's running-only +6.2 ms is flat over ≈ 150 functions (F135); no single exe hotspot. Function-mode frame effect not claimed, bounded only to ≈ 1.3/3.2 ms (F130). Ghidra: granny2 imported, 3 functions created, `SseDeformPWNT3432I` named, plate comments on the candidates.
+- **TEST now**: `sample=off`, plan id removed (see below). `SH2Perf_out` keeps all sources.
+- **Next order (smallest, F136)**: EXP-008 read-only call counter at the exe → granny2 import boundary (hub: IAT hooks for `GrannySetModelClock`, `GrannySampleModelAnimationsAccelerated`, `GrannyDeformVertices`; per frame call count, clock argument min/max, vertex count argument if present), same save/protocol, 1 off + 2 on runs. Decides whether paused frames recompute identical poses/skinning (redundant work, then a hook target) and how calls scale per visible unit. Exe side: attributing the flat running-only cost needs call stacks (design step 3, EBP walk) or a static common-caller search over the 146–169 running-only functions — after EXP-008.
+
+## Previous order (2026-10-15, later): EXP-006 army-view profiling — supersedes the acceptance order below
+Protocol and evaluation rules fixed in advance: [EXPERIMENTS.md](EXPERIMENTS.md) "Protocol EXP-006". Sampler check: F122–F124 (no blocking defect; synthetic overhead now 4.6–5.1 %, `system` group contains game CRT).
+
+| Run | `sample` | plan id | State |
+|---|---|---|---|
+| A0 | off | (plan id EXP-006-A1) | pilot done 08:28, imported `rec-20261015T062849Z-735e2089`, relabelled A0: only 2 markers, pause in marker 1 → not protocol-conform |
+| A1 | off | EXP-006-A1 | done 08:33, `rec-20261015T063324Z-11f9f002`, valid: 3 markers, m1 running 20 s, m3 paused 24 s (frozen counters from 40 s), pause at ≈ 39 s inside transition marker 2 (20 s long instead of 3 s). speed 90 user-confirmed + annotated; pause from counters |
+| B1 | module | EXP-006-B1 | done 08:37, `rec-20261015T063727Z-a0c4873e`, valid: m1 running 18.2 s, m3 paused 21.5 s, pause ≈ 26 s in marker 2; 5,018 samples, 0 failed/dropped, ≈ 95/s per marker; speed 90 user-confirmed + annotated |
+| B2 | module | EXP-006-B2 | done 08:40, `rec-20261015T064050Z-f3b36a54`, valid: m1 running 20.1 s, m3 paused 21.2 s; 5,060 samples, 0 failed/dropped, ≈ 95/s; speed 90 user-confirmed + annotated |
+| A2 | off | EXP-006-A2 | done 08:43, `rec-20261015T064341Z-dee7161d`, valid: m1 running 19.8 s, m3 paused 21.1 s; speed 90 user-confirmed + annotated |
+
+- TEST change (game closed, 2026-10-15): before = `SH2Proxy.ini` sha256 `57946eae…`, `[proxy] target=system hub=1`, `[plan] experiment=EXP-INGAME scenario=REAL_LAG_257`, no explicit profile/sample (defaults full/off); `SH2Prepared.json` `6e635c7b…`. Both copied to `..\Stronghold 2 - TEST\_backup_before_EXP-006_20261015\` (+ `SHA256SUMS.txt`). Now: `profile=full`, `sample=off` explicit, plan `experiment=EXP-006-A1 scenario=REAL_LAG_257 game_speed=90 protocol=ARMY_RUN_PAUSE`. Hub DLL/proxy unchanged (`matches hub build: True`). Original untouched.
+- **Result (EXPERIMENTS.md EXP-006, F125–F129)**: sampler adds ≈ 0.6–1.3 ms per frame (2–5 %, F125), so only A runs give frame times: running 32.8 vs paused 25.1 ms (+7.7 ms, F126). Module split from B1/B2 (F127): granny2 ≈ 11 ms in both states, exe 9.8 running vs 4.3 paused, graphics stack (d3dx9_27 + d3d9 + nvd3dum) ≈ 8 ms in both; the running − paused difference is ≈ 5.5 ms exe + 0.8 ms CRT + 0.5 ms ntdll (F128). Graphics settings hash unchanged after the runs.
+- **TEST now**: `sample=off`, `profile=full`, plan `scenario=REAL_LAG_257 game_speed=90` (experiment/protocol removed after A2). Way back to the pre-EXP-006 state: copy `SH2Proxy.ini` from `_backup_before_EXP-006_20261015\` (game closed), then `variant.py status`. `SH2Perf_out` still holds all sources (imported; delete only on the user's word).
+- **Next order (smallest)**: EXP-007, function mode, same save/protocol/profile, 2 runs (C1, C2) with `variant.py sample function` — no new off runs needed (sampler bias known, F125; frame times of C runs are not used). Evaluate: top `Stronghold2.exe` rva per marker and the rva whose samples grow running vs paused (reproduced in C1 and C2); top `granny2.dll` rva mapped to the nearest preceding export (`pe_info.py granny2.dll --exports`). Only then skill `funktion-analysieren` (fbrief/Ghidra) on the ≤ 5 reproduced exe candidates. Module sampling cannot name functions, hence the function-mode run.
+- Between runs (game closed): import + validity check of the last run, then `variant.py sample <mode>` and `variant.py plan experiment=EXP-006-<next>`; `variant.py status`.
+- Import: `ingest.py import --recording <ts> --exp EXP-006-<run> --scenario REAL_LAG_257 --troops 257`, then `annotate <id> --game-speed 90 --phase-paused 1=false 3=true` only after the user confirms.
+- Save file: no file named LAG_217_Reiter exists in `Documents\Stronghold 2\Saves` or the Steam cloud list; the user loads it by its in-game name. Its file identity is not recorded.
+- Old `SH2Perf_out` recordings of EXP-INGAME are still there (already imported); `ingest.py import` needs `--recording`.
 
 ## Current order
 In-game acceptance of the measurement instrumentation (hub D011/D012/D013) in Stronghold 2 Steam 1.5, steps of [SETUP.md](SETUP.md) "Check in Stronghold 2". **Nothing about performance** is shown or claimed yet; stand-in results are no game result.
@@ -50,3 +86,7 @@ Installed with `variant.py baseline` (game was not running); `variant.py status`
 Wait for the user's first game session. Then read yourself (do not ask the user to copy files): `..\Stronghold 2 - TEST\SH2Perf_out\Stronghold2AnalyseHub.log`, `SH2Proxy.log`, `*_manifest.json`, `*_prepared.json`, `latest.json`; check against SETUP steps 1–5 "Expected"; `python -I tools/ingest.py list`, then import per SETUP step 6 and `annotate --game-speed <N>` with the speed the **user** named. Record the result in EXPERIMENTS.md/FINDINGS (F113 stays stand-in-only until then) and update this file and STATE.
 
 User actions needed: start the game from the TEST folder, load LAG_217_Reiter (REAL_LAG_257), say which game speed is set, do recordings 1+2 with F9, Alt-Tab, END in a suitable session, one session that quits while recording (last).
+
+## Acceptance result — supersedes the open rows above
+User completed the simplified check and confirms speed 90 throughout. Three captures imported/verified and annotated; see EXPERIMENTS.md EXP-INGAME and F118–F121. Sources retained. Pause annotations false follow the user-confirmed instructions; F8 was only a marker. No benchmark release.
+Passed in this session: F9, second recording, Alt-Tab with logged reset, END without active recording. Not performed: END during recording or process exit during recording. No sampler capture and no controlled performance gain. Next prepare a fixed-camera pause/run and sampler-off/on protocol; do not repeat generic hardening. Old acceptance rows and Next action above describe the pre-session state.

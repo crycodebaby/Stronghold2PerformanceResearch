@@ -1,0 +1,43 @@
+{
+  "schema": "sh2perf.annotations",
+  "version": 1,
+  "capture_id": "rec-20261015T062849Z-735e2089",
+  "labels": {
+    "exp": "EXP-006-A0",
+    "scenario": "REAL_LAG_257",
+    "troops": 257,
+    "note": "pilot: 2 markers only; marker 1 paused (frozen counters 18-38 s), markers 0 and 2 running; transitions inside measured markers; manifest plan id says EXP-006-A1"
+  },
+  "history": [
+    {
+      "at": "2026-10-15T06:30:46Z",
+      "field": "labels.exp",
+      "old": null,
+      "new": "EXP-006-A1"
+    },
+    {
+      "at": "2026-10-15T06:30:46Z",
+      "field": "labels.scenario",
+      "old": null,
+      "new": "REAL_LAG_257"
+    },
+    {
+      "at": "2026-10-15T06:30:46Z",
+      "field": "labels.troops",
+      "old": null,
+      "new": 257
+    },
+    {
+      "at": "2026-10-15T06:31:32Z",
+      "field": "labels.exp",
+      "old": "EXP-006-A1",
+      "new": "EXP-006-A0"
+    },
+    {
+      "at": "2026-10-15T06:31:32Z",
+      "field": "labels.note",
+      "old": null,
+      "new": "pilot: 2 markers only; marker 1 paused (frozen counters 18-38 s), markers 0 and 2 running; transitions inside measured markers; manifest plan id says EXP-006-A1"
+    }
+  ]
+}

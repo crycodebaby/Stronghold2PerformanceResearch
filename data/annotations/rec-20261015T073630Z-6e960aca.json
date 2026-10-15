@@ -1,0 +1,37 @@
+{
+  "schema": "sh2perf.annotations",
+  "version": 1,
+  "capture_id": "rec-20261015T073630Z-6e960aca",
+  "labels": {
+    "exp": "EXP-007-X",
+    "scenario": "REAL_LAG_257",
+    "troops": 257,
+    "note": "excluded: F2 attempt out of sequence (marker 1 after 19 s, stopped before marker 3, second short recording); plan id says EXP-007-F2"
+  },
+  "history": [
+    {
+      "at": "2026-10-15T07:38:19Z",
+      "field": "labels.exp",
+      "old": null,
+      "new": "EXP-007-X"
+    },
+    {
+      "at": "2026-10-15T07:38:19Z",
+      "field": "labels.scenario",
+      "old": null,
+      "new": "REAL_LAG_257"
+    },
+    {
+      "at": "2026-10-15T07:38:19Z",
+      "field": "labels.troops",
+      "old": null,
+      "new": 257
+    },
+    {
+      "at": "2026-10-15T07:38:19Z",
+      "field": "labels.note",
+      "old": null,
+      "new": "excluded: F2 attempt out of sequence (marker 1 after 19 s, stopped before marker 3, second short recording); plan id says EXP-007-F2"
+    }
+  ]
+}
