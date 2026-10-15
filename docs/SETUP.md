@@ -50,8 +50,10 @@ python -I tools/variant.py plan game_speed=90 experiment=EXP-001   # planned con
 
 ## Import and provenance checks (D012)
 ```
-python -I tools/test_import_safety.py ; python -I tools/test_ingest.py     # import, conflicts, interruption, speed origins (temp folders)
-python -I tools/e2e_standin.py                        # real proxy + hub DLL + stand-in: 3 sessions -> manifests -> import (needs the hub build)
+python -I tools/test_import_safety.py ; python -I tools/test_ingest.py ; python -I tools/test_hardening.py   # import, conflicts, interruption, speed origins, reference release, bronze integrity, write lock (real processes), names (temp folders)
+build\Release\lifecycle_test.exe                      # hub: blocked writer / sampler / hashing at deactivation (exit 0 = OK)
+python -I tools/e2e_standin.py                        # real proxy + hub DLL + stand-in: 3 sessions -> manifests -> import -> END-key deactivation (needs the hub build and an interactive desktop)
+python -I tools/e2e_standin.py --deactivate-only --repeat 8   # only the END deactivation, N times
 python -I tools/ingest.py list                        # recordings in SH2Perf_out with manifest state
 python -I tools/ingest.py import --recording <timestamp>      # verify -> stage -> atomic commit; sources stay
 python -I tools/ingest.py annotate <capture_id> --game-speed 90   # user-confirmed value (never written into the raw manifest)
@@ -71,3 +73,22 @@ set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot
   -import "Stronghold 2\Stronghold2.exe" -scriptPath SH2-Perf\ghidra_scripts ^
   -postScript ExportVtables.java SH2-Perf\captures\vtables_exe.csv
 ```
+
+## Prepared build for the first check in Stronghold 2
+| Item | Value |
+|---|---|
+| Hub commit (branch `perf-metrics`, clean tree) | `e822e7f` (`git describe --always --dirty --abbrev=12` = `e822e7f19019`, no `-dirty`); parent `ce07db2` |
+| `build\Release\Stronghold2AnalyseHub.dll` sha256 | `591e6375a531c1dbcc6fee582e90f32f873f83629a3f4b7b065d4527b35a89e5` |
+| `build\Release\d3d9.dll` (proxy) sha256 | `13c895196c175fd3cd963ba3b20ad84e92d4d9caf41cd2e1308eadfc84e24801` |
+The build is **not** installed in the TEST copy; the user installs it (below). The manifests of the recordings name these hashes (`software.files`), so the log of the check shows which build ran.
+
+## Check in Stronghold 2 (user): install, record, record again, Alt-Tab, END, import
+What each step shows is also what the hub does *not* promise: END **deactivates** the hub (the DLL stays loaded until the game exits; to activate it again or to change the hub build, restart the game), and a normal exit of the game does **not** finalize a running recording (F117) - stop with F9 first.
+0. **Install** (game closed, Steam running later): in `Stronghold2AnalyseHub` check `git describe --always --dirty --abbrev=12` = `e822e7f19019` and `Get-FileHash build\Release\Stronghold2AnalyseHub.dll` = the hash above. In `SH2-Perf`: `python -I tools/variant.py baseline` (copies proxy + hub into the TEST copy, writes `SH2Proxy.ini` and `SH2Prepared.json` there; it also sets LAA off for `baseline`), then `python -I tools/variant.py status` must say `matches hub build: True`; `Get-FileHash` of the DLL in the TEST folder equals the hash above. Then `python -I tools/variant.py plan game_speed=<N> experiment=EXP-INGAME scenario=SMOKE` with the number you will set in the game. Start the game from the TEST folder.
+1. **First recording**: load a game, **F9** (overlay shows recording, or high tone with `min`), **F8** twice, wait ~20 s, **F9**. Wait until `Stronghold2AnalyseHub.log` shows `Recording stopped (user_toggle) … manifest published -> capture OK`. In `SH2Perf_out`: `*_manifest.json` with `"status": "finalized"`, `"capture_ok": true`, 64-digit hashes equal to the table above for `hub_dll` and the proxy, `game_speed` as you planned it; plus `*_prepared.json`. Note any visible hitch at the stop.
+2. **Second recording** in the same session: F9 on, ~10 s, F9 off, wait for `manifest published`. A second manifest with a new `capture_id` and stem; `latest.json` names only this one.
+3. **Alt-Tab**: F9 on, Alt-Tab to the desktop and back (and once more with a window/resolution change if you use one), ~10 s, F9 off, wait for `manifest published`. Expected: recording continues, overlay returns, manifest `capture_ok` true. Report `Device reset` lines or a visible problem.
+4. **END (deactivation)**, once with no recording and once with a recording open (separate sessions are fine): press END. Log: `VK_END pressed: deactivating the hub`, `ImGui shutdown`, `All hooks disabled`, `Hub deactivated: hooks disabled, background threads ended. The DLL and its trampolines stay loaded …`; **no** `DLL detaching`, no `Deactivation DEFERRED`. The overlay disappears, the game keeps running normally, F9/F8 do nothing any more; with a recording open its manifest becomes `finalized` with `"stop_reason": "hub_shutdown"`. Quit the game normally afterwards. `Deactivation DEFERRED … still running: <thread>` means a background thread did not end: leave the game running, note the thread, send the log.
+5. **Game exit while recording (to see the limit)**, last session: F9 on, quit the game normally without F9. Expected (stand-in result, unproven in the game): no `Recording stopped` line, the manifest stays `"status": "recording"`; `ingest.py import` refuses it (exit 5) and accepts it only with `--allow-interrupted`, as `incomplete`.
+6. **Import** (game closed): `python -I tools/ingest.py list`; then for each finalized recording `python -I tools/ingest.py import --recording <timestamp> --exp EXP-INGAME --scenario SMOKE`; import the first one again (`already imported`). Confirm what you saw: `ingest.py annotate <id> --game-speed <N>` and `--phase-paused <marker>=true|false` per F8 phase. `usable as reference` will stay NO for a smoke run without release; it never says anything about save game, camera, graphics, V-Sync, hardware (CAPTURE_MANIFEST.md "What reference-v1 checks").
+Report back: the log lines around steps 1-5, one finalized manifest (personal paths removed, D007), the `ingest.py` output of step 6, and anything that did not match "Expected". Nothing here claims game compatibility until you have done it.

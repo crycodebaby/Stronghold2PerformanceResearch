@@ -16,6 +16,12 @@ Guarantees:
     deletes it and starts over. A crash after the rename leaves a complete bronze folder.
   - Write errors (disk full, access denied) abort the import, remove the staging folder and leave the
     source untouched.
+  - Every cleanup goes through `safe_rmtree`, which refuses anything that is not a direct, non-link child of the staging
+    area. Names and roles in the manifest are validated (capture_manifest.parse) before the first write.
+  - A committed capture is verified against its import record (`verify_committed`) before it is reported as "already
+    imported" or used for silver; a damaged one is reported and never repaired.
+  - Callers serialise writers with `filelock.exclusive` (ingest.py); under that lock a staging folder found for the
+    own id is by definition left behind by a dead process.
 A recording without a manifest (legacy) is imported only with `legacy=True`; its capture id is `legacy-<stem>`,
 its hashes are taken at import time (basis "import") and it is never treated as verified.
 """
@@ -35,13 +41,31 @@ MANIFEST_COPY = "manifest.json"
 IMPORT_RECORD = "import.json"
 
 # Exit codes of ingest.py (also used by tests).
-EXIT_OK, EXIT_SELECT, EXIT_CONFLICT, EXIT_VERIFY, EXIT_REFUSED, EXIT_WRITE = 0, 2, 3, 4, 5, 6
+EXIT_OK, EXIT_SELECT, EXIT_CONFLICT, EXIT_VERIFY, EXIT_REFUSED, EXIT_WRITE, EXIT_BUSY = 0, 2, 3, 4, 5, 6, 7
 
 
 class ImportFailure(Exception):
     def __init__(self, code, message, details=()):
         super().__init__(message)
         self.code, self.message, self.details = code, message, list(details)
+
+
+class UnsafePath(Exception):
+    """A cleanup target outside the area it may touch."""
+
+
+def safe_rmtree(path, root):
+    """Delete `path` only if it is a direct child of `root` and neither a symlink nor a junction (never followed)."""
+    p, r = os.path.abspath(path), os.path.abspath(root)
+    if os.path.normcase(os.path.dirname(p)) != os.path.normcase(r) or os.path.normcase(p) == os.path.normcase(r):
+        raise UnsafePath(f"{p} is not a direct child of {r}")
+    if os.path.islink(p) or os.path.isjunction(p):
+        raise UnsafePath(f"{p} is a link; links are not followed")
+    if os.path.islink(r) or os.path.isjunction(r):
+        raise UnsafePath(f"{r} is a link")
+    if os.path.normcase(os.path.realpath(os.path.dirname(p))) != os.path.normcase(os.path.realpath(r)):
+        raise UnsafePath(f"{p} resolves outside {r}")
+    shutil.rmtree(p, ignore_errors=False)
 
 
 class Recording:
@@ -179,6 +203,46 @@ def committed_record(dest):
     return _read_json(Path(dest) / IMPORT_RECORD)
 
 
+def verify_committed(dest):
+    """Check a committed capture folder against its import record. Returns (problems, verifiable).
+
+    One check for `verify`, a repeated import and every (re)derivation of silver. Folders from before D012 have no
+    import record: nothing to compare with (verifiable False). Never changes anything.
+    """
+    dest = Path(dest)
+    imp = committed_record(dest)
+    if imp is None:
+        return ([] if not (dest / IMPORT_RECORD).exists() else [f"{IMPORT_RECORD} unreadable"]), False
+    problems = []
+    for f in imp.get("files", []):
+        path = dest / f["name"]
+        if not path.is_file():
+            problems.append(f"{f['name']}: missing")
+        elif path.stat().st_size != f["size"]:
+            problems.append(f"{f['name']}: size {path.stat().st_size} != recorded {f['size']} (raw data changed)")
+        elif cm.sha256_file(path) != f["sha256"]:
+            problems.append(f"{f['name']}: sha256 differs from the import record (raw data changed)")
+    m = imp.get("manifest")
+    if m:
+        path = dest / m["name"]
+        if not path.is_file():
+            problems.append(f"{m['name']}: missing")
+        elif cm.sha256_file(path) != m["sha256"]:
+            problems.append(f"{m['name']}: sha256 differs from the import record (raw data changed)")
+    return problems, True
+
+
+def require_intact(dest):
+    """Raise ImportFailure(EXIT_VERIFY) naming the damage if a committed capture no longer matches its import record."""
+    problems, _ = verify_committed(dest)
+    if problems:
+        raise ImportFailure(
+            EXIT_VERIFY,
+            f"capture {Path(dest).name} is damaged: its raw data no longer matches the import record. Nothing was derived and "
+            "bronze is not repaired automatically; restore the files (the sources in the hub output folder are still there) "
+            "or import under a new id.", problems)
+
+
 # --- phases 2 and 3 --------------------------------------------------------------------------------------
 
 def _copy_synced(src, dst):
@@ -217,10 +281,11 @@ def import_recording(rec, bronze_root, legacy=False, allow_interrupted=False, ob
     if dest.exists():
         return _existing(dest, new_identity, capture_id)
 
-    stage = bronze_root / STAGING / capture_id
+    stage_root = bronze_root / STAGING
+    stage = stage_root / capture_id
     try:
-        if stage.exists():                         # leftover of an interrupted import: copies only, safe to drop
-            shutil.rmtree(stage)
+        if stage.exists():                         # leftover of a dead import (callers hold the write lock): copies only
+            safe_rmtree(stage, stage_root)
         stage.mkdir(parents=True)
         for f in p["files"]:
             inject("copy", name=f["name"])
@@ -271,20 +336,29 @@ def import_recording(rec, bronze_root, legacy=False, allow_interrupted=False, ob
         try:
             os.rename(stage, dest)                 # the commit: atomic, fails if the id appeared meanwhile
         except FileExistsError:
-            shutil.rmtree(stage, ignore_errors=True)
+            _cleanup(stage, stage_root)
             return _existing(dest, new_identity, capture_id)
         inject("after_commit")
     except ImportFailure:
-        shutil.rmtree(stage, ignore_errors=True)
+        _cleanup(stage, stage_root)
         raise
     except OSError as e:
-        shutil.rmtree(stage, ignore_errors=True)
+        _cleanup(stage, stage_root)
         raise ImportFailure(EXIT_WRITE, f"write error while importing {capture_id}: {e}; the source is untouched and "
                                         "nothing was committed")
     return {"state": "imported", "capture_id": capture_id, "dest": dest}
 
 
+def _cleanup(stage, stage_root):
+    try:
+        if os.path.lexists(stage):
+            safe_rmtree(stage, stage_root)
+    except (UnsafePath, OSError):
+        pass                                       # never escalate a failed cleanup; a stale staging folder is harmless
+
+
 def _existing(dest, new_identity, capture_id):
+    require_intact(dest)                           # "already imported" is only true for an intact capture
     old = committed_record(dest)
     if old is None:
         raise ImportFailure(EXIT_CONFLICT, f"{dest.name} exists but has no import record; it is not touched")

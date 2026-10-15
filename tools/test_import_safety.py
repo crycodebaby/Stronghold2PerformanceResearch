@@ -192,7 +192,7 @@ class MissingMetadataAndLegacy(Base):
         self.assertIsNone(s["switches"]["modes"])
         self.assertEqual(s["quality"]["technical"]["status"], "unknown", "no health information: unknown, not ok")
         missing = s["quality"]["benchmark_suitability"]["missing_info"]
-        for key in ("game_speed_unknown", "paused_unknown", "switches_unknown", "software_identity_missing", "variant_unknown"):
+        for key in ("game_speed_unknown", "pause_unknown_phase_0", "switches_unknown", "software_identity_missing", "variant_unknown"):
             self.assertIn(key, missing)
 
     def test_invalid_manifests_are_refused(self):
@@ -438,7 +438,7 @@ class GameSpeedAndPause(Base):
         self.assertEqual(len(self.capture_dirs()), 2)
 
     def test_pause_is_independent_of_speed(self):
-        m, _ = tk.make_recording(self.L.src, "20261015_100000", speed=90, paused=True)
+        m, _ = tk.make_recording(self.L.src, "20261015_100000", speed=90, paused=True, single_phase=True)
         self.import_ok()
         g = self.L.summary(m["capture_id"])["game"]
         self.assertEqual((g["game_speed"]["resolved"]["value"], g["paused"]["resolved"]["value"]), (90, True))
@@ -494,8 +494,8 @@ class QualityVersusSuitability(Base):
         self.assertFalse(q["benchmark_suitability"]["usable_as_benchmark"])
 
     def test_user_verdict_counts_only_without_blockers(self):
-        good, _ = tk.make_recording(self.L.src, "20261015_100000", speed=90)
-        bad, _ = tk.make_recording(self.L.src, "20261015_110000", speed=90, quality={
+        good, _ = tk.reference_recording(self.L.src, "20261015_100000")
+        bad, _ = tk.reference_recording(self.L.src, "20261015_110000", quality={
             "capture_ok": False, "frames_dropped": 9, "frames_lost_write": 0, "write_errors": 0, "files_closed": True, "hashes_complete": True})
         self.import_ok("--recording", "20261015_100000")
         self.import_ok("--recording", "20261015_110000")

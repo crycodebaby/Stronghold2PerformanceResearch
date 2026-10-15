@@ -9,6 +9,11 @@ Files:
   data/index.jsonl                        one compact line per capture (tracked)
   data/annotations/<capture_id>.json      human input: labels, user-confirmed game speed / pause, suitability (tracked)
 
+Reference profile `reference-v1` (the only rule set; see docs/FORMATS/CAPTURE_MANIFEST.md): a capture is usable as a
+reference benchmark only if (1) its integrity is ok, (2) the experiment description is complete (experiment, scenario, variant,
+game speed known and not contradicted, switches known, software identity present, pause known for every phase) and (3) the
+user released it. The three are judged separately and every failure is listed with a code and a text.
+
 Change SILVER_VERSION whenever the derivation changes; every summary and index line names the version that made it.
 """
 import json
@@ -19,8 +24,9 @@ import analyze_frames
 import capture_manifest as cm
 import samples
 
-TOOL = {"name": "sh2perf-silver", "version": "2.0.0"}
-SILVER_SCHEMA = 2
+TOOL = {"name": "sh2perf-silver", "version": "2.1.0"}
+SILVER_SCHEMA = 3
+REFERENCE_PROFILE = "reference-v1"
 ANNOTATION_SCHEMA = "sh2perf.annotations"
 
 # Metrics that exist only while a hub switch is on (D011); the CSV holds 0 for them otherwise.
@@ -106,6 +112,22 @@ def resolve_origins(by_origin):
             "planned_differs": "planned" in known and known["planned"] != known[best]}
 
 
+def phase_pause(recording_level, phase_ids, ann):
+    """Pause state per phase. A global pause statement is evidence for a recording with ONE phase only; in a recording
+    with several F8 phases it says nothing about the individual phases, so each of them stays unknown until the user
+    confirms it (annotate --phase-paused M=true|false). Nothing is read from game memory."""
+    mine = (ann or {}).get("phase_paused") or {}
+    out = {}
+    for pid in phase_ids:
+        if len(phase_ids) == 1:
+            out[pid] = {"value": recording_level["value"], "origin": recording_level["origin"]}
+        elif isinstance(mine.get(pid), dict) and isinstance(mine[pid].get("value"), bool):
+            out[pid] = {"value": mine[pid]["value"], "origin": "user_confirmed"}
+        else:
+            out[pid] = {"value": None, "origin": "unknown"}
+    return out
+
+
 def collect_origins(manifest, ann, key):
     """Values of game.<key> per origin: the hub's (planned / observed) and the user's confirmation."""
     by = {"planned": None, "user_confirmed": None, "observed": None}
@@ -139,6 +161,32 @@ def _role_file(cdir, imp, latest, role, legacy_key):
     if latest and latest.get(legacy_key):
         return cdir / latest[legacy_key]
     return None
+
+
+_REJECTION_TEXTS = {
+    "technical_quality_degraded": "the recording lost frames or had write errors",
+    "technical_quality_incomplete": "the recording was interrupted and never finalized",
+    "technical_quality_unknown": "no capture health information exists for this recording",
+    "interrupted": "the recording was interrupted",
+    "legacy_unverified_origin": "the recording has no manifest; its origin and software cannot be verified",
+    "no_usable_frames": "fewer than two frames were recorded",
+    "experiment_unknown": "the experiment is not named",
+    "scenario_unknown": "the scenario is not named",
+    "variant_unknown": "the variant of the game folder is unknown",
+    "game_speed_unknown": "the game speed is unknown (neither planned, observed nor confirmed by the user)",
+    "game_speed_conflict": "the game speed statements contradict each other (observed and user-confirmed differ)",
+    "switches_unknown": "the hub measurement switches of this recording are unknown",
+    "software_identity_missing": "the hash of the game exe or hub DLL taken in the session is missing",
+    "pause_unknown": "it is not known whether the game was paused",
+    "not_released": "nobody has released the recording as a reference benchmark",
+    "released_unsuitable": "the user judged the recording not suitable",
+}
+
+
+def REJECTION_TEXT(code):
+    if code.startswith("pause_unknown_phase_"):
+        return f"it is not confirmed whether the game was paused in phase (marker) {code.rsplit('_', 1)[1]}"
+    return _REJECTION_TEXTS.get(code, code)
 
 
 def derive(cdir, ann=None):
@@ -249,29 +297,61 @@ def derive(cdir, ann=None):
             render_modules = {"all": samples.shares(g[-1])[0], "n": samples.shares(g[-1])[1],
                               "by_marker": {str(m): samples.shares(c)[0] for m, c in g.items() if m >= 0}}
 
-    # benchmark suitability: a separate judgement, never implied by technical quality
-    blockers = []
+    # phases and pause per phase (the recording-level pause only counts for a single-phase recording)
+    phase_ids = [str(ph["marker"]) for ph in phases]
+    rec_pause = game["paused"]["resolved"]
+    game["paused"]["recording_level"] = rec_pause
+    game["paused"]["by_phase"] = phase_pause(rec_pause, phase_ids, ann)
+    if len(phase_ids) > 1:
+        game["paused"]["resolved"] = {"value": None, "origin": "unknown", "conflict": False, "planned_differs": False}
+
+    # integrity (technical), completeness (experiment description, profile reference-v1) and release (user) are judged apart
+    reasons = []
     if technical["status"] != "ok":
-        blockers.append(f"technical_quality_{technical['status']}")
+        reasons.append(f"technical_quality_{technical['status']}")
     if technical["completion"] == "interrupted":
-        blockers.append("interrupted")
+        reasons.append("interrupted")
     if provenance == "legacy":
-        blockers.append("legacy_unverified_origin")
+        reasons.append("legacy_unverified_origin")
+    if total is None:
+        reasons.append("no_usable_frames")
+    integrity = {"status": technical["status"] if reasons else "ok", "reasons": reasons}
+
     missing = []
-    if game["game_speed"]["resolved"]["value"] is None:
-        missing.append("game_speed_unknown" + ("_conflict" if game["game_speed"]["resolved"]["conflict"] else ""))
-    if game["paused"]["resolved"]["value"] is None:
-        missing.append("paused_unknown")
+    for code, value in (("experiment_unknown", lab["exp"]), ("scenario_unknown", lab["scenario"]), ("variant_unknown", lab["variant"])):
+        if not value:
+            missing.append(code)
+    gres = game["game_speed"]["resolved"]
+    if gres["conflict"]:
+        missing.append("game_speed_conflict")
+    elif gres["value"] is None:
+        missing.append("game_speed_unknown")
     if not switches_known:
         missing.append("switches_unknown")
-    if provenance == "manifest" and (not by_name or soft["pending"]):
+    roles_hashed = {f.get("role") for f in ((manifest or {}).get("software") or {}).get("files", []) if f.get("sha256")}
+    if provenance != "manifest" or soft["pending"] or not {"game_exe", "hub_dll"} <= roles_hashed:
         missing.append("software_identity_missing")
-    if not lab["variant"]:
-        missing.append("variant_unknown")
+    if len(phase_ids) == 1:
+        if game["paused"]["by_phase"][phase_ids[0]]["value"] is None:
+            missing.append("pause_unknown")
+    else:
+        for pid in phase_ids:
+            if game["paused"]["by_phase"][pid]["value"] is None:
+                missing.append(f"pause_unknown_phase_{pid}")
+    completeness = {"profile": REFERENCE_PROFILE, "complete": not missing, "missing": missing}
+
     verdict = (ann.get("suitability") or {}).get("verdict", "unknown")
+    rejections = [{"code": r, "text": REJECTION_TEXT(r)} for r in reasons + missing]
+    if verdict == "unknown":
+        rejections.append({"code": "not_released", "text": REJECTION_TEXT("not_released")})
+    elif verdict == "not_suitable":
+        why = (ann.get("suitability") or {}).get("reason")
+        rejections.append({"code": "released_unsuitable", "text": REJECTION_TEXT("released_unsuitable") + (f": {why}" if why else "")})
     suit = {"verdict": verdict, "reason": (ann.get("suitability") or {}).get("reason"),
-            "assessed_by": "user" if "suitability" in ann else None, "blockers": blockers, "missing_info": missing,
-            "usable_as_benchmark": verdict == "suitable" and not blockers}
+            "assessed_by": "user" if "suitability" in ann else None,
+            "integrity": integrity, "completeness": completeness, "rejections": rejections,
+            "usable_as_benchmark": not rejections,
+            "blockers": reasons, "missing_info": missing}
 
     hardware = observed.get("hardware") or {"cpu": meta.get("cpu"), "gpu": meta.get("gpu")}
     start = (manifest or {}).get("recording", {}).get("start_local") or (latest or {}).get("start") or meta.get("start")
@@ -300,6 +380,8 @@ def index_line(s):
             "paused": {k: s["game"]["paused"]["resolved"][k] for k in ("value", "origin")},
             "technical": s["quality"]["technical"]["status"],
             "benchmark": s["quality"]["benchmark_suitability"]["verdict"],
+            "integrity": s["quality"]["benchmark_suitability"]["integrity"]["status"],
+            "complete": s["quality"]["benchmark_suitability"]["completeness"]["complete"],
             "usable_as_benchmark": s["quality"]["benchmark_suitability"]["usable_as_benchmark"],
             "total": s["total"], "phases": s["phases"]}
     if s["switches"]["modes"]:
@@ -327,7 +409,29 @@ def write_silver(summary, silver_root):
     body = {k: v for k, v in summary.items() if not k.startswith("_")}
     write_atomic(d / "summary.json", json.dumps(body, indent=2, ensure_ascii=False) + "\n")
     write_atomic(d / "timeline.md", summary["_timeline"])
+    (d / INVALID_MARKER).unlink(missing_ok=True)       # derived from an intact bronze again
     return d
+
+
+INVALID_MARKER = "INVALID.json"
+
+
+def mark_invalid(silver_root, index_path, capture_id, problems):
+    """Bronze of this capture no longer matches its import record: keep the earlier results, but mark them as not valid
+    (a marker next to the summary and silver_valid=false in the index line). Nothing new is derived."""
+    d = Path(silver_root) / capture_id
+    if d.exists():
+        write_atomic(d / INVALID_MARKER, json.dumps({
+            "capture_id": capture_id, "silver_valid": False,
+            "reason": "raw data no longer matches the import record; results below are from before the change and are not valid",
+            "problems": list(problems)}, indent=2) + "\n")
+    lines = read_index(index_path)
+    if capture_id in lines:
+        line = json.loads(lines[capture_id])
+        line["silver_valid"] = False
+        line["silver_invalid_reason"] = list(problems)[:5]
+        lines[capture_id] = json.dumps(line, separators=(",", ":"))
+        write_atomic(index_path, "\n".join(lines.values()) + "\n")
 
 
 def read_index(index_path):

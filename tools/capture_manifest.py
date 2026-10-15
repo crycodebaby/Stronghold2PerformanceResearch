@@ -12,12 +12,53 @@ Compatibility rules (also in the format doc):
 import hashlib
 import json
 import re
+import unicodedata
 
 SCHEMA = "sh2perf.capture-manifest"
 SUPPORTED_VERSION = 1
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 ORIGINS = ("planned", "user_confirmed", "observed", "unknown")     # allowed `origin` of game_speed / paused
 STATUSES = ("recording", "finalized")
+KNOWN_ROLES = ("frames", "threads", "samples", "prepared")      # a regular recording has exactly one frames file, each role at most once
+# Names the importer writes itself next to the raw files; a manifest must not claim them as data files.
+RESERVED_ADMIN_NAMES = ("manifest.json", "import.json", "latest.json", "stronghold2analysehub.log")
+_DEVICE_NAMES = {"con", "prn", "aux", "nul", "conin$", "conout$", *(f"com{i}" for i in range(1, 10)), *(f"lpt{i}" for i in range(1, 10))}
+_BAD_CHARS = set('<>:"/\\|?*')
+MAX_NAME = 200
+
+
+def _fold(name):
+    """Key under which Windows treats two names as the same file: compatibility-normalised and case-folded."""
+    return unicodedata.normalize("NFKC", name).casefold()
+
+
+def name_problem(name, reserved_ok=False):
+    """Why `name` is not an acceptable plain file name on Windows (None if it is). Covers absolute paths, drive letters,
+    alternative data streams (all contain ':' or a separator), device names, trailing dots/spaces, control characters."""
+    if not isinstance(name, str) or not name:
+        return "empty or not text"
+    if len(name) > MAX_NAME:
+        return f"longer than {MAX_NAME} characters"
+    if any(ord(ch) < 32 or ch in _BAD_CHARS for ch in name):
+        return "contains a path separator, drive or stream marker, wildcard or control character"
+    if name in (".", "..") or name.startswith(".") or name.endswith((" ", ".")):
+        return "starts with a dot or ends with a dot or space"
+    stem = _fold(name).split(".")[0].rstrip(" ")
+    if stem in _DEVICE_NAMES:
+        return "is a reserved Windows device name"
+    if not reserved_ok and _fold(name) in RESERVED_ADMIN_NAMES:
+        return "is reserved for the importer"
+    return None
+
+
+def id_problem(cid):
+    if not isinstance(cid, str) or not re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*$", cid):
+        return "has characters that are not safe in a folder name"
+    if len(cid) > 100 or cid.endswith((".", " ")):
+        return "is too long or ends with a dot"
+    if _fold(cid).split(".")[0] in _DEVICE_NAMES:
+        return "is a reserved Windows device name"
+    return None
 
 
 class ManifestError(Exception):
@@ -56,28 +97,39 @@ def parse(raw):
         problems.append(f"manifest_version {version} is newer than this reader ({SUPPORTED_VERSION})")
     if not isinstance(m.get("capture_id"), str) or not m.get("capture_id"):
         problems.append("capture_id missing")
-    elif not re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*$", m["capture_id"]):
-        problems.append("capture_id has characters that are not safe in a folder name")
+    elif id_problem(m["capture_id"]):
+        problems.append(f"capture_id {m['capture_id'][:40]!r} {id_problem(m['capture_id'])}")
     if m.get("status") not in STATUSES:
         problems.append(f"status {m.get('status')!r} is not one of {STATUSES}")
     files = m.get("files")
     if not isinstance(files, list) or not files:
         problems.append("files missing or empty")
     else:
-        seen = set()
+        seen, roles = {}, {}
         for f in files:
             name = f.get("name") if isinstance(f, dict) else None
-            if not isinstance(name, str) or not name or "/" in name or "\\" in name or name.startswith("."):
-                problems.append(f"file name {name!r} is not a plain file name")
+            why = name_problem(name)
+            if why:
+                problems.append(f"file name {str(name)[:40]!r} is not a valid file name: {why}")
                 continue
-            if name in seen:
-                problems.append(f"file {name} listed twice")
-            seen.add(name)
+            key = _fold(name)
+            if key in seen:
+                problems.append(f"duplicate file name {name!r} (the same file on Windows as {seen[key]!r})")
+            seen[key] = name
+            role = f.get("role")
+            if role not in KNOWN_ROLES:
+                problems.append(f"{name}: file role {role!r} is not one of {KNOWN_ROLES}")
+            elif role in roles:
+                problems.append(f"{name}: file role {role!r} used twice (also {roles[role]!r})")
+            else:
+                roles[role] = name
             if m.get("status") == "finalized":
                 if not (isinstance(f.get("sha256"), str) and SHA256_RE.match(f["sha256"])):
                     problems.append(f"{name}: sha256 is not a full 64-digit lowercase hex value")
                 if not isinstance(f.get("size"), int) or isinstance(f.get("size"), bool) or f["size"] < 0:
                     problems.append(f"{name}: size missing")
+        if "frames" not in roles:
+            problems.append("file role 'frames': exactly one frames file is required")
     game = m.get("game") if isinstance(m.get("game"), dict) else {}
     for key in ("game_speed", "paused"):
         item = game.get(key)
@@ -91,6 +143,9 @@ def parse(raw):
             if item.get("origin") == "unknown":
                 problems.append(f"game.{key} has a value but origin 'unknown'")
     for role_file in (m.get("software") or {}).get("files", []) if isinstance(m.get("software"), dict) else []:
+        sw_why = name_problem(role_file.get("name"), reserved_ok=True)
+        if sw_why:
+            problems.append(f"software file name {str(role_file.get('name'))[:40]!r} is not a valid file name: {sw_why}")
         sha = role_file.get("sha256")
         if sha is not None and not SHA256_RE.match(str(sha)):
             problems.append(f"software file {role_file.get('name')}: sha256 is not a full 64-digit value")

@@ -1,0 +1,51 @@
+# Red run of tools/test_hardening.py against the code before the fixes (2026-10-15); names only
+ERROR: test_cleanup_refuses_targets_outside_the_staging_area
+ERROR: test_complete_intact_recording_needs_the_release_and_can_get_it
+ERROR: test_global_pause_is_no_proof_for_a_mixed_recording
+ERROR: test_missing_required_description_is_listed_with_reasons
+ERROR: test_single_phase_recording_takes_the_recording_level_pause
+ERROR: test_technical_damage_rejects_even_with_complete_description
+ERROR: test_unknown_switches_and_software_identity_reject
+ERROR: test_parallel_annotations_keep_every_change_and_valid_json
+FAIL: test_changed_manifest_copy
+FAIL: test_changed_raw_file
+FAIL: test_one_damaged_capture_does_not_hide_the_good_ones
+FAIL: test_removed_manifest_copy
+FAIL: test_removed_raw_file
+FAIL: test_restored_data_makes_the_capture_valid_again
+FAIL: test_truncated_raw_file
+FAIL: test_exactly_one_frames_file_and_known_unique_roles
+FAIL: test_exactly_one_frames_file_and_known_unique_roles
+FAIL: test_exactly_one_frames_file_and_known_unique_roles
+FAIL: test_exactly_one_frames_file_and_known_unique_roles
+FAIL: test_exactly_one_frames_file_and_known_unique_roles
+FAIL: test_reserved_administration_names_cannot_replace_the_manifest_copy
+FAIL: test_unsafe_capture_ids_are_rejected
+FAIL: test_unsafe_capture_ids_are_rejected
+FAIL: test_unsafe_capture_ids_are_rejected
+FAIL: test_unsafe_capture_ids_are_rejected
+FAIL: test_unsafe_capture_ids_are_rejected
+FAIL: test_unsafe_capture_ids_are_rejected
+FAIL: test_unsafe_capture_ids_are_rejected
+FAIL: test_unsafe_capture_ids_are_rejected
+FAIL: test_unsafe_capture_ids_are_rejected
+FAIL: test_unsafe_capture_ids_are_rejected
+FAIL: test_unsafe_capture_ids_are_rejected
+FAIL: test_conflicting_speed_cannot_be_overruled_by_the_user
+FAIL: test_phase_confirmation_by_the_user_completes_a_mixed_recording
+FAIL: test_unknown_speed_cannot_be_overruled_by_the_user
+FAIL: test_active_staging_is_never_taken_for_an_orphan
+FAIL: test_busy_lock_is_reported_and_leaves_everything_alone_then_a_killed_holder_frees_it
+FAIL: test_killed_importer_leaves_a_staging_that_the_next_importer_may_remove
+FAIL: test_parallel_annotations_keep_every_change_and_valid_json
+FAIL: test_parallel_imports_of_different_recordings_lose_nothing
+FAIL: test_parallel_imports_of_the_same_recording_end_with_one_capture
+Ran 31 tests in 52.455s
+FAILED (failures=33, errors=8)
+
+# Red run of tests/lifecycle_test.cpp against the old Shutdown() behaviour
+FAIL line 56: !Capture::Test_ThreadAlive() || Capture::Test_WakeHandleValid()  A: Shutdown returned and closed the wake event while the capture thread is still running
+A. capture: thread alive after Shutdown=1, wake handle valid=0
+FAIL line 65: !Sampler::Test_ThreadAlive()  B: Shutdown returned while the sampler thread is still running (the DLL could unload under it)
+B. sampler: thread alive after Shutdown=1
+lifecycle_test: 2 FAILED

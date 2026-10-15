@@ -1,11 +1,14 @@
 """End-to-end check of provenance and import without the game (D012): real d3d9 proxy + real hub DLL +
 D3D9 stand-in program, `variant.py` for the prepared state and plan, then `ingest.py` into a temp bronze/silver.
 
-Usage: python -I tools/e2e_standin.py [<work dir>]        (default: a new temp folder, removed afterwards unless --keep)
+Usage: python -I tools/e2e_standin.py [<work dir>] [--keep] [--hub-build <dir>] [--deactivate-only [--repeat N]]
+(default work dir: a new temp folder, removed afterwards unless --keep; --hub-build compares another build of the hub;
+--deactivate-only runs just the END-key deactivation check N times and prints how often the program ended cleanly)
 Needs the hub build (docs/SETUP.md: build/Release/{d3d9.dll, Stronghold2AnalyseHub.dll, standin_d3d9.exe}); a window flashes
 for a few seconds. Never touches the TEST copy, captures/, data/ or the original folder.
 
-Sequence: three game sessions (nothing planned / game_speed=30 / game_speed=90 + paused, last one in `min` mode), a hub DLL
+Sequence: a fourth session deactivates the hub with the END key while the program keeps running (injected key press; needs
+an interactive desktop - if the key does not arrive the check says so and does not pass). Three game sessions (nothing planned / game_speed=30 / game_speed=90 + paused, last one in `min` mode), a hub DLL
 swapped after the recordings, then import of all three. Prints one line per check and exits 1 if one fails.
 """
 import json
@@ -30,21 +33,81 @@ def check(cond, text):
         failures.append(text)
 
 
+def press_end():
+    """Inject a real END key press (the hub polls GetAsyncKeyState(VK_END)); Windows only."""
+    import ctypes
+    user32 = ctypes.windll.user32
+    user32.keybd_event(0x23, 0x4F, 1, 0)           # VK_END, extended key
+    user32.keybd_event(0x23, 0x4F, 1 | 2, 0)       # key up
+
+
+def deactivation_check(test, out, check):
+    """Manual hub deactivation (END) after a recording, while the program goes on rendering: orderly end, no crash, no deferral. The DLL stays loaded."""
+    import time
+    for p in out.glob("*"):
+        if p.name.startswith("SH2Perf_") or p.name in ("latest.json", "Stronghold2AnalyseHub.log"):
+            p.unlink()
+    variant.set_plan(["clear"])
+    variant.set_mode("full")
+    env = dict(os.environ, SH2HUB_OUT=str(out), SH2HUB_AUTORECORD="150")
+    proc = subprocess.Popen([str(test / "Stronghold2.exe"), "2500", "4"], cwd=test, env=env, stdout=subprocess.PIPE, text=True)
+    deadline = time.time() + 60
+    while time.time() < deadline and not any("finalized" in p.read_text() for p in out.glob("*_manifest.json")):
+        time.sleep(0.2)
+    check(any("finalized" in p.read_text() for p in out.glob("*_manifest.json")), "recording finalized before the deactivation")
+    press_end()
+    log = out / "Stronghold2AnalyseHub.log"
+    for _ in range(100):
+        if log.exists() and "Hub deactivated" in log.read_text(errors="replace"):
+            break
+        time.sleep(0.2)
+    text = log.read_text(errors="replace") if log.exists() else ""
+    check("VK_END pressed" in text, "END key reached the hub (injected key press)")
+    check("Hub deactivated" in text and "Deactivation DEFERRED" not in text, "orderly deactivation, no deferral")
+    try:
+        proc.wait(timeout=120)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+    check(proc.returncode == 0, f"the program kept running after the deactivation and ended normally (exit {proc.returncode})")
+
+
 def main():
-    keep = "--keep" in sys.argv
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    argv = sys.argv[1:]
+    keep = "--keep" in argv
+    build = paths.HUB_BUILD
+    repeat = 1
+    for flag in ("--hub-build", "--repeat"):
+        if flag in argv:
+            i = argv.index(flag)
+            value = argv.pop(i + 1)
+            argv.pop(i)
+            if flag == "--hub-build":
+                build = Path(value)
+            else:
+                repeat = int(value)
+    deactivate_only = "--deactivate-only" in argv
+    args = [a for a in argv if not a.startswith("--")]
     work = Path(args[0]) if args else Path(tempfile.mkdtemp(prefix="sh2_e2e_"))
     work.mkdir(parents=True, exist_ok=True)
     test, out, repo = work / "TEST", work / "out", work / "repo"
     for d in (test, out):
         d.mkdir(exist_ok=True)
-    build = paths.HUB_BUILD
     for need in ("d3d9.dll", "Stronghold2AnalyseHub.dll", "standin_d3d9.exe"):
         if not (build / need).exists():
             sys.exit(f"{need} missing in the hub build ({build.name}); build the hub first (docs/SETUP.md)")
     shutil.copy2(build / "standin_d3d9.exe", test / "Stronghold2.exe")
     variant.TEST_DIR, variant.PROXY_SRC, variant.HUB_SRC = test, build / "d3d9.dll", build / "Stronghold2AnalyseHub.dll"
     variant.apply("baseline")
+
+    if deactivate_only:
+        ok = 0
+        for n in range(repeat):
+            failures.clear()
+            deactivation_check(test, out, check)
+            ok += not failures
+        print(f"deactivation check: {ok} of {repeat} runs clean (hub build: {build})")
+        shutil.rmtree(work, ignore_errors=True) if not keep else None
+        sys.exit(0 if ok == repeat else 1)
 
     def play(plan, mode):
         variant.set_plan(plan)
@@ -88,6 +151,7 @@ def main():
           "recorded hub DLL hash kept as identity")
     check(first["software"].get("changed_after_capture") == {"Stronghold2AnalyseHub.dll": "changed"}, "swapped hub DLL flagged")
     check(idx[2]["modes"]["counters"] is False and idx[2]["total"]["dip"] is None, "min-mode recording: counters null, not 0")
+    deactivation_check(test, out, check)
     if keep:
         print(f"work folder kept: {work}")
     else:

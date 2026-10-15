@@ -48,3 +48,5 @@ __pycache__/
 # Silver summaries are re-derived from bronze by `ingest.py rebuild --write` (D012); data/index.jsonl and
 # data/annotations/ (user facts) stay tracked
 data/silver/
+# runtime file of the ingest write lock (an OS lock on it; the file itself is harmless)
+data/.sh2perf.lock

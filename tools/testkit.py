@@ -21,14 +21,14 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def frames_csv(frames=20, counters=True, overlay=True, poll=True, base_ms=20.0):
+def frames_csv(frames=20, counters=True, overlay=True, poll=True, base_ms=20.0, single_phase=False):
     rows = ""
     for i in range(frames):
         dip = 100 if counters else 0
         endscene = 0.2 if overlay else 0.0
         between = base_ms - 1 if overlay else 0.0
         va = 1500 if poll else 0
-        rows += f"{i},{i * base_ms / 1000:.4f},{base_ms},0.5,{endscene},{between},{0.1 if overlay else 0.0},2,{dip},10,0,0,5000,50,60,200,5,20,{va},{i // 10}\n"
+        rows += f"{i},{i * base_ms / 1000:.4f},{base_ms},0.5,{endscene},{between},{0.1 if overlay else 0.0},2,{dip},10,0,0,5000,50,60,200,5,20,{va},{0 if single_phase else i // 10}\n"
     return (HEADER + rows).encode()
 
 
@@ -69,12 +69,12 @@ def make_legacy_recording(folder, stamp, frames=20, samples=False, **kw):
 
 def make_recording(folder, stamp, capture_id=None, modes=None, speed=None, speed_origin="planned", paused=None,
                    status="finalized", frames=20, software=None, quality=None, prepared=None, plan=None,
-                   minimal=False, manifest_extra=None, csv_bytes=None, samples=False):
+                   minimal=False, manifest_extra=None, csv_bytes=None, samples=False, single_phase=False):
     """Write a hub recording with a manifest the way the hub does. Returns (manifest dict, stem)."""
     modes = modes or FULL
     stem = f"SH2Perf_{stamp}"
     capture_id = capture_id or f"rec-{stamp.replace('_', 'T')}Z-{sha(stamp.encode())[:8]}"
-    csv = csv_bytes if csv_bytes is not None else frames_csv(frames, counters=modes["counters"], overlay=modes["overlay"], poll=modes["poll"])
+    csv = csv_bytes if csv_bytes is not None else frames_csv(frames, counters=modes["counters"], overlay=modes["overlay"], poll=modes["poll"], single_phase=single_phase)
     files = [("frames", f"{stem}_frames.csv", csv)]
     if modes["poll"]:
         files.append(("threads", f"{stem}_threads.csv", b"t_s,tid,cpu_pct,is_render_thread\n0.5,1,90.0,1\n"))
@@ -113,6 +113,15 @@ def make_recording(folder, stamp, capture_id=None, modes=None, speed=None, speed
     return m, stem
 
 
+def reference_recording(folder, stamp, **kw):
+    """A recording that satisfies the reference profile (docs/FORMATS/CAPTURE_MANIFEST.md): one phase, speed, pause,
+    labels, variant, switches and software identity all stated."""
+    args = dict(speed=90, paused=False, single_phase=True, plan={"experiment": "EXP-REF", "scenario": "REF"},
+                prepared=prepared_record())
+    args.update(kw)
+    return make_recording(folder, stamp, **args)
+
+
 def prepared_record(variant="baseline", software=None):
     return {"schema": "sh2perf.prepared-start", "version": 1, "prepared_utc": "2026-10-15T09:00:00Z", "variant": variant,
             "files": software or software_files(), "plan": {}}
@@ -125,7 +134,7 @@ def run_ingest(args, src, root, game_dir=None):
            "--index", str(root / "data" / "index.jsonl")]
     if args and args[0] in ("import",) or (args and args[0].startswith("-")):
         cmd += ["--game-dir", str(game_dir or root / "game")]
-    return subprocess.run(cmd, capture_output=True, text=True, env=env)
+    return subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
 
 
 def tree_hashes(folder):

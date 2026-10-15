@@ -6,9 +6,9 @@ Run every tool as `python -I tools/<name>.py` from the repo root; `--help`/no ar
 |---|---|
 | `paths.py` | single source for all locations (relative to repo); import it, never hardcode paths |
 | `ingest.py` | `list` / `import` / `annotate` / `verify` / `rebuild` (D012): verify against the manifest → stage → atomic commit to `captures/<capture_id>/`; sources are never deleted; same id + different content = conflict; silver in `data/silver/` + `data/index.jsonl`; user facts in `data/annotations/` |
-| `bronze.py`, `silver.py`, `capture_manifest.py` | libraries behind `ingest.py`: import transaction, silver derivation (tool version in every result), manifest contract + compatibility rules |
-| `testkit.py`, `test_import_safety.py` | fixtures and tests for provenance/import (manifests, interruption, conflicts, write errors, speed origins) |
-| `e2e_standin.py` | real proxy + hub DLL + stand-in → manifests → import, in a temp folder (needs the hub build) |
+| `bronze.py`, `silver.py`, `capture_manifest.py`, `filelock.py` | libraries behind `ingest.py`: import transaction + integrity check + safe cleanup, silver derivation (tool version in every result; reference profile), manifest contract + name/role validation, write lock |
+| `testkit.py`, `test_import_safety.py`, `test_hardening.py` | fixtures and tests for provenance/import (manifests, interruption, conflicts, write errors, speed origins); `test_hardening` = reference release, bronze integrity, write lock with real processes, names/roles |
+| `e2e_standin.py` | real proxy + hub DLL + stand-in → manifests → import → END-key deactivation, in a temp folder (needs the hub build; `--deactivate-only --repeat N`, `--hub-build`) |
 | `analyze_frames.py` | metrics for one CSV / marker range (library: `summarize()`); `--timeline [--window 5]` = 5 s windows (FPS, DIP, triangles, render CPU) |
 | `samples.py` | sampler output: module groups per marker, top functions (`SH2Perf_*_samples.csv`) |
 | `ab_compare.py` | frame-time distributions of several captures side by side (A/B/repeat), long frames per minute, 1 s clock share vs random control; compares only columns valid in every hub mode |

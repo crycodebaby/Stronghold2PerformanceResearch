@@ -1,0 +1,887 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 25e2699..08f9637 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -36,6 +36,7 @@ add_library(Stronghold2AnalyseHub SHARED
+     Stronghold2AnalyseHub/core/capture.cpp
+     Stronghold2AnalyseHub/core/manifest.cpp
+     Stronghold2AnalyseHub/core/provenance.cpp
++    Stronghold2AnalyseHub/core/lifecycle.cpp
+     Stronghold2AnalyseHub/core/logger.cpp
+     Stronghold2AnalyseHub/core/metrics.cpp
+     Stronghold2AnalyseHub/core/sampler.cpp
+@@ -72,6 +73,14 @@ target_precompile_headers(capture_test PRIVATE Stronghold2AnalyseHub/pch.h)
+ target_compile_definitions(capture_test PRIVATE HUB_GIT_COMMIT="test")
+ target_link_libraries(capture_test PRIVATE minhook imgui d3d9 psapi winmm bcrypt)
+ 
++# Background-thread lifecycle (blocked writer / sampler / hashing at unload): build/Release/lifecycle_test.exe
++add_executable(lifecycle_test tests/lifecycle_test.cpp Stronghold2AnalyseHub/core/capture.cpp Stronghold2AnalyseHub/core/config.cpp
++    Stronghold2AnalyseHub/core/manifest.cpp Stronghold2AnalyseHub/core/provenance.cpp Stronghold2AnalyseHub/core/sampler.cpp
++    Stronghold2AnalyseHub/core/lifecycle.cpp Stronghold2AnalyseHub/core/logger.cpp)
++target_precompile_headers(lifecycle_test PRIVATE Stronghold2AnalyseHub/pch.h)
++target_compile_definitions(lifecycle_test PRIVATE HUB_GIT_COMMIT="test")
++target_link_libraries(lifecycle_test PRIVATE minhook imgui d3d9 psapi winmm bcrypt)
++
+ # D3D9 stand-in for the game, to test proxy + hub + sampler without Stronghold 2: build/Release/standin_d3d9.exe
+ add_executable(standin_d3d9 tests/standin_d3d9.cpp)
+ target_link_libraries(standin_d3d9 PRIVATE d3d9)
+diff --git a/README.md b/README.md
+index dc47357..7de9c7a 100644
+--- a/README.md
++++ b/README.md
+@@ -34,7 +34,7 @@ This is intentionally modest and readable—meant to be a solid base for deeper
+    - Per-frame overlay rendering
+ 
+ **Hotkeys**
+-- `END` — request unload (removes hooks cleanly, shuts down ImGui, flushes logs)
++- `END` — deactivate the hub (disables the hooks, ends ImGui and the background threads, finalizes an open recording). The DLL and its trampolines stay loaded until the game exits; activating the hub again or using another hub build needs a game restart
+ 
+ ---
+ 
+@@ -68,7 +68,7 @@ Read-only telemetry; nothing changes how the game renders or simulates.
+ - Per-thread CPU usage once per second (which thread is busy, which one renders).
+ - Loaded module list written to the log once (which DLL copies the loader picked).
+ 
+-Hotkeys: `F9` record on/off, `F8` marker, `F10` reset histogram, `END` unload.
++Hotkeys: `F9` record on/off, `F8` marker, `F10` reset histogram, `END` deactivate the hub (not an unload).
+ Recording writes `SH2Perf_<timestamp>_frames.csv` (and `_threads.csv` with `poll`, `_samples.csv` with the sampler)
+ plus `latest.json` into the output dir (`SH2HUB_OUT`, `out=` in `SH2Proxy.ini`, default `SH2Perf_out`).
+ 
+@@ -175,3 +175,8 @@ source, the file list with sizes and hashes, and the capture health. The manifes
+ and published as `finalized` only after the capture files are closed and hashed; `latest.json` is just a pointer.
+ All of this runs on the capture thread or a background hashing thread. The hub reads no game memory: game speed and pause
+ are only what was planned in the ini. Format and import rules: SH2-Perf `docs/FORMATS/CAPTURE_MANIFEST.md`.
++
++### Deactivation (END key) and game exit
++`END` deactivates the hub; it does not unload it. The capture writer, the sampler and the provenance hashing thread are asked to stop and must really end first; a blocked one is logged (`Deactivation DEFERRED`) and nothing is terminated. Then the hooks are disabled and made inert, ImGui is torn down by the render thread, and the DLL with its trampolines stays loaded until the game exits (log: `Hub deactivated …`). Activating the hub again or using another hub build needs a game restart. An open recording is finalized by the deactivation.
++
++A **normal exit of the game does not finalize** a running recording (the process ends the hub's threads; verified in the stand-in): the manifest stays at `status: recording`, like after a hard kill, and the importer treats it as interrupted. Stop the recording with `F9` and wait for `Recording stopped … manifest published` in the log before quitting the game. Details: SH2-Perf D013.
+diff --git a/Stronghold2AnalyseHub/core/capture.cpp b/Stronghold2AnalyseHub/core/capture.cpp
+index 0d70470..a65cf77 100644
+--- a/Stronghold2AnalyseHub/core/capture.cpp
++++ b/Stronghold2AnalyseHub/core/capture.cpp
+@@ -40,7 +40,7 @@ namespace
+ 
+     std::atomic<bool> g_toggle{ false };
+     std::atomic<bool> g_running{ false };
+-    HANDLE g_wake = nullptr;
++    HANDLE g_wake = nullptr;                      // never closed while the process lives: the capture thread and RequestToggle may still use it
+     HANDLE g_thread = nullptr;
+     uint32_t (*g_markerFn)() = nullptr;
+ 
+@@ -56,6 +56,8 @@ namespace
+     std::atomic<bool> g_manifestFailed{ false };
+     std::atomic<bool> g_abandon{ false };
+     std::atomic<bool> g_testStall{ false };
++    std::atomic<bool> g_testBlockWrite{ false };
++    std::atomic<bool> g_threadAlive{ false };
+     std::atomic<bool> g_testFail{ false };
+ 
+     // Capture-thread state of the current recording.
+@@ -111,6 +113,7 @@ namespace
+     // One write with error accounting. After the first failure the recording is marked failed.
+     bool WriteBytes(FILE* f, const char* data, size_t n, const char* what)
+     {
++        while (g_testBlockWrite.load()) Sleep(5);        // test hook: a writer stuck inside a file operation
+         if (g_rec.failed) return false;
+         const bool injected = g_testFail.load(std::memory_order_relaxed);
+         if (injected || fwrite(data, 1, n, f) != n) {
+@@ -505,6 +508,7 @@ namespace
+ 
+     DWORD WINAPI WriterMain(LPVOID)
+     {
++        g_threadAlive.store(true);
+         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+         while (g_running.load()) {
+             WaitForSingleObject(g_wake, 50);
+@@ -531,15 +535,17 @@ namespace
+             }
+         }
+         try { Stop("hub_shutdown"); } catch (...) {}
++        g_threadAlive.store(false);
+         return 0;
+     }
+ }
+ 
+ void Capture::Init(uint32_t (*markerFn)())
+ {
++    if (g_thread) { Logger::Warn("Capture: Init called while the capture thread still exists; ignored."); return; }
+     QueryPerformanceFrequency(&g_freq);
+     g_markerFn = markerFn;
+-    g_wake = CreateEventW(nullptr, FALSE, FALSE, nullptr);
++    if (!g_wake) g_wake = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+     g_running.store(true);
+     g_thread = CreateThread(nullptr, 0, WriterMain, nullptr, 0, nullptr);
+     if (!g_thread) {
+@@ -548,19 +554,25 @@ void Capture::Init(uint32_t (*markerFn)())
+     }
+ }
+ 
+-void Capture::Shutdown()
++bool Capture::Shutdown(DWORD timeoutMs)
+ {
++    if (!g_thread) return true;
+     g_running.store(false);
++    g_activeGen.store(0, std::memory_order_release);   // the render thread stops handing over frames
+     if (g_wake) SetEvent(g_wake);
+-    if (g_thread) {
+-        if (WaitForSingleObject(g_thread, 5000) == WAIT_TIMEOUT)
+-            Logger::Error("Capture: capture thread did not stop within 5 s.");
+-        CloseHandle(g_thread);
+-        g_thread = nullptr;
++    if (WaitForSingleObject(g_thread, timeoutMs) != WAIT_OBJECT_0) {
++        // A blocked writer. Closing its handles or letting the DLL go would pull the code from under it, so nothing is
++        // released; the caller keeps the hub loaded and asks again (SH2-Perf D012).
++        Logger::Error("Capture: the capture thread is still running after %lu ms (blocked in a file operation?); nothing is released and the hub stays loaded.", timeoutMs);
++        return false;
+     }
+-    if (g_wake) { CloseHandle(g_wake); g_wake = nullptr; }
++    CloseHandle(g_thread);
++    g_thread = nullptr;
++    return true;
+ }
+ 
++bool Capture::ThreadRunning() { return g_thread != nullptr && g_threadAlive.load(); }
++
+ uint32_t Capture::ActiveGen() { return g_activeGen.load(std::memory_order_acquire); }
+ 
+ void Capture::Push(const FrameRecord& record)
+@@ -602,6 +614,9 @@ Capture::Status Capture::GetStatus()
+ }
+ 
+ void Capture::Test_StallWriter(bool stall) { g_testStall.store(stall); }
++void Capture::Test_BlockWrites(bool block) { g_testBlockWrite.store(block); }
++bool Capture::Test_ThreadAlive() { return g_threadAlive.load(); }
++bool Capture::Test_WakeHandleValid() { DWORD f = 0; return g_wake && GetHandleInformation(g_wake, &f); }
+ void Capture::Test_FailNextWrites(bool fail) { g_testFail.store(fail); }
+ void Capture::Test_FailManifest(bool fail) { Manifest::Test_FailWrites(fail); }
+ void Capture::Test_AbandonRecording()
+diff --git a/Stronghold2AnalyseHub/core/capture.h b/Stronghold2AnalyseHub/core/capture.h
+index fb80a8f..e6c14c8 100644
+--- a/Stronghold2AnalyseHub/core/capture.h
++++ b/Stronghold2AnalyseHub/core/capture.h
+@@ -42,8 +42,11 @@ namespace Capture
+ 
+     // `markerFn` returns the current F8 marker number. Starts the capture thread.
+     void Init(uint32_t (*markerFn)());
+-    // Stops the thread; an open recording is finished first.
+-    void Shutdown();
++    // Asks the capture thread to finish (an open recording is finalized first) and waits up to `timeoutMs` for it to END.
++    // true = the thread has ended. false = it is still running (blocked in a file operation, for example): nothing it
++    // uses is released, the caller must not unload the DLL and may call this again later.
++    bool Shutdown(DWORD timeoutMs = 5000);
++    bool ThreadRunning();
+ 
+     // --- render thread ---
+     uint32_t ActiveGen();                          // 0 = not recording
+@@ -58,6 +61,9 @@ namespace Capture
+ 
+     // Test hooks (tests/capture_test.cpp).
+     void Test_StallWriter(bool stall);
++    void Test_BlockWrites(bool block);             // the writer sticks inside its next file write
++    bool Test_ThreadAlive();                       // the capture thread function has not returned
++    bool Test_WakeHandleValid();                   // the wake event handle is still open
+     void Test_FailNextWrites(bool fail);
+     void Test_FailManifest(bool fail);             // next manifest writes fail
+     void Test_AbandonRecording();                  // behave like a killed process: no final manifest
+diff --git a/Stronghold2AnalyseHub/core/dllmain.cpp b/Stronghold2AnalyseHub/core/dllmain.cpp
+index 9f1a690..1d94e56 100644
+--- a/Stronghold2AnalyseHub/core/dllmain.cpp
++++ b/Stronghold2AnalyseHub/core/dllmain.cpp
+@@ -4,6 +4,7 @@
+ #include "capture.h"
+ #include "config.h"
+ #include "provenance.h"
++#include "lifecycle.h"
+ #include "sampler.h"
+ #include "../hooks/d3d9_hooks.h"
+ 
+@@ -17,6 +18,9 @@ namespace
+     HMODULE           g_module = nullptr;
+     HANDLE            g_thread = nullptr;
+     std::atomic<bool> g_running{ true };
++    // Hooks patch the game's code and threads may still be returning through our trampolines: once Install() ran, the DLL
++    // is never unmapped (SH2-Perf D012/D013): END deactivates the hub, it does not unload it. Without hooks the DLL may unload.
++    std::atomic<bool> g_keepResident{ false };
+ 
+     // Game builds the hub was checked against (SH2-Perf docs/FINDINGS.md F001, F058).
+     struct KnownBuild { const char* sha256; const char* name; };
+@@ -55,6 +59,29 @@ namespace
+         }
+     }
+ 
++    // The DLL may only go once none of our threads can still run code from it. Blocks (without killing anything) until the
++    // capture writer, the sampler and the hashing thread have really ended; a blocked one keeps the hub loaded and logged.
++    void WaitForBackgroundThreads()
++    {
++        const DWORD t0 = GetTickCount();
++        DWORD lastLog = t0;
++        bool deferred = false;
++        for (;;) {
++            const Lifecycle::Result r = Lifecycle::StopBackground(deferred ? 1000 : 5000);
++            if (r.All()) break;
++            if (!deferred) {
++                deferred = true;
++                Logger::Error("Deactivation DEFERRED: still running: %s. Nothing is terminated; the deactivation "
++                    "continues by itself when they end.", Lifecycle::Describe(r).c_str());
++            }
++            else if (GetTickCount() - lastLog > 30000) {
++                lastLog = GetTickCount();
++                Logger::Warn("Still waiting for: %s (%lu s since the deactivation request).", Lifecycle::Describe(r).c_str(), (GetTickCount() - t0) / 1000);
++            }
++        }
++        if (deferred) Logger::Info("Background threads ended after %lu ms; continuing the deactivation.", GetTickCount() - t0);
++    }
++
+     DWORD RunHub()
+     {
+         // Visible in DebugView even if the log file cannot be written.
+@@ -66,6 +93,7 @@ namespace
+         Config::Init();                                   // measurement switches (config.h)
+         Provenance::Start();                              // background SHA-256 of exe/DLLs for the manifests (provenance.h)
+         Capture::Init([] { return Metrics::Markers(); }); // capture thread: files, polling (capture.h)
++        g_keepResident.store(true);
+         const bool installed = D3D9Hooks::Install();
+         Sampler::Init();
+ 
+@@ -76,6 +104,7 @@ namespace
+ 
+         if (!installed) {
+             Logger::Error("Hook installation failed; exiting.");
++            WaitForBackgroundThreads();
+             Logger::Shutdown();
+             return 0;
+         }
+@@ -95,7 +124,7 @@ namespace
+         bool warnedNoFrames = false;
+ 
+         // Simple control loop.
+-        // END unload, F9 recording on/off, F8 marker, F10 reset histogram.
++        // END deactivate the hub, F9 recording on/off, F8 marker, F10 reset histogram.
+         while (g_running.load()) {
+             if (autoFrames) {
+                 const uint64_t frame = Metrics::FrameIndex();
+@@ -109,7 +138,7 @@ namespace
+                 }
+             }
+             if (GetAsyncKeyState(VK_END) & 1) {
+-                Logger::Info("VK_END pressed: requesting unload.");
++                Logger::Info("VK_END pressed: deactivating the hub (hooks off, threads stopped; the DLL stays loaded until the game exits).");
+                 break;
+             }
+             if (GetAsyncKeyState(VK_F9) & 1) Metrics::ToggleRecording();
+@@ -123,10 +152,13 @@ namespace
+             Sleep(50);
+         }
+ 
+-        Metrics::Shutdown();
+-        Sampler::Shutdown();
++        WaitForBackgroundThreads();                       // before hooks and logger go: a stuck thread may still log
+         D3D9Hooks::Uninstall();
+-        Logger::Info("DLL detaching.");
++        if (g_keepResident.load())
++            Logger::Info("Hub deactivated: hooks disabled, background threads ended. The DLL and its trampolines stay loaded until the game exits; "
++                "activating the hub again or using another hub build needs a game restart.");
++        else
++            Logger::Info("DLL detaching.");
+         Logger::Shutdown();
+         return 0;
+     }
+@@ -150,6 +182,8 @@ namespace
+             Logger::Error("Unknown exception in hub thread.");
+             SignalReady();
+         }
++        WaitForBackgroundThreads();                       // also after an exception: never unload under a running thread
++        if (g_keepResident.load()) return 0;              // hooks were installed: the module stays mapped, only this thread ends
+         FreeLibraryAndExitThread(g_module, 0);
+         return 0;
+     }
+diff --git a/Stronghold2AnalyseHub/core/lifecycle.cpp b/Stronghold2AnalyseHub/core/lifecycle.cpp
+new file mode 100644
+index 0000000..5b81764
+--- /dev/null
++++ b/Stronghold2AnalyseHub/core/lifecycle.cpp
+@@ -0,0 +1,23 @@
++#include "lifecycle.h"
++#include "capture.h"
++#include "provenance.h"
++#include "sampler.h"
++
++Lifecycle::Result Lifecycle::StopBackground(DWORD perThreadMs)
++{
++    Result r;
++    r.capture = Capture::Shutdown(perThreadMs);
++    r.sampler = Sampler::Shutdown(perThreadMs);
++    r.provenance = Provenance::Shutdown(perThreadMs);
++    return r;
++}
++
++std::string Lifecycle::Describe(const Result& r)
++{
++    std::string s;
++    auto add = [&](bool ended, const char* name) { if (!ended) s += (s.empty() ? "" : ", ") + std::string(name); };
++    add(r.capture, "capture writer");
++    add(r.sampler, "sampler");
++    add(r.provenance, "provenance hashing");
++    return s.empty() ? "none" : s;
++}
+diff --git a/Stronghold2AnalyseHub/core/lifecycle.h b/Stronghold2AnalyseHub/core/lifecycle.h
+new file mode 100644
+index 0000000..daaa866
+--- /dev/null
++++ b/Stronghold2AnalyseHub/core/lifecycle.h
+@@ -0,0 +1,21 @@
++#pragma once
++#include "../pch.h"
++
++// Orderly end of the hub's own background threads before the DLL may be unloaded (SH2-Perf D012).
++// Closing a thread handle is no proof that the thread ended, and unloading a DLL under a running thread crashes the
++// game. So every thread is asked to stop, waited for, and only a thread that has really ended counts. Nothing is ever
++// terminated by force. If a thread does not end (a blocked file write), the caller keeps the DLL loaded and asks again.
++namespace Lifecycle
++{
++    struct Result
++    {
++        bool capture = true, sampler = true, provenance = true;       // true = that thread has ended (or never ran)
++        bool All() const { return capture && sampler && provenance; }
++    };
++
++    // Order matters: the capture thread first (it finalizes the open recording and needs the software identity and the
++    // sampler's data), the sampler second, the hashing thread last. Waits up to `perThreadMs` for each.
++    Result StopBackground(DWORD perThreadMs);
++    // "capture, hashing" - the names of the threads that have not ended, for the log.
++    std::string Describe(const Result& r);
++}
+diff --git a/Stronghold2AnalyseHub/core/provenance.cpp b/Stronghold2AnalyseHub/core/provenance.cpp
+index 556c2e9..3275817 100644
+--- a/Stronghold2AnalyseHub/core/provenance.cpp
++++ b/Stronghold2AnalyseHub/core/provenance.cpp
+@@ -13,6 +13,9 @@ namespace
+     Provenance::Software g_software;
+     std::atomic<bool> g_done{ false };
+     std::atomic<bool> g_started{ false };
++    std::atomic<bool> g_cancel{ false };
++    std::atomic<bool> g_alive{ false };
++    std::atomic<int>  g_stall{ 0 };
+     HANDLE g_thread = nullptr;
+     std::string g_sessionId;
+     std::mutex g_sessionMutex;
+@@ -33,11 +36,13 @@ namespace
+ 
+     void AddFile(const char* role, const std::wstring& path)
+     {
++        if (g_cancel.load()) return;
+         if (GetFileAttributesW(path.c_str()) == INVALID_FILE_ATTRIBUTES) return;
+         Provenance::FileId id;
+         id.role = role;
+         id.name = BaseName(path);
+-        id.sha256 = Provenance::Sha256File(path.c_str(), &id.size);
++        id.sha256 = Provenance::Sha256File(path.c_str(), &id.size, &g_cancel);
++        if (g_cancel.load()) return;                     // stopped: do not record a half-measured file
+         if (id.sha256.empty())
+             Logger::Warn("Provenance: could not hash %s (%lu); identity of this file stays unknown.", id.name.c_str(), GetLastError());
+         g_software.files.push_back(std::move(id));
+@@ -45,7 +50,13 @@ namespace
+ 
+     DWORD WINAPI HashMain(LPVOID)
+     {
++        g_alive.store(true);
+         try {
++            for (;;) {                                   // test hook: hashing that is slow or stuck
++                const int mode = g_stall.load();
++                if (mode == 0 || (mode == 2 && g_cancel.load())) break;
++                Sleep(5);
++            }
+             HMODULE self = nullptr;
+             GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                 reinterpret_cast<LPCWSTR>(&Provenance::Start), &self);
+@@ -77,6 +88,7 @@ namespace
+             Logger::Error("Provenance: unknown exception while hashing.");
+         }
+         g_done.store(true, std::memory_order_release);
++        g_alive.store(false);
+         return 0;
+     }
+ }
+@@ -91,6 +103,32 @@ void Provenance::Start()
+     }
+ }
+ 
++bool Provenance::Shutdown(DWORD timeoutMs)
++{
++    if (!g_thread) return true;
++    g_cancel.store(true);
++    if (WaitForSingleObject(g_thread, timeoutMs) != WAIT_OBJECT_0) {
++        Logger::Error("Provenance: the hashing thread is still running after %lu ms; the hub stays loaded until it ends.", timeoutMs);
++        return false;                                  // the handle stays open: it is the only proof that the thread ended
++    }
++    CloseHandle(g_thread);
++    g_thread = nullptr;
++    return true;
++}
++
++bool Provenance::ThreadRunning() { return g_thread != nullptr && g_alive.load(); }
++bool Provenance::Cancelled() { return g_cancel.load(); }
++
++void Provenance::Test_StallHash(int mode) { g_stall.store(mode); }
++void Provenance::Test_Reset()
++{
++    if (g_thread) return;                         // only after the thread has ended
++    g_software = Software{};
++    g_done.store(false);
++    g_cancel.store(false);
++    g_started.store(false);
++}
++
+ bool Provenance::Wait(DWORD timeoutMs)
+ {
+     if (!g_started.load()) return false;           // never started: nothing to wait for, identity unavailable
+@@ -124,7 +162,7 @@ std::wstring Provenance::HubDir()
+     return ModuleDir(self);
+ }
+ 
+-std::string Provenance::Sha256File(const wchar_t* path, uint64_t* sizeOut)
++std::string Provenance::Sha256File(const wchar_t* path, uint64_t* sizeOut, const std::atomic<bool>* cancel)
+ {
+     if (sizeOut) *sizeOut = 0;
+     std::string hex;
+@@ -141,6 +179,7 @@ std::string Provenance::Sha256File(const wchar_t* path, uint64_t* sizeOut)
+         bool ok = true;
+         uint64_t total = 0;
+         for (;;) {
++            if (cancel && cancel->load()) { ok = false; break; }
+             if (!ReadFile(file, buf.data(), static_cast<DWORD>(buf.size()), &got, nullptr)) { ok = false; break; }
+             if (!got) break;
+             if (BCryptHashData(hash, buf.data(), got, 0) != 0) { ok = false; break; }
+diff --git a/Stronghold2AnalyseHub/core/provenance.h b/Stronghold2AnalyseHub/core/provenance.h
+index 169cd42..b0f74a7 100644
+--- a/Stronghold2AnalyseHub/core/provenance.h
++++ b/Stronghold2AnalyseHub/core/provenance.h
+@@ -27,6 +27,11 @@ namespace Provenance
+ 
+     // Starts the hashing thread (once). Call from the hub init thread after Logger::Init.
+     void Start();
++    // Asks the hashing thread to stop (it checks between 1 MB chunks) and waits up to `timeoutMs` for it to END. true = the
++    // thread has ended (or never ran); false = still running: its handle stays open and the DLL must not be unloaded.
++    bool Shutdown(DWORD timeoutMs);
++    bool ThreadRunning();
++    bool Cancelled();                              // the identity is incomplete because hashing was stopped
+     // Blocks up to `timeoutMs` until the hashing is done; false = not finished (identity pending).
+     bool Wait(DWORD timeoutMs);
+     // Result of Start(); valid after Wait() returned true.
+@@ -37,7 +42,8 @@ namespace Provenance
+     std::wstring HubDir();
+ 
+     // Full SHA-256 of a file, lowercase hex; empty on error. `sizeOut` receives the bytes hashed.
+-    std::string Sha256File(const wchar_t* path, uint64_t* sizeOut = nullptr);
++    // `cancel`: checked between chunks; a cancelled hash returns an empty string.
++    std::string Sha256File(const wchar_t* path, uint64_t* sizeOut = nullptr, const std::atomic<bool>* cancel = nullptr);
+ 
+     // Helpers shared with the manifest writer.
+     std::string Utf8(const std::wstring& w);
+@@ -45,4 +51,9 @@ namespace Provenance
+     std::string RandomHex(size_t bytes);        // BCryptGenRandom; falls back to tick/pid mixing
+     std::string NowUtcIso();                    // 2026-10-15T01:44:11Z
+     std::string NowUtcCompact();                // 20261015T014411Z
++
++    // Test hooks (tests/lifecycle_test.cpp): 1 = hashing stalls and ignores the stop request until released with 0;
++    // 2 = hashing stalls but honours the stop request. Test_Reset() re-arms Start() after the thread has ended.
++    void Test_StallHash(int mode);
++    void Test_Reset();
+ }
+diff --git a/Stronghold2AnalyseHub/core/sampler.cpp b/Stronghold2AnalyseHub/core/sampler.cpp
+index fa29a77..c6c051d 100644
+--- a/Stronghold2AnalyseHub/core/sampler.cpp
++++ b/Stronghold2AnalyseHub/core/sampler.cpp
+@@ -107,14 +107,19 @@ namespace
+         else ++g_stats.dropped;
+     }
+ 
++    std::atomic<bool> g_alive{ false };
++    std::atomic<bool> g_testBlock{ false };
++
+     DWORD WINAPI SamplerThread(LPVOID)
+     {
++        g_alive.store(true);
+         QueryPerformanceFrequency(&g_freq);
+         timeBeginPeriod(1);
+         HANDLE h = nullptr;
+         DWORD openTid = 0;
+         DWORD lastRefresh = 0;
+         while (g_running.load()) {
++            while (g_testBlock.load()) Sleep(5);          // test hook: a sampler thread that does not come back
+             if (!g_active.load()) { Sleep(10); continue; }
+             const DWORD tid = g_target.load();
+             if (tid == 0) { Sleep(10); continue; }
+@@ -148,6 +153,7 @@ namespace
+         }
+         if (h) CloseHandle(h);
+         timeEndPeriod(1);
++        g_alive.store(false);
+         return 0;
+     }
+ }
+@@ -171,18 +177,25 @@ void Sampler::Init()
+         g_mode == Mode::Module ? "module" : "function", g_intervalMs);
+ }
+ 
+-void Sampler::Shutdown()
++bool Sampler::Shutdown(DWORD timeoutMs)
+ {
+     g_active.store(false);
+     g_running.store(false);
+-    if (g_thread) {
+-        WaitForSingleObject(g_thread, 2000);
+-        CloseHandle(g_thread);
+-        g_thread = nullptr;
++    if (!g_thread) return true;
++    if (WaitForSingleObject(g_thread, timeoutMs) != WAIT_OBJECT_0) {
++        Logger::Error("Sampler: the sampler thread is still running after %lu ms; the hub stays loaded until it ends.", timeoutMs);
++        return false;
+     }
++    CloseHandle(g_thread);
++    g_thread = nullptr;
++    return true;
+ }
+ 
++bool Sampler::ThreadRunning() { return g_thread != nullptr && g_alive.load(); }
++
+ Sampler::Mode Sampler::GetMode() { return g_mode; }
++void Sampler::Test_BlockThread(bool block) { g_testBlock.store(block); }
++bool Sampler::Test_ThreadAlive() { return g_alive.load(); }
+ void Sampler::SetTarget(uint32_t tid) { g_target.store(tid); }
+ 
+ void Sampler::Begin(const std::wstring& csvPath, uint32_t (*markerFn)())
+diff --git a/Stronghold2AnalyseHub/core/sampler.h b/Stronghold2AnalyseHub/core/sampler.h
+index 66effd9..2c010dc 100644
+--- a/Stronghold2AnalyseHub/core/sampler.h
++++ b/Stronghold2AnalyseHub/core/sampler.h
+@@ -19,7 +19,10 @@ namespace Sampler
+ 
+     // Reads the configuration and starts the sampler thread if the mode is not Off.
+     void Init();
+-    void Shutdown();
++    // Stops the sampler thread; true = it has ended. false = still running after `timeoutMs`: its handle stays open and the
++    // DLL must not be unloaded; call again later.
++    bool Shutdown(DWORD timeoutMs = 2000);
++    bool ThreadRunning();
+     Mode GetMode();
+ 
+     // Thread to sample (cheap; called once per frame by the render thread).
+@@ -33,4 +36,8 @@ namespace Sampler
+     // Statistics of the last finished recording (also logged).
+     struct Stats { uint64_t samples = 0, failed = 0, dropped = 0; double meanSuspendUs = 0, maxSuspendUs = 0; };
+     Stats LastStats();
++
++    // Test hooks (tests/lifecycle_test.cpp).
++    void Test_BlockThread(bool block);
++    bool Test_ThreadAlive();
+ }
+diff --git a/Stronghold2AnalyseHub/hooks/d3d9_hooks.cpp b/Stronghold2AnalyseHub/hooks/d3d9_hooks.cpp
+index 2521d67..9ae662d 100644
+--- a/Stronghold2AnalyseHub/hooks/d3d9_hooks.cpp
++++ b/Stronghold2AnalyseHub/hooks/d3d9_hooks.cpp
+@@ -25,7 +25,13 @@ namespace
+     WNDPROC              g_prevWndProc = nullptr;
+ 
+     // ImGui lifecycle flag
+-    bool                 g_imguiReady = false;
++    std::atomic<bool>    g_imguiReady{ false };
++    // Deactivation protocol (SH2-Perf D013; END deactivates, the DLL stays loaded): Uninstall() sets g_unloading; from then on the hooks neither start nor use ImGui, and the
++    // render thread - the only thread that draws with it - tears it down in EndScene. g_imguiUsers counts the other threads
++    // (window procedure, device reset) that are inside ImGui code right now.
++    std::atomic<bool>    g_unloading{ false };
++    std::atomic<int>     g_imguiUsers{ 0 };
++    struct ImGuiUse { ImGuiUse() { ++g_imguiUsers; } ~ImGuiUse() { --g_imguiUsers; } };
+ 
+     // Function typedefs
+     using Direct3DCreate9_t = IDirect3D9 * (WINAPI*)(UINT);
+@@ -131,26 +137,31 @@ namespace
+     // we avoid feeding it back to the game.
+     LRESULT CALLBACK WndProc_Hook(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+     {
+-        if (g_imguiReady) {
+-            if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+-                return TRUE;
+-
+-            const ImGuiIO& io = ImGui::GetIO();
+-            if (io.WantCaptureMouse || io.WantCaptureKeyboard)
+-                return DefWindowProcW(hWnd, msg, wParam, lParam);
++        {
++            ImGuiUse use;
++            if (!g_unloading.load() && g_imguiReady) {
++                if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
++                    return TRUE;
++
++                const ImGuiIO& io = ImGui::GetIO();
++                if (io.WantCaptureMouse || io.WantCaptureKeyboard)
++                    return DefWindowProcW(hWnd, msg, wParam, lParam);
++            }
+         }
+         return CallWindowProcW(g_prevWndProc, hWnd, msg, wParam, lParam);
+     }
+ 
+     HRESULT STDMETHODCALLTYPE Reset_Hook(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS* pp)
+     {
+-        if (g_imguiReady) {
++        ImGuiUse use;
++        const bool overlay = !g_unloading.load() && g_imguiReady;
++        if (overlay) {
+             ImGui_ImplDX9_InvalidateDeviceObjects();
+         }
+ 
+         const HRESULT hr = s_Reset_Orig(device, pp);
+ 
+-        if (SUCCEEDED(hr) && g_imguiReady) {
++        if (SUCCEEDED(hr) && overlay && !g_unloading.load() && g_imguiReady) {
+             ImGui_ImplDX9_CreateDeviceObjects();
+             Logger::Info("Device reset handled.");
+         }
+@@ -202,12 +213,17 @@ namespace
+         if (cs.openFailed) ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "LAST START FAILED: files could not be opened (see log)");
+         if (cs.writeFailed || cs.writeErrors) ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "WRITE ERROR: recording incomplete (see log)");
+         if (cs.dropped) ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "frames dropped: capture ring was full");
+-        ImGui::TextUnformatted("F9 record on/off   F8 marker   F10 reset histogram   END unload");
++        ImGui::TextUnformatted("F9 record on/off   F8 marker   F10 reset histogram   END deactivate hub");
+     }
+ 
+     HRESULT STDMETHODCALLTYPE EndScene_Hook(IDirect3DDevice9* device)
+     {
+         if (!g_device) g_device = device;
++        if (g_unloading.load()) {
++            // Deactivation in progress: no measurement, no overlay. This thread is the one that draws, so it tears ImGui down.
++            if (g_imguiReady && g_imguiUsers.load() == 0) ImGui_Destroy();
++            return s_EndScene_Orig(device);
++        }
+         Metrics::OnEndSceneEnter();
+         ImGui_CreateIfReady();
+ 
+@@ -476,18 +492,27 @@ bool D3D9Hooks::Install()
+ 
+ void D3D9Hooks::Uninstall()
+ {
+-    if (g_hwnd && g_prevWndProc) {
++    static std::atomic<bool> done{ false };
++    if (done.exchange(true)) return;
++    g_unloading.store(true);                         // from here on the hooks leave ImGui alone
++
++    // Put the game's window procedure back. g_prevWndProc stays set: a thread still inside WndProc_Hook calls it.
++    if (g_hwnd && g_prevWndProc)
+         SetWindowLongPtrW(g_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(g_prevWndProc));
+-        g_prevWndProc = nullptr;
+-    }
+ 
+-    ImGui_Destroy();
++    // ImGui may only be destroyed by the render thread (EndScene hook). Wait for it; if it never comes back to EndScene,
++    // ImGui stays allocated - destroying it from this thread while the render thread may use it is what crashed the game.
++    const DWORD t0 = GetTickCount();
++    while (g_imguiReady && GetTickCount() - t0 < 2000) Sleep(10);
++    if (g_imguiReady)
++        Logger::Warn("ImGui left allocated: the render thread did not reach EndScene within 2 s; it is not destroyed from this thread.");
+ 
+     MH_DisableHook(MH_ALL_HOOKS);
+-    MH_Uninitialize();
++    // MH_Uninitialize() is deliberately not called: it frees the trampolines, and a thread that is still inside one of our hooks
++    // returns through them. For the same reason the DLL stays loaded after hooks were installed (dllmain).
+     Metrics::Shutdown();
+ 
+-    Logger::Info("All hooks removed.");
++    Logger::Info("All hooks disabled (trampolines and module stay resident).");
+ }
+ 
+ HWND D3D9Hooks::GetGameHwnd() { return g_hwnd; }
+diff --git a/tests/lifecycle_test.cpp b/tests/lifecycle_test.cpp
+new file mode 100644
+index 0000000..2914616
+--- /dev/null
++++ b/tests/lifecycle_test.cpp
+@@ -0,0 +1,189 @@
++// Background-thread lifecycle without the game (SH2-Perf D012, work order "Schutzluecken schliessen", point 5).
++// A DLL may only be unloaded when none of its threads can still run its code. Checked here:
++//   A. capture writer blocked inside a file write: Shutdown times out, reports "still running", releases nothing (wake event
++//      stays valid), a second attempt still reports it; after release the thread ends, the recording is finalized and
++//      the module can be started again
++//   B. sampler thread that does not come back: same contract
++//   C. hashing that ignores the stop request: reported as running, ends after release
++//   D. hashing that honours the stop request: Shutdown returns quickly, identity marked cancelled
++//   E. the unload order (Lifecycle::StopBackground) with hashing still running: capture is finalized, the result names
++//      the hashing thread, and the whole set reports "all ended" only after it ends
++// Exit code 0 = all checks passed. Temp output dir (SH2HUB_OUT).
++#include "../Stronghold2AnalyseHub/core/capture.h"
++#include "../Stronghold2AnalyseHub/core/config.h"
++#include "../Stronghold2AnalyseHub/core/lifecycle.h"
++#include "../Stronghold2AnalyseHub/core/logger.h"
++#include "../Stronghold2AnalyseHub/core/provenance.h"
++#include "../Stronghold2AnalyseHub/core/sampler.h"
++
++#include <string>
++
++namespace
++{
++    int g_failures = 0;
++    std::wstring g_dir;
++#define CHECK(cond, ...) do { if (!(cond)) { ++g_failures; printf("FAIL line %d: %s  ", __LINE__, #cond); printf(__VA_ARGS__); printf("\n"); } } while (0)
++
++    uint32_t Marker() { return 0; }
++    bool WaitFor(bool (*pred)(), DWORD timeoutMs = 5000)
++    {
++        const DWORD t0 = GetTickCount();
++        while (!pred()) { if (GetTickCount() - t0 > timeoutMs) return false; Sleep(5); }
++        return true;
++    }
++    bool IsRecording() { return Capture::Recording(); }
++    bool NotRecording() { return !Capture::Recording(); }
++
++    std::string ReadFileText(const std::wstring& path)
++    {
++        std::string out;
++        FILE* f = nullptr;
++        _wfopen_s(&f, path.c_str(), L"rb");
++        if (!f) return out;
++        char buf[4096];
++        size_t n;
++        while ((n = fread(buf, 1, sizeof(buf), f)) > 0) out.append(buf, n);
++        fclose(f);
++        return out;
++    }
++
++    std::wstring NewestManifest()
++    {
++        WIN32_FIND_DATAW fd;
++        HANDLE h = FindFirstFileW((g_dir + L"SH2Perf_*_manifest.json").c_str(), &fd);
++        std::wstring best;
++        FILETIME bt{};
++        if (h != INVALID_HANDLE_VALUE) {
++            do { if (CompareFileTime(&fd.ftLastWriteTime, &bt) >= 0) { bt = fd.ftLastWriteTime; best = fd.cFileName; } } while (FindNextFileW(h, &fd));
++            FindClose(h);
++        }
++        return best.empty() ? best : g_dir + best;
++    }
++
++    void PushFrames(int n)
++    {
++        for (int i = 0; i < n; ++i) {
++            Capture::FrameRecord r;
++            r.frame = i;
++            r.gen = Capture::ActiveGen();
++            r.frameMs = 16.6f;
++            if (r.gen) Capture::Push(r);
++        }
++    }
++}
++
++int main()
++{
++    wchar_t tmp[MAX_PATH];
++    GetTempPathW(MAX_PATH, tmp);
++    g_dir = std::wstring(tmp) + L"sh2_lifecycle_test_" + std::to_wstring(GetCurrentProcessId()) + L"\\";
++    CreateDirectoryW(g_dir.c_str(), nullptr);
++    SetEnvironmentVariableW(L"SH2HUB_OUT", g_dir.c_str());
++    SetEnvironmentVariableW(L"SH2HUB_SAMPLE", L"module");
++    Logger::Init(L"lifecycle_test.log");
++    Config::Init();
++    Provenance::Start();
++    CHECK(Provenance::Wait(30000), "identity not hashed");
++    Sampler::Init();
++    Capture::Init(Marker);
++
++    // A. blocked capture writer --------------------------------------------------------------------
++    {
++        Capture::RequestToggle();
++        CHECK(WaitFor(IsRecording), "recording did not start");
++        Capture::Test_BlockWrites(true);
++        PushFrames(20);
++        Sleep(200);
++        const DWORD t0 = GetTickCount();
++        CHECK(!Capture::Shutdown(300), "A: Shutdown must report a still running thread");
++        CHECK(GetTickCount() - t0 < 3000, "A: Shutdown must honour its timeout");
++        CHECK(Capture::Test_ThreadAlive() && Capture::ThreadRunning(), "A: the thread is still inside our code");
++        CHECK(Capture::Test_WakeHandleValid(), "A: the wake event must stay open while the thread runs");
++        CHECK(!Capture::Shutdown(200), "A: a second attempt reports it again");
++        CHECK(NewestManifest().empty() || ReadFileText(NewestManifest()).find("\"status\": \"recording\"") != std::string::npos,
++            "A: no 'finalized' manifest while the writer is blocked");
++        Capture::Test_BlockWrites(false);
++        CHECK(Capture::Shutdown(10000), "A: after the release an orderly end is possible");
++        CHECK(!Capture::Test_ThreadAlive() && !Capture::ThreadRunning(), "A: thread ended");
++        const std::string m = ReadFileText(NewestManifest());
++        CHECK(m.find("\"status\": \"finalized\"") != std::string::npos && m.find("\"stop_reason\": \"hub_shutdown\"") != std::string::npos,
++            "A: the interrupted unload still finalized the recording");
++        Capture::Init(Marker);                                   // the module is reusable after a completed shutdown
++        Capture::RequestToggle();
++        CHECK(WaitFor(IsRecording), "A: second life: recording did not start");
++        Capture::RequestToggle();
++        CHECK(WaitFor(NotRecording), "A: second life: stop");
++        CHECK(Capture::Shutdown(5000), "A: second shutdown");
++        printf("A. blocked capture writer: reported, nothing released, ended after release, recording finalized\n");
++    }
++
++    // B. sampler thread that does not come back ----------------------------------------------------
++    {
++        Sampler::Test_BlockThread(true);
++        Sleep(100);
++        CHECK(!Sampler::Shutdown(300), "B: Shutdown must report a still running thread");
++        CHECK(Sampler::Test_ThreadAlive() && Sampler::ThreadRunning(), "B: thread still alive");
++        Sampler::Test_BlockThread(false);
++        CHECK(Sampler::Shutdown(5000), "B: ends after release");
++        CHECK(!Sampler::Test_ThreadAlive(), "B: thread ended");
++        printf("B. blocked sampler: reported, ended after release\n");
++    }
++
++    // C. hashing that ignores the stop request ------------------------------------------------------
++    {
++        CHECK(Provenance::Shutdown(5000), "C: the finished identity thread from the start of the test is joined");
++        Provenance::Test_Reset();
++        Provenance::Test_StallHash(1);
++        Provenance::Start();
++        Sleep(100);
++        CHECK(Provenance::ThreadRunning(), "C: hashing is running");
++        CHECK(!Provenance::Shutdown(300), "C: Shutdown must report the running hashing thread");
++        CHECK(Provenance::ThreadRunning(), "C: still running");
++        Provenance::Test_StallHash(0);
++        CHECK(Provenance::Shutdown(10000), "C: ends once it is released");
++        CHECK(!Provenance::ThreadRunning(), "C: ended");
++        printf("C. stuck hashing: reported as running, ended after release\n");
++    }
++
++    // D. hashing that honours the stop request ------------------------------------------------------
++    {
++        CHECK(Provenance::Shutdown(5000), "D: previous thread joined");
++        Provenance::Test_Reset();
++        Provenance::Test_StallHash(2);
++        Provenance::Start();
++        Sleep(100);
++        const DWORD t0 = GetTickCount();
++        CHECK(Provenance::Shutdown(5000), "D: Shutdown returns once the thread saw the stop request");
++        CHECK(GetTickCount() - t0 < 2000, "D: and promptly (%lu ms)", GetTickCount() - t0);
++        CHECK(Provenance::Cancelled() && Provenance::Get().files.empty(), "D: a cancelled identity is empty/incomplete, never half-measured");
++        printf("D. hashing with stop request: ended in %lu ms, identity marked incomplete\n", GetTickCount() - t0);
++        Provenance::Test_StallHash(0);
++    }
++
++    // E. unload order with hashing still running ----------------------------------------------------
++    {
++        Provenance::Test_Reset();
++        Provenance::Test_StallHash(1);
++        Provenance::Start();
++        Sleep(50);
++        Capture::Init(Marker);
++        Capture::RequestToggle();
++        CHECK(WaitFor(IsRecording, 15000), "E: recording started (the start waits for the identity for at most 10 s)");
++        PushFrames(30);
++        Lifecycle::Result r = Lifecycle::StopBackground(300);
++        CHECK(!r.All() && !r.provenance, "E: the result must name the running hashing thread");
++        CHECK(r.capture && r.sampler, "E: the capture writer ended on its own (recording finalized) and the idle sampler counts as ended");
++        CHECK(Lifecycle::Describe(r) == "provenance hashing", "E: described: %s", Lifecycle::Describe(r).c_str());
++        const std::string m = ReadFileText(NewestManifest());
++        CHECK(m.find("\"status\": \"finalized\"") != std::string::npos && m.find("\"pending\": true") != std::string::npos,
++            "E: the recording is finalized and says the software identity was still pending");
++        Provenance::Test_StallHash(0);
++        r = Lifecycle::StopBackground(10000);
++        CHECK(r.All(), "E: everything ended after the release: %s", Lifecycle::Describe(r).c_str());
++        printf("E. unload order with running hashing: hashing named, recording finalized with identity pending, all ended after release\n");
++    }
++
++    Logger::Shutdown();
++    printf(g_failures ? "lifecycle_test: %d FAILED\n" : "lifecycle_test: all checks passed\n", g_failures);
++    return g_failures ? 1 : 0;
++}
