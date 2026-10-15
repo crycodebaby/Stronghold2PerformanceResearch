@@ -104,6 +104,16 @@ class VariantTest(unittest.TestCase):
         variant.set_sample("off")
         self.assertEqual(variant.read_ini()["sample"], "off")
 
+    def test_granny_observer_switch_is_separate_from_profiles(self):
+        variant.apply("baseline")
+        variant.set_granny(True)
+        self.assertEqual(variant.read_ini()["granny"], "1")
+        variant.set_mode("min")                       # a profile change does not touch it
+        variant.set_sample("off")
+        self.assertEqual(variant.read_ini()["granny"], "1")
+        variant.set_granny(False)
+        self.assertEqual(variant.read_ini()["granny"], "0")   # off is explicit, not a removed key
+
     def test_hub_measurement_switches(self):
         variant.apply("baseline")
         variant.set_switch("overlay", "off")

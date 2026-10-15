@@ -69,7 +69,7 @@ def make_legacy_recording(folder, stamp, frames=20, samples=False, **kw):
 
 def make_recording(folder, stamp, capture_id=None, modes=None, speed=None, speed_origin="planned", paused=None,
                    status="finalized", frames=20, software=None, quality=None, prepared=None, plan=None,
-                   minimal=False, manifest_extra=None, csv_bytes=None, samples=False, single_phase=False):
+                   minimal=False, manifest_extra=None, csv_bytes=None, samples=False, single_phase=False, granny=False):
     """Write a hub recording with a manifest the way the hub does. Returns (manifest dict, stem)."""
     modes = modes or FULL
     stem = f"SH2Perf_{stamp}"
@@ -80,6 +80,11 @@ def make_recording(folder, stamp, capture_id=None, modes=None, speed=None, speed
         files.append(("threads", f"{stem}_threads.csv", b"t_s,tid,cpu_pct,is_render_thread\n0.5,1,90.0,1\n"))
     if samples:
         files.append(("samples", f"{stem}_samples.csv", b"marker,module,rva,count\n0,Stronghold2.exe,0x00000000,60\n0,nvwgf2um.dll,0x00000000,30\n"))
+    if granny:      # EXP-008 observer files (content shape only)
+        files.append(("granny_meta", f"{stem}_granny.json", b'{"schema": "sh2perf.granny-observer", "version": 1}\n'))
+        files.append(("granny_frames", f"{stem}_granny_frames.csv", b"frame,marker,partial\n0,0,1\n"))
+        files.append(("granny_instances", f"{stem}_granny_instances.csv", b"instance,marker_slot\n0x00001000,0\n"))
+        files.append(("granny_deformers", f"{stem}_granny_deformers.csv", b"deformer,marker_slot\n0x00002000,0\n"))
     if prepared is not None:
         files.append(("prepared", f"{stem}_prepared.json", json.dumps(prepared).encode()))
     for _, name, data in files:

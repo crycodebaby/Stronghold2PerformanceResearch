@@ -24,6 +24,9 @@ A 0 can therefore mean "measured 0" (menu: no DIP) or "switch off". the recordin
 ## `<stem>_threads.csv` — only with `poll`
 `t_s,tid,cpu_pct,is_render_thread`: one row per thread above 0.5 % CPU about once per second (100 ns CPU time vs wall clock, 100 % = one core). Polled on the capture thread, only while recording.
 
+## `<stem>_granny*.json/.csv` — only with the Granny observer (`granny=1`, EXP-008)
+Four files, written at recording stop by the capture thread; columns and meaning in [GRANNY_OBSERVER.md](GRANNY_OBSERVER.md). The manifest names them with roles `granny_*` and records the switch `switches.granny`.
+
 ## `<stem>_samples.csv` — only with the sampler (`SH2HUB_SAMPLE`)
 `marker,module,rva,count`, see [SAMPLING_PROFILER.md](../design/SAMPLING_PROFILER.md).
 

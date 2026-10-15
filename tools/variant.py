@@ -3,6 +3,7 @@
 Usage: python -I tools/variant.py <baseline|laa|dxvk|laa+dxvk|status>
        python -I tools/variant.py hub <on|off>
        python -I tools/variant.py sample <off|module|function>
+       python -I tools/variant.py granny <on|off>
        python -I tools/variant.py mode <full|min>
        python -I tools/variant.py switch <frametime|counters|poll|overlay|beep> <on|off|default>
        python -I tools/variant.py plan [experiment=E] [protocol=P] [scenario=S] [game_speed=N] [paused=true|false] [key=] | clear
@@ -19,6 +20,8 @@ Usage: python -I tools/variant.py <baseline|laa|dxvk|laa+dxvk|status>
 - hub on|off: switch in SH2Proxy.ini; off = proxy passes everything through, no hub.
 - sample off|module|function: sampling profiler of the hub (render thread, writes *_samples.csv per
   recording; docs/design/SAMPLING_PROFILER.md). Default off.
+- granny on|off: Granny import-boundary observer of the hub (EXP-008, docs/FORMATS/GRANNY_OBSERVER.md; patches six exe
+  import slots, writes *_granny*.{json,csv} per recording). Separate from profiles; off is written explicitly (granny=0).
 - mode full|min: hub measurement profile (D011). full = frame time + graphics counters + background polls +
   overlay (behaviour of hub builds before D011); min = frame time only. Clears single switches.
 - switch <key> on|off|default: one hub switch in SH2Proxy.ini (read by the hub, env SH2HUB_<KEY> wins).
@@ -192,6 +195,12 @@ def set_sample(mode):
     write_ini(sample=mode)
 
 
+def set_granny(on):
+    if not is_proxy(TEST_DIR / "d3d9.dll"):
+        sys.exit("proxy not installed - run a variant first, e.g. `variant.py baseline`")
+    write_ini(granny="1" if on else "0")
+
+
 SWITCHES = ("frametime", "counters", "poll", "overlay", "beep")
 
 
@@ -273,6 +282,7 @@ def status():
     print(f"TEST={TEST_DIR}\nvariant={current_variant()}  LAA={laa_enabled()}  DXVK={dxvk_active()}")
     print(f"proxy={is_proxy(proxy)} (matches hub build: {fresh})  target={ini.get('target', '-')}"
           f"  hub={'on' if ini.get('hub', '1') != '0' else 'off'}  sample={ini.get('sample', 'off')}"
+          f"  granny={ {'1': 'on', '0': 'off'}.get(ini.get('granny'), 'off (default)') }"
           f"  steam_appid={(TEST_DIR / 'steam_appid.txt').exists()}")
     switches = {k: ini[k] for k in SWITCHES if k in ini}
     print(f"hub profile={ini.get('profile', 'full')}  single switches={switches or 'none'}")
@@ -285,6 +295,8 @@ def main():
         set_hub(args[1] == "on")
     elif args[:1] == ["sample"] and len(args) == 2 and args[1] in ("off", "module", "function"):
         set_sample(args[1])
+    elif args[:1] == ["granny"] and len(args) == 2 and args[1] in ("on", "off"):
+        set_granny(args[1] == "on")
     elif args[:1] == ["mode"] and len(args) == 2 and args[1] in ("full", "min"):
         set_mode(args[1])
     elif args[:1] == ["switch"] and len(args) == 3 and args[1] in SWITCHES and args[2] in ("on", "off", "default"):

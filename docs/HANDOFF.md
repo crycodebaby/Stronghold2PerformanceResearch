@@ -1,10 +1,43 @@
 # HANDOFF
 
-> Kurzfassung: Übergabe an den nächsten Agenten: aktueller Auftrag (EXP-006 Profiling der Armeeansicht; davor Abnahme der Messinstrumentierung), geprüfte Stände, Abnahmeschritte erledigt/offen, nächste Aktion. Projekthistorie steht in STATE.md, nicht hier.
+> Kurzfassung: Übergabe an den nächsten Agenten: aktueller Auftrag EXP-008 (Granny-Beobachter vorbereitet und installiert, Spielaufnahmen stehen aus; EXP-007 korrigiert und gesichert), darunter ältere Aufträge (EXP-007, EXP-006, Abnahme). Projekthistorie steht in STATE.md, nicht hier.
 
 Updated: 2026-10-15. Read [STATE.md](STATE.md) for history and open tasks; this file only covers the current order.
 
-## Current order (2026-10-15, latest): EXP-007 function hotspots — done; supersedes EXP-006 below
+## Current order (2026-10-15, newest): close EXP-007, prepare EXP-008 — **prepared, no game run yet**
+Order: A) correct and secure EXP-007; B) read-only Granny boundary observer, then four game runs. No optimisation, cache, skipping, clock or simulation change, publishing.
+
+| Step | State |
+|---|---|
+| A1 wording (deform loop "large in both states", "no exe hotspot" only for flat sampling, 0 samples ≠ 0 calls) | done (EXPERIMENTS, F135/F136, STATE) |
+| A2 recount | done: **134 / 120** known exe functions sampled only running (138 / 121 with unresolved pages); 169 / 146 were keys incl. pages with Δ > 0. Query: `funcsamples.py … --delta-counts --module exe` |
+| A3 analysis state | done: [evidence/ANALYSIS_STATE_EXP-007.md](evidence/ANALYSIS_STATE_EXP-007.md) (binary hashes, Ghidra 12.1.4, image bases, map hashes, manual Ghidra edits); closed project zipped to `ghidra-projects/_backup/SH2_after_EXP-007_20261015.zip` (sha256 `48d50246…`) |
+| A4 commits | SH2-Perf `68b8868` (prior sessions' EXP-INGAME/006/007 tree as found), `a31a5c7` (corrections); this preparation in the next commit. No push |
+| B4 signatures | done: F137 (all stdcall, pop counts, argument roles), F138 (deform call has **no** model instance; link only through world pose → composite pointer), F139 (clock values per call site) |
+| B5 data contract | done: [FORMATS/GRANNY_OBSERVER.md](FORMATS/GRANNY_OBSERVER.md), D014 |
+| B6 implementation | done: hub `perf-metrics` `e3ea53e` (`core/granny_observer.*`, switch `granny`, default off); `tools/grannyobs.py`; `variant.py granny on\|off`; ingest stem fix (F140) |
+| B7 checks without the game | done: F140 (`granny_observer_test` 3/3 + mutation check, `capture_test`, `lifecycle_test`, `sampler_test`, `e2e_standin` off and on, Python suites, lint) |
+| B7 install in TEST | done, game closed: DLL `54de688f…` (build `e3ea53e5d9f7`), proxy unchanged `13c89519…`, exe unchanged `f3ccdf9b…`; `granny=0`, `sample=off`, profile full, plan `EXP-008-A1` / `GRANNY_OBS` / REAL_LAG_257 / 90. Original folder untouched |
+| B8 protocol | fixed before any run: [EXPERIMENTS.md](EXPERIMENTS.md) "Protocol EXP-008" (A1 off, G1 on, G2 on, A2 off; sampler off) |
+| Game runs | **open — waiting for the user** |
+
+| Run | `granny` | plan id | State |
+|---|---|---|---|
+| A1 | off | EXP-008-A1 | **TEST prepared**, waiting |
+| G1 | on | EXP-008-G1 | open |
+| G2 | on | EXP-008-G2 | open |
+| A2 | off | EXP-008-A2 | open |
+
+**Way back** (game closed): copy `Stronghold2AnalyseHub.dll`, `SH2Proxy.ini`, `SH2Prepared.json` from `..\Stronghold 2 - TEST\_backup_before_EXP-008_20261015\` (+ `SHA256SUMS.txt`; hub `e822e7f19019`, DLL `591e6375…`), then `variant.py status`. Observer only off: `variant.py granny off`.
+
+**User guide (per run, game started from the TEST folder):**
+1. Load the save LAG_217_Reiter, set/check speed 90, do not touch the camera, mouse to the screen centre. Wait 10 s.
+2. **F9** (recording starts) → wait ≈ 5 s → **F8** → let it run 20 s → **F8** → press the game's **pause**, wait ≈ 3 s → **F8** → wait 20 s paused → **F9** (recording stops; wait until the overlay no longer shows recording) → quit the game.
+3. Tell me: run done, speed was 90, paused in the last part, anything unusual (Alt-Tab, camera moved, stutter). I import and check it, then switch the observer for the next run (A1 off → G1 on → G2 on → A2 off); only start the next run after I say TEST is ready.
+
+**Between runs (agent, game closed):** `ingest.py list` → `import --recording <ts> --exp EXP-008-<run> --scenario REAL_LAG_257 --troops 257` → validity per protocol (G runs: `grannyobs.py captures/<id>` + log line `Granny observer: installed`) → `annotate <id> --game-speed 90 --phase-paused 1=false 3=true` after the user's confirmation → `variant.py granny on|off` + `variant.py plan experiment=EXP-008-<next>` → `variant.py status`. After A2: `ab_compare.py` per marker, evaluation questions of the protocol, results into EXPERIMENTS/FINDINGS (F136 stays a hypothesis unless G1 and G2 agree; allowed wording only), graphics settings hash re-check, then set `granny=0` and remove the plan id.
+
+## Previous order (2026-10-15): EXP-007 function hotspots — done; supersedes EXP-006 below
 Protocol and candidate rules fixed in advance: [EXPERIMENTS.md](EXPERIMENTS.md) "Protocol EXP-007". Prerequisite added: `ghidra_scripts/ExportFunctions.java` (all function bodies) and `granny2.dll` imported into the Ghidra project.
 
 | Run | `sample` | plan id | State |
@@ -18,7 +51,7 @@ Protocol and candidate rules fixed in advance: [EXPERIMENTS.md](EXPERIMENTS.md) 
 
 - **Result (EXPERIMENTS.md EXP-007, F130–F136, FUNCTIONS.md)**: 4 candidates by the fixed rules — granny2 `FUN_50008810` (SSE deform loop under `SseDeformPWNT3432I`, large cost in both states: paused 4.39/4.46 ms well repeated, running 3.61/4.93 ms differing more), `FUN_500166E0` (B-spline eval helper, 1.2–1.4 ms), `FUN_50017600` (knot search, 0.7–0.9 ms), exe `FUN_004E3530` (x87 helper, +0.2/+0.4 ms running-only). In flat samples the exe's running-only +6.2 ms is spread over 134/120 known functions sampled only running (F135, corrected count); no single exe hotspot in flat sampling, a shared expensive call path is not excluded; 0 paused samples ≠ 0 paused calls. Function-mode frame effect not claimed, bounded only to ≈ 1.3/3.2 ms (F130). Ghidra: granny2 imported, 3 functions created, `SseDeformPWNT3432I` named, plate comments on the candidates.
 - **TEST now**: `sample=off`, plan id removed (see below). `SH2Perf_out` keeps all sources.
-- **Next order (smallest, F136)**: EXP-008 read-only call counter at the exe → granny2 import boundary (hub: IAT hooks for `GrannySetModelClock`, `GrannySampleModelAnimationsAccelerated`, `GrannyDeformVertices`; per frame call count, clock argument min/max, vertex count argument if present), same save/protocol, 1 off + 2 on runs. Decides whether paused frames recompute identical poses/skinning (redundant work, then a hook target) and how calls scale per visible unit. Exe side: attributing the flat running-only cost needs call stacks (design step 3, EBP walk) or a static common-caller search over the 134/120 known functions sampled only running — after EXP-008.
+- **Next order (smallest, F136)** — superseded by the newest order above (EXP-008 as prepared differs: six import slots, aggregated per object, sampler off, A1/G1/G2/A2): EXP-008 read-only call counter at the exe → granny2 import boundary (hub: IAT hooks for `GrannySetModelClock`, `GrannySampleModelAnimationsAccelerated`, `GrannyDeformVertices`; per frame call count, clock argument min/max, vertex count argument if present), same save/protocol, 1 off + 2 on runs. Decides whether paused frames recompute identical poses/skinning (redundant work, then a hook target) and how calls scale per visible unit. Exe side: attributing the flat running-only cost needs call stacks (design step 3, EBP walk) or a static common-caller search over the 134/120 known functions sampled only running — after EXP-008.
 
 ## Previous order (2026-10-15, later): EXP-006 army-view profiling — supersedes the acceptance order below
 Protocol and evaluation rules fixed in advance: [EXPERIMENTS.md](EXPERIMENTS.md) "Protocol EXP-006". Sampler check: F122–F124 (no blocking defect; synthetic overhead now 4.6–5.1 %, `system` group contains game CRT).

@@ -19,7 +19,8 @@ SUPPORTED_VERSION = 1
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 ORIGINS = ("planned", "user_confirmed", "observed", "unknown")     # allowed `origin` of game_speed / paused
 STATUSES = ("recording", "finalized")
-KNOWN_ROLES = ("frames", "threads", "samples", "prepared")      # a regular recording has exactly one frames file, each role at most once
+KNOWN_ROLES = ("frames", "threads", "samples", "prepared",
+               "granny_meta", "granny_frames", "granny_instances", "granny_deformers")   # granny_*: EXP-008 observer      # a regular recording has exactly one frames file, each role at most once
 # Names the importer writes itself next to the raw files; a manifest must not claim them as data files.
 RESERVED_ADMIN_NAMES = ("manifest.json", "import.json", "latest.json", "stronghold2analysehub.log")
 _DEVICE_NAMES = {"con", "prn", "aux", "nul", "conin$", "conout$", *(f"com{i}" for i in range(1, 10)), *(f"lpt{i}" for i in range(1, 10))}
@@ -188,6 +189,8 @@ def switches(m):
         out[k] = item.get("value") if isinstance(item, dict) and isinstance(item.get("value"), bool) else None
     sample = sw.get("sample")
     out["sample"] = sample.get("value") if isinstance(sample, dict) else None
+    granny = sw.get("granny")      # hub builds before EXP-008 have no such switch: None (unknown), not False
+    out["granny"] = granny.get("value") if isinstance(granny, dict) and isinstance(granny.get("value"), bool) else None
     return out
 
 

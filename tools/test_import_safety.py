@@ -379,6 +379,16 @@ class DamagedOrConflictingSources(Base):
         self.import_ok()
         self.assertEqual(tk.tree_hashes(self.L.src), before)
 
+    def test_granny_observer_files_are_imported_and_verified(self):
+        m, stem = tk.make_recording(self.L.src, "20261015_100000", granny=True)
+        self.import_ok()
+        dest = self.L.captures / m["capture_id"]
+        for suffix in ("_granny.json", "_granny_frames.csv", "_granny_instances.csv", "_granny_deformers.csv"):
+            self.assertTrue((dest / f"{stem}{suffix}").is_file(), suffix)
+        (self.L.src / f"{stem}_granny_frames.csv").write_bytes(b"tampered\n")    # a changed source is refused
+        r = self.L.run("import", "--recording", stem.split("_", 1)[1])
+        self.assertNotEqual(r.returncode, 0)
+
     def test_existing_raw_captures_are_not_changed_by_import_or_rebuild(self):
         old = self.L.captures / "20261015_EXP-000_baseline_SMOKE"
         old.mkdir(parents=True)

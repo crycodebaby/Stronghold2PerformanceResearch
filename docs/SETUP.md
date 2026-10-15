@@ -80,7 +80,9 @@ set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot
 | Hub commit (branch `perf-metrics`, clean tree) | `e822e7f` (`git describe --always --dirty --abbrev=12` = `e822e7f19019`, no `-dirty`); parent `ce07db2` |
 | `build\Release\Stronghold2AnalyseHub.dll` sha256 | `591e6375a531c1dbcc6fee582e90f32f873f83629a3f4b7b065d4527b35a89e5` |
 | `build\Release\d3d9.dll` (proxy) sha256 | `13c895196c175fd3cd963ba3b20ad84e92d4d9caf41cd2e1308eadfc84e24801` |
-The build is **not** installed in the TEST copy; the user installs it (below). The manifests of the recordings name these hashes (`software.files`), so the log of the check shows which build ran.
+The build is **not** installed in the TEST copy; the user installs it (below).
+
+**EXP-008 build (installed in TEST 2026-10-15, game closed)**: hub `e3ea53e` (`e3ea53e5d9f7`, clean, parent `e822e7f`), `Stronghold2AnalyseHub.dll` sha256 `54de688fd37840b07aa6b543be6089fb60a953010ee418d83e2e35d78d9f714d`, proxy unchanged `13c89519…`. Tests: `build\Release\granny_observer_test.exe` (needs the stand-in `granny2.dll` next to it — a test DLL, never copy it into a game folder), `capture_test`, `lifecycle_test`, `sampler_test`, `e2e_standin.py` (also with `SH2HUB_GRANNY=1`: logs "granny2.dll is not loaded", runs unobserved). Rebuild: re-run `cmake -S . -B build -A Win32` after a commit so the commit id is baked in. The manifests of the recordings name these hashes (`software.files`), so the log of the check shows which build ran.
 
 ## Check in Stronghold 2 (user): install, record, record again, Alt-Tab, END, import
 What each step shows is also what the hub does *not* promise: END **deactivates** the hub (the DLL stays loaded until the game exits; to activate it again or to change the hub build, restart the game), and a normal exit of the game does **not** finalize a running recording (F117) - stop with F9 first.

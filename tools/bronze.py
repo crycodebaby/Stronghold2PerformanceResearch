@@ -87,11 +87,18 @@ class Recording:
         return self.stem[len("SH2Perf_"):]
 
 
+# A hub stem is SH2Perf_<YYYYMMDD>_<HHMMSS>; other files of a recording only add a suffix to it
+# (e.g. SH2Perf_<ts>_granny_frames.csv must not look like a recording "<ts>_granny").
+STEM_RE = re.compile(r"^SH2Perf_\d{8}_\d{6}$")
+
+
 def find_recordings(src):
     stems = set()
     for pattern, tail in (("SH2Perf_*_frames.csv", "_frames.csv"), ("SH2Perf_*_manifest.json", "_manifest.json")):
         for p in Path(src).glob(pattern):
-            stems.add(p.name[:-len(tail)])
+            stem = p.name[:-len(tail)]
+            if STEM_RE.match(stem):
+                stems.add(stem)
     return [Recording(src, s) for s in sorted(stems)]
 
 
