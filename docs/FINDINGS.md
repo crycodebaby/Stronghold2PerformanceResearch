@@ -73,7 +73,8 @@ IDs are stable; never renumber. Append, don't rewrite history (mark old entries 
 |---|---|---|---|
 | F055 | [verifiziert] | Steam AppID 40960 | `installscript.vdf` HasRunKey `…\Steam\Apps\40960` |
 | F056 | [verifiziert] | `SteamLib.dll` imports `SteamAPI_Init` etc. but NOT `SteamAPI_RestartAppIfNecessary` | `pe_info.py SteamLib.dll --imports` |
-| F057 | [Hypothese] | Direct start (outside Steam) works with `steam_appid.txt`=40960 while Steam runs | untested |
+| F057 | [verifiziert] | Direct start of the exe (not via Steam launch) works with `steam_appid.txt`=40960 | user test 2026-10-15: `TEST\Stronghold2.exe` started directly runs (steam_appid.txt=40960, exe = .orig, LAA off); whether Steam must run: untested |
+| F058 | [verifiziert] | Game version **1.5 Steam Edition**; exe sha256 `f3ccdf9bb41158202dffc000e5f2036a82f4c1ce8c5c89462f6140000f32d34b` (original = TEST = TEST `.orig`) | version: in-game display (user, 2026-10-15); hash: `sha256sum` of all three files. Hub logs `known build: yes/no` against this hash |
 
 ## Performance (unmeasured)
 
@@ -82,3 +83,12 @@ IDs are stable; never renumber. Append, don't rewrite history (mark old entries 
 | F060 | [Hypothese] | User report: 2×~100 knights → ~20 FPS; more troops/melee → 1–2 FPS on strong PCs | user statement, not yet measured |
 | F061 | [Hypothese] | Cause is CPU-side simulation (pathing/targeting/melee) rather than GPU | none — FPS collapse correlating with melee suggests sim; must measure (EXP-001) |
 | F062 | [Hypothese] | 2 GB VA limit (F006) contributes to stutter/crash on large maps | none — test EXP-002 |
+
+## Hub / loader (measurement tooling, not game code)
+
+| ID | Status | Fact | Evidence |
+|---|---|---|---|
+| F080 | [verifiziert] | Start via `SH2Launcher` (suspended + `CreateRemoteThread`/`LoadLibraryW`, hub `d29d935`): no ready signal, `SH2Perf_out\Stronghold2AnalyseHub.log` exists with 0 B, game ends with "Runtime Error! abnormal program termination" | user report 2026-10-15; 0-B log file in TEST `SH2Perf_out` |
+| F081 | [verifiziert] | Hub `d29d935` aborts **any** process it is loaded into: `Logger::Init` holds `g_mutex` and calls `WriteLine`, which locks the same non-recursive `std::mutex` again → MSVC STL throws `system_error` (resource_deadlock_would_occur) → uncaught in the hub thread → `abort()` | minimal 32-bit console host (no game, plain `LoadLibraryW`): exit `0xC0000409` within 3 s, log 0 B. Same host + hub with only the lock fix: process alive, log has 3 lines. STL: `<mutex>` `_Mtx_lock` ≠ success → `_Throw_Cpp_error`, MSVC 14.44 |
+| F082 | [Hypothese] | F081 alone explains F080; the suspended start / early injection is **not** the cause | symptoms match F081 (file opened, first write never happens; abort text; thread dies before `SetEvent` → no ready). Missing: in-game run with the fixed hub (EXP-000); launcher with fixed hub untested in game |
+| F083 | [verifiziert] | d3d9 proxy + fixed hub work in a stand-in D3D9 program (imports `Direct3DCreate9` like the game, creates a device, presents 30 frames): hub ready before `Direct3DCreate9`, device hooks + ImGui init logged; with `target=d3d9_dxvk.dll` (DXVK 3.1.1) likewise; `hub=0` and `SH2HUB_DISABLE=1` run pass-through | scratch test 2026-10-15, `SH2Proxy.log` + hub log per case. **Not yet run in the game** |

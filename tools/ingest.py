@@ -51,11 +51,15 @@ def hardware():
 
 
 def binaries_meta():
-    """Hashes identify the exact build measured (exe, optional DXVK d3d9, hub)."""
+    """Hashes identify the exact build measured (exe, d3d9 proxy, optional DXVK, hub).
+
+    The proxy loads the hub copy in the TEST folder (D009), so that one is hashed.
+    """
     files = {
         "Stronghold2.exe": paths.TEST / "Stronghold2.exe",
         "d3d9.dll (TEST folder)": paths.TEST / "d3d9.dll",
-        "Stronghold2AnalyseHub.dll": paths.HUB_BUILD / "Stronghold2AnalyseHub.dll",
+        "d3d9_dxvk.dll (TEST folder)": paths.TEST / "d3d9_dxvk.dll",
+        "Stronghold2AnalyseHub.dll (TEST folder)": paths.TEST / "Stronghold2AnalyseHub.dll",
     }
     return {name: sha256(p)[:16] for name, p in files.items() if p.exists()}
 

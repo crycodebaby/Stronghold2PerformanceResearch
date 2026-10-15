@@ -15,7 +15,9 @@ ORIGINAL = ROOT / "Stronghold 2"
 TEST = ROOT / "Stronghold 2 - TEST"
 HUB = ROOT / "Stronghold2AnalyseHub"
 HUB_BUILD = HUB / "build" / "Release"
-HUB_OUT = TEST / "SH2Perf_out"                 # SH2Launcher default --out
+HUB_DLL = HUB_BUILD / "Stronghold2AnalyseHub.dll"
+HUB_PROXY = HUB_BUILD / "d3d9.dll"             # d3d9 proxy that loads the hub (D009)
+HUB_OUT = TEST / "SH2Perf_out"                 # default output dir (proxy and SH2Launcher)
 DXVK_D3D9 = Path.home() / "Tools" / "dxvk-3.1.1" / "x32" / "d3d9.dll"
 
 CAPTURES = REPO / "captures"                   # bronze, gitignored

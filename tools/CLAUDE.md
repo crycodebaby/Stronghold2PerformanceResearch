@@ -9,7 +9,8 @@ Run every tool as `python -I tools/<name>.py` from the repo root; `--help`/no ar
 | `analyze_frames.py` | metrics for one CSV / marker range (library: `summarize()`) |
 | `sym.py` | vtable symbol DB: `build`, `addr <hex>`, `class <name>` |
 | `fbrief.py` | structural brief of one function via Ghidra headless (no decompiled code) |
-| `variant.py` | TEST copy: baseline / laa / dxvk / laa+dxvk |
+| `variant.py` | TEST copy: baseline / laa / dxvk / laa+dxvk; installs d3d9 proxy + hub (D009); `hub on/off` |
+| `test_variant.py` | unit tests for `variant.py` (temp folder) |
 | `laa_patch.py` | LARGE_ADDRESS_AWARE flag; refuses the original folder |
 | `pe_info.py` | PE header/imports/exports |
 | `vtable_candidates.py` | keyword filter over the vtable CSV |

@@ -32,14 +32,23 @@ Host: Windows 10/11 x64. Install via winget (as done 2026-10-15):
 cd Stronghold2AnalyseHub
 cmake -S . -B build -A Win32
 cmake --build build --config Release
-# -> build\Release\Stronghold2AnalyseHub.dll, build\Release\SH2Launcher.exe
+# -> build\Release\Stronghold2AnalyseHub.dll, d3d9.dll (proxy, D009), SH2Launcher.exe (fallback)
 ```
+If `cmake` is not on PATH yet (new shell needed after winget), use the path from `build\CMakeCache.txt` (`CMAKE_COMMAND`).
+Re-run the configure step after a hub commit: the commit id is baked into `latest.json` at configure time.
 
 ## Test copy
 ```
 robocopy "Stronghold 2" "Stronghold 2 - TEST" /E      # robocopy exit 1 = copied OK
-python -I tools/variant.py baseline                   # also writes steam_appid.txt (40960)
+python -I tools/variant.py baseline                   # proxy + hub copy + SH2Proxy.ini + steam_appid.txt (40960)
+python -I tools/variant.py status
+python -I tools/test_variant.py                       # unit tests (temp folder, never touches TEST)
 ```
+TEST folder after `variant.py` (D009): `d3d9.dll` (proxy), `Stronghold2AnalyseHub.dll`, `SH2Proxy.ini`, with DXVK also `d3d9_dxvk.dll`.
+Re-run the variant after every hub rebuild (refreshes the copies; `status` shows `matches hub build`).
+Hub off without rebuild: `variant.py hub off` (or `hub=0` in `SH2Proxy.ini`, or env `SH2HUB_DISABLE=1`).
+Fully vanilla TEST folder: delete `d3d9.dll`, `Stronghold2AnalyseHub.dll`, `SH2Proxy.ini` (and `d3d9_dxvk.dll`).
+Logs: `TEST\SH2Perf_out\SH2Proxy.log` (loader, rewritten per start) and `Stronghold2AnalyseHub.log` (appended).
 
 ## Ghidra headless (project outside repo)
 ```
