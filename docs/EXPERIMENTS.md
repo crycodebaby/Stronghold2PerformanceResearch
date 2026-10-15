@@ -24,11 +24,11 @@ Goal: reproducible, separates **simulation cost** from **render cost**, gives a 
 | P4 melee look-away | camera pointed at empty corner during P2 | sim-only cost (few draws) |
 
 ### Measurement protocol
-1. `python -I tools/variant.py <variant>`; start Steam; run `SH2Launcher.exe "…\Stronghold 2 - TEST\Stronghold2.exe"`.
+1. `python -I tools/variant.py <variant>` (installs d3d9 proxy + hub, D009); start Steam; start `Stronghold 2 - TEST\Stronghold2.exe` normally (double-click).
 2. Fixed settings: same resolution/graphics preset each run (note them), V-Sync OFF, window mode noted.
 3. Load save → wait 10 s → **F9** (record on).
 4. At each phase start press **F8** (marker). ~30 s per phase.
-5. **F9** (record off). Hub writes CSVs + `latest.json` to `TEST\SH2Perf_out\` (launcher `--out` overrides).
+5. **F9** (record off). Hub writes CSVs + `latest.json` to `TEST\SH2Perf_out\` (`out=` in `SH2Proxy.ini` or env `SH2HUB_OUT` overrides).
 6. Close the game, then `python -I tools/ingest.py --exp <EXP> --scenario KNIGHTS --troops <N>` (skill `messung-auswerten`): moves files to `captures/<date>_<EXP>_<variant>_KNIGHTS/`, appends `data/index.jsonl`, prints per-marker phases.
 
 ### Interpretation key
@@ -40,16 +40,41 @@ Goal: reproducible, separates **simulation cost** from **render cost**, gives a 
 | render thread ≈ 100 % of one core, others idle | single-threaded CPU limit |
 | high `present_ms` | GPU-bound or driver wait |
 | frame ms grows ~N² across N=25…200 | O(n²) algorithm (e.g. target search) |
-| VA used near 2,000 MB / crash | address space (LAA helps) |
+| VA used near 2,048 MB / crash | address space (LAA helps); `va_used_mb` = reserved + committed (F089) |
+| high `cpu-side ms` but render thread CPU % low | waiting/sleeping outside Present (frame limiter, sync), not CPU work: `cpu-side` = frame − Present − EndScene wall time |
 
 ## Planned
 | ID | Variant | Scenario | Status |
 |---|---|---|---|
 | EXP-001 | baseline | KNIGHTS N=100, P0–P4 | waiting for user run |
 | EXP-001b | baseline | KNIGHTS N=25/50/200, P2 | waiting |
+| EXP-001-REAL | baseline | user save from a real lag situation (optional) | waiting for user save |
 | EXP-002 | laa | KNIGHTS N=100 + N=200 | after EXP-001 |
 | EXP-003 | dxvk | KNIGHTS N=100 | after EXP-001 |
 | EXP-004 | laa+dxvk | KNIGHTS N=100 | if 002/003 help |
 
+### EXP-001-REAL (optional): real lag save
+Goal: confirm that KNIGHTS reproduces the lag the user actually sees, not just a synthetic load.
+- Input: a save game from a real situation with heavy lag (user, any map). Copy the save into the TEST copy's save folder; note map, troop counts per side (estimate), what happens on screen.
+- Protocol: identical to KNIGHTS (variant `baseline`, same graphics settings, V-Sync off, load → wait 10 s → F9, F8 at each phase change, ~30 s per phase, F9). Phases as far as they apply: P0 as loaded (paused if the save starts paused, then unpause), P2 the laggy action, P3 pause during the lag, P4 camera on an empty area during the lag.
+- Ingest: `python -I tools/ingest.py --exp EXP-001-REAL --scenario REAL --troops <estimate per player> --note "<map, situation>"`.
+- Compare with EXP-001 per phase (FPS, render-thread CPU %, present ms, DIP, VA). Same verdict pattern → KNIGHTS is representative; different → use the real save as the main scenario.
+- Saves are user data: keep them out of the repo (local only, like captures/).
+
 ## Results
-(none yet)
+
+### EXP-000 · 2026-10-15 · baseline · SMOKE (main menu, 0 troops)
+- capture `20261015_EXP-000_baseline_SMOKE`, hub `7a9e511da4a6`, exe known build (F058), loader: d3d9 proxy → system d3d9 (D009)
+- Setup: main menu only, ~38 s, 1 marker (F8) at ~31 s; Steam overlay loaded (F085). Graphics settings not noted.
+
+| Range | Frames | FPS avg | 1% low | p50 / p99 ms | cpu-side ms | present ms | DP / DIP per frame | render thread CPU |
+|---|---|---|---|---|---|---|---|---|
+| total | 1712 | 45.1 | 18.8 | 21.85 / 39.12 | 21.48 | 0.70 | 24 / 0 | 12 % mean, 22 % max |
+| marker 0 | 1413 | 45.1 | – | 21.87 / 39.17 | 21.5 | 0.71 | – / 0 | |
+| marker 1 | 299 | 45.6 | – | 21.74 / 37.3 | 21.38 | 0.63 | – / 0 | |
+
+VA used 1,348–1,355 MB (F090); frame ms min 16.66, max 118; 2 scenes/frame; DIP, DPUP, DIPUP, shader constants 0 (F092; hooks verified F091).
+
+- Verdict: **smoke test passed** (proxy start, hub ready before `Direct3DCreate9`, overlay, F9 recording, ingest). Confirms F083 in game (system d3d9). F082 stays a hypothesis: the launcher was not re-run with the fixed hub.
+- Performance verdict: **unclear / not applicable**. Menu frames are ~22 ms while the render thread uses only ~12 % CPU → the time outside Present is mostly waiting, not work [Hypothese: menu frame pacing]. No conclusion for battles.
+- Follow-ups: F032 verified via module list (F084); `Direct3DCreate9` twice (F087/F088, caller logged from next hub build).
