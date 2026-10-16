@@ -45,10 +45,18 @@ def main():
     results.append(run("lint_docs", ["tools/lint_docs.py"], paths.REPO))
     if a.audit:
         source = a.hub / "Stronghold2AnalyseHub" / "core" / "granny_observer.cpp"
-        results.append(run("audit observer_repro", ["observer_repro.py", "--hub-source", str(source)], AUDIT))
+        if source.is_file():
+            results.append(run("audit observer_repro", ["observer_repro.py", "--hub-source", str(source)], AUDIT))
+        else:
+            print(f"FAIL  audit observer_repro   hub source not found: {source} (clone the hub next to this repo or pass --hub)")
+            results.append(False)
     if a.e2e:
-        results.append(run("e2e_standin", ["tools/e2e_standin.py", "--hub-build", str(a.hub / "build" / "Release")],
-                           paths.REPO))
+        build = a.hub / "build" / "Release"
+        if (build / "Stronghold2AnalyseHub.dll").is_file():
+            results.append(run("e2e_standin", ["tools/e2e_standin.py", "--hub-build", str(build)], paths.REPO))
+        else:
+            print(f"FAIL  e2e_standin            no hub build in {build} (build the hub first, see its README)")
+            results.append(False)
     failed = results.count(False)
     print(f"{len(results) - failed}/{len(results)} checks passed")
     return 1 if failed else 0
