@@ -80,7 +80,7 @@ IDs are stable; never renumber. Append, don't rewrite history (mark old entries 
 
 | ID | Status | Fact | Evidence |
 |---|---|---|---|
-| F060 | [Hypothese] | User report: 2×~100 knights → ~20 FPS; more troops/melee → 1–2 FPS on strong PCs | user statement, not yet measured |
+| F060 | [Hypothese] | Historical user report: roughly 2×100 knights → ~20 FPS; larger melee → 1–2 FPS. Clarified 2026-10-16: the extreme event was multiplayer against a human on a large, heavily built, high-resource map, with several hundred troops/many knights; exact recalled counts uncertain. Not the current 257-unit single-player AI save and not a recorded benchmark. CPU, rendering and network/synchronisation causes remain unseparated | user statements, clarification 2026-10-16; no capture of that event |
 | F061 | [Hypothese] | Cause is CPU-side simulation (pathing/targeting/melee) rather than GPU | none — FPS collapse correlating with melee suggests sim; must measure (EXP-001) |
 | F062 | [Hypothese] | 2 GB VA limit (F006) contributes to stutter/crash on large maps | none — test EXP-002 |
 

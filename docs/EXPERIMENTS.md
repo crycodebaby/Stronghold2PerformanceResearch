@@ -20,8 +20,8 @@ Goal: reproducible, separates **simulation cost** from **render cost**, gives a 
 | P0 idle | troops standing still | baseline per-unit cost (animation, idle AI) |
 | P1 march | both armies ordered toward each other (no contact yet) | pathfinding + formation movement |
 | P2 melee | armies in contact | target search, combat, collision |
-| P3 melee paused | press pause during P2 for 15 s | render-only cost (sim stopped) |
-| P4 melee look-away | camera pointed at empty corner during P2 | sim-only cost (few draws) |
+| P3 melee paused | press pause during P2 for 15 s | paused-scene cost; animation/control/render work can continue, not a pure rendering isolation |
+| P4 melee look-away | camera pointed at empty corner during P2 | reduced visible-scene work; culling/animation/render preparation may change, not a pure simulation isolation |
 
 ### Measurement protocol
 1. `python -I tools/variant.py <variant>` (installs d3d9 proxy + hub, D009); start Steam; start `Stronghold 2 - TEST\Stronghold2.exe` normally (double-click).
@@ -293,3 +293,6 @@ Whole recording: 42.4 FPS avg, 1 % low 12.8, p99 68.5 ms; VA 1,568–1,573 MB. F
 ### EXP-008R · corrected-observer restart
 - G1 failures began before full occupancy: 3,176 retained keys by first drop frame 1151, final 4,096. Corrected observer hub `32ebc38a05ea`: mixed pointer hash, bounded 128 probes, 8,192 retained instance keys, explicit table diagnostics, free/reuse comparison reset and stale pose-link rejection. Tested without the game; not yet validated in Stronghold 2.
 - A1 `rec-20261015T121438Z-7d436886` verified: 2,407 frames, no losses, speed 90 user-confirmed, running/paused 34.241/25.446 ms; phase target amended to 30/30 s before G1 ([restart evidence](evidence/EXP-008_OBSERVER_CORRECTION.md)). **G1 partial again**: `rec-20261015T122211Z-dff71642`, 2,542 intact frames but 126,632 instance probe failures; speed 90/final pause confirmed. [G1 findings, limits and next scope](evidence/EXP-008R_G1_PARTIAL.md). G2/A2 suspended, TEST observer off. F136 remains hypothesis; narrow stable/changing-input observations F146/F147.
+
+### Historical multiplayer event (user clarification 2026-10-16)
+- F060's 1–2 FPS event concerned a large, heavily built, high-resource multiplayer map against a human, with several hundred troops/many knights (counts uncertain). Current REAL_LAG_257 is a different single-player ranged-army/AI scenario; no claim that its bottleneck explains that multiplayer event. Do not require random AI army accumulation or multiplayer availability for the next animation investigation; treat a future natural combat recording as a separate exploratory case.
