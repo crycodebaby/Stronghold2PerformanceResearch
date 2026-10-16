@@ -23,6 +23,7 @@ ENV = {**os.environ, "GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "test@exampl
 
 
 def load_audit_data():
+    sys.dont_write_bytecode = True        # no __pycache__ inside the audit reference folder
     spec = importlib.util.spec_from_file_location("audit_data_under_test", SCRIPT)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
