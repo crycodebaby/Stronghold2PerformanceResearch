@@ -35,10 +35,10 @@ checkout has exactly the hashed bytes. Each replacement was applied by an exact,
 | `AuditPath.java` | `44fc42f4689c83bd88ae1032f7da6cc7edb8ba340db31a58e814745300332b5b` | identical | — |
 | `HANDOFF.md` | `1ac3fcb705f2a284c9b0fcca92285c7eeacd7dfcaf40d25ac56d5c6c0ee146e0` | `5c84dc067c06b61b5b19da6a8ce5b0711f630b61abeeb4e8395ce1893a9f02e8` | P1 (1×), P2 (2×), P3 (1×) |
 | `INDEPENDENT_AUDIT_2026-10-16.md` | `2bdf89b91931e06fc1ce672eec07cf818c8e29cec47be0fac514fa65affc1c9b` | `9fe933312fb346d94fcbab34fad5337a02d50e3245c049d3e8c97d0cfb519f25` | P1, P2 (1× each) |
-| `audit_data.py` | `624808078a85b3f5db3fe88f14295902b4faeca026fd5202b2c6a2aff22fa45a` | `160148d041aa364484409d2de83d5e08bea417e05d8d323f2aedaa03f9ec3c96` | S1 |
-| `verify_binary.py` | `7f7e4360d68e5d39a00b77048b7603810599639d27910192b287a504a9866920` | `d938181c9f5205d9836094774053508dfc68e6170f9c7979a5ba92aed8face4c` | S1 |
-| `observer_repro.py` | `3e2e6975c1b0a78c769b0c60e0546a397cc4b05ef7871dac38c37d11bce113f0` | `b0cc302d1a8e184fc49dfd54a0b6728c1fd38c8fd9f01efa9feca19927429b7f` | S1, S2 |
-| `run_audit.ps1` | `b67c5b3ed016a8cb1071ad967578c6a11a42a3646f9a75ecf6fe221a2e9342d6` | `2c5d1e62ebfe4669f81cc485d9b130086c90a96ca2be15994e449125eba5c805` | S1, S3 |
+| `audit_data.py` | `624808078a85b3f5db3fe88f14295902b4faeca026fd5202b2c6a2aff22fa45a` | `10f85340c9d0e64bce1341db1ba8505187a18ef2f9d2eb81d75ea036dffeebc2` | S1, S4 |
+| `verify_binary.py` | `7f7e4360d68e5d39a00b77048b7603810599639d27910192b287a504a9866920` | `21676df076ab2682641c94ddff68a8100f8bd4741fb3aac0bdbdaceae13053a7` | S1, S4 |
+| `observer_repro.py` | `3e2e6975c1b0a78c769b0c60e0546a397cc4b05ef7871dac38c37d11bce113f0` | `12a0f6ae7513bc12167db4d8c49eaba5375e8cb25592a86d343387d96db25fc4` | S1, S2, S4 |
+| `run_audit.ps1` | `b67c5b3ed016a8cb1071ad967578c6a11a42a3646f9a75ecf6fe221a2e9342d6` | `967d3d610bcf750cb4d9dfe3f8f0e3936b7e7f1ed58275ed6c34609cd2357741` | S1, S3, S4 |
 | `native_test_result.json` | `d4c848855a1b94d457f73219cadb482333d4118158dc6f9bb2b43562cc8c5e8c` | `45ce9d04a17dc4381a0bc9238d9b7b7cc53496ee1ff21b9d5d590c6bcecd5892` | P2 (1×, in the `output` string) |
 | `binary_results.json` | `b8c23dc03d7d4886f474800dfcc8d2967180737aab66aa30f9ca583b6022e9e6` | identical | — |
 | `data_results.json` | `0b1a4e2ea50d985ea07b056a25240c20c881d5200f62a568913b793040d47f5f` | identical | — |
@@ -58,18 +58,32 @@ checkout has exactly the hashed bytes. Each replacement was applied by an exact,
 - **S3** `run_audit.ps1` writes its work files (Ghidra project copy, exports) to `-Work`, default
   `%TEMP%\sh2-independent-audit-work`, instead of a `work/` folder beside the scripts, so nothing large or game-derived
   lands inside the repository.
+- **S4** (2026-10-17) one work-dir contract for the whole chain. Every script takes `--work` (env `SH2_AUDIT_WORK`,
+  default `%TEMP%\sh2-independent-audit-work`, the same default as `run_audit.ps1 -Work`), which passes it to every
+  call. New results and identity snapshots go to `<work>/results/`; `verify_binary.py` reads the Ghidra exports from
+  `<work>/binary/exe/references.txt` (before: fixed `../work/binary/...`, which missed the exports written to `-Work`).
+  `audit_data.py --snapshot after` compares only with a baseline taken in the same work dir and refuses to run without
+  one; the historical `identity_before.json` here is never used as a new run's baseline. `observer_repro.py` reads its
+  distributions from this folder (`--inputs reference`, default) or from the run's own `audit_data.py` output
+  (`--inputs work`, used by `run_audit.ps1`). The pin of the audited hub source stays the historical
+  `identity_before.json` entry, on purpose. Guarded by `tools/test_audit_workdir.py` (no game, no raw data).
+- **Correction to S2** (2026-10-17): the first published edit of `observer_repro.py` put a comment in front of the
+  hash `assert` on the same line, which disabled the hub-source check; runs before this correction did not verify the
+  source pin. The check is now a separate statement and exits with "Source changed" on a different source (covered
+  by the regression test).
 
-Result files are the audit's outputs from its own run; they were not regenerated for this copy. Re-running a script
-rewrites its result file beside it, so `git diff` shows whether a rerun reproduces it.
+Result files and identity snapshots in this folder are the audit's outputs from its own run, kept as reference; they
+were not regenerated for this copy and no script writes here any more. Compare a new run's `<work>/results/` with them
+(`tools/run_checks.py --audit` does this for `repro_results.json`).
 
 ## What can be re-run where
 
 | Command (from this folder) | Needs | Checked on 2026-10-16 for this copy |
 |---|---|---|
-| `python -I observer_repro.py --hub-source <hub>/Stronghold2AnalyseHub/core/granny_observer.cpp` | hub source equal to `32ebc38` (default: sibling `../Stronghold2AnalyseHub`); no game, no raw data | 9/9 tests OK from fresh clones; `results` equal to the published `repro_results.json` |
-| `python -I audit_data.py [--root <RE-Projects>]` | the two raw recordings under `SH2-Perf/captures/` and the game files | not re-run (raw data are not published) |
-| `python -I verify_binary.py [--root <RE-Projects>]` | your own `Stronghold2.exe` / `granny2.dll` (Steam 1.5 hashes above) and the instruction exports of `run_audit.ps1 -ExportBinary` | not re-run |
-| `powershell -File run_audit.ps1 -ExportBinary` | all of the above, Ghidra 12.1.4 and the project's Ghidra database | not re-run |
+| `python -I observer_repro.py --hub-source <hub>/Stronghold2AnalyseHub/core/granny_observer.cpp --work <dir>` | hub source equal to `32ebc38` (default: sibling `../Stronghold2AnalyseHub`); no game, no raw data | 9/9 tests OK from fresh clones; `results` equal to the published `repro_results.json`; changed source rejected |
+| `python -I audit_data.py --work <dir> --snapshot before`, then without `--snapshot`, then `--snapshot after` | the two raw recordings under `SH2-Perf/captures/` and the game files | not re-run (raw data are not published) |
+| `python -I verify_binary.py --work <dir>` | your own `Stronghold2.exe` / `granny2.dll` (Steam 1.5 hashes above) and the instruction exports of `run_audit.ps1 -ExportBinary` | not re-run |
+| `powershell -File run_audit.ps1 -ExportBinary [-Work <dir>]` | all of the above, Ghidra 12.1.4 and the project's Ghidra database | not re-run |
 
 `observer_repro.py` is a Python model fed with real aggregated distributions (`workload_distribution.json`,
 `data_results.json`) and explicitly synthetic event orders. It is not an event replay, measures no hook latency and does

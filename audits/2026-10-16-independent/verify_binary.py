@@ -1,8 +1,9 @@
 """Read-only PE/x86 byte checks for audit claims; stdlib, no binary execution."""
-import argparse,hashlib,json,struct
+import argparse,hashlib,json,os,struct,tempfile
 from pathlib import Path
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parents[2]  # published copy: <RE-Projects>/SH2-Perf/audits/<this dir>
+DEFAULT_WORK = Path(os.environ.get('SH2_AUDIT_WORK') or Path(tempfile.gettempdir())/'sh2-independent-audit-work')  # published copy: new runs write only to <work>/results, exports are read from <work>/binary
 class PE:
     def __init__(self,p):
         self.path=p; self.b=p.read_bytes(); self.sha=hashlib.sha256(self.b).hexdigest()
@@ -43,7 +44,11 @@ class PE:
         return out
 
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument('--root',type=Path,default=ROOT); args=ap.parse_args()
+    ap=argparse.ArgumentParser(); ap.add_argument('--root',type=Path,default=ROOT); ap.add_argument('--work',type=Path,default=DEFAULT_WORK)
+    args=ap.parse_args(); out=args.work/'results'
+    refs=args.work/'binary'/'exe'/'references.txt'  # published copy: same --work as run_audit.ps1 -Work
+    if not refs.is_file():
+        raise SystemExit(f'Missing Ghidra export {refs}: run run_audit.ps1 -ExportBinary -Work {args.work} first.')
     exe=PE(args.root/'Stronghold 2'/'Stronghold2.exe'); granny=PE(args.root/'Stronghold 2'/'granny2.dll')
     assert exe.sha=='f3ccdf9bb41158202dffc000e5f2036a82f4c1ce8c5c89462f6140000f32d34b'
     assert granny.sha=='94d56fd7e9ef8adde51425da339722a584e28e71235bc8a89d8175c2276050fd'
@@ -62,7 +67,7 @@ def main():
     assert exe.data(0x38e6d9,6)==b'\xff\x15'+struct.pack('<I',0x900a98)
     assert 0x38e6d9+6==0x38e6df
     calls=[]
-    for ln in (HERE.parent/'work'/'binary'/'exe'/'references.txt').read_text().splitlines():
+    for ln in refs.read_text().splitlines():
         if ln.startswith('ROOT 0078c9e0'):break
         if ln.startswith('REF') and 'UNCONDITIONAL_CALL' in ln:
             parts=ln.split(); va=int(parts[1],16); b=exe.data(va-exe.base,5)
@@ -71,7 +76,7 @@ def main():
     result={'exe_sha256':exe.sha,'granny_sha256':granny.sha,'exe_image_base':hex(exe.base),'granny_image_base':hex(granny.base),
             'machine':'x86/PE32','import_export_checks':checks,'direct_calls_to_rva_38e4d0':calls,
             'sample_return_rva':'0x38e6df','granny_import_count':sum(v['dll'].lower()=='granny2.dll' for v in imports.values())}
-    (HERE/'binary_results.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
+    out.mkdir(parents=True,exist_ok=True); (out/'binary_results.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
     print(f'Binary identity, 6 import/export/pop-count checks, sample return site and {len(calls)} direct call sites verified against file bytes.')
     print('Distinct direct caller functions (including recursion):',len({x['caller_rva'] for x in calls}))
 

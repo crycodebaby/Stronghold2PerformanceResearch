@@ -7,17 +7,19 @@ param(
 $ErrorActionPreference = 'Stop'
 $auditDir = $PSScriptRoot
 $scratch = $Work   # published copy: work files stay outside the repository
-New-Item -ItemType Directory -Force -Path $scratch | Out-Null
+$results = Join-Path $scratch 'results'   # every script gets the same -Work; results never go beside the scripts
+New-Item -ItemType Directory -Force -Path $results | Out-Null
 function Invoke-PythonAudit([string]$Name, [string[]]$Arguments) {
   & python -I (Join-Path $auditDir $Name) @Arguments
   if ($LASTEXITCODE -ne 0) { throw "$Name failed: $LASTEXITCODE" }
 }
-if (-not (Test-Path -LiteralPath (Join-Path $auditDir 'identity_before.json'))) {
-  Invoke-PythonAudit 'audit_data.py' @('--root',$InputRoot,'--snapshot','before')
+# Own baseline per work dir; the historical identity_before.json beside the scripts is a reference only.
+if (-not (Test-Path -LiteralPath (Join-Path $results 'identity_before.json'))) {
+  Invoke-PythonAudit 'audit_data.py' @('--root',$InputRoot,'--work',$Work,'--snapshot','before')
 }
 # Refuse to proceed after an unnoticed change to audited inputs.
-Invoke-PythonAudit 'audit_data.py' @('--root',$InputRoot,'--snapshot','after')
-Invoke-PythonAudit 'audit_data.py' @('--root',$InputRoot)
+Invoke-PythonAudit 'audit_data.py' @('--root',$InputRoot,'--work',$Work,'--snapshot','after')
+Invoke-PythonAudit 'audit_data.py' @('--root',$InputRoot,'--work',$Work)
 if ($ExportBinary) {
   $projectCopy = Join-Path $scratch 'ghidra-copy'
   if (-not (Test-Path -LiteralPath (Join-Path $projectCopy 'SH2.gpr'))) {
@@ -38,7 +40,7 @@ if ($ExportBinary) {
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $destination 'references.txt'))) { throw 'Ghidra export failed' }
   }
 }
-Invoke-PythonAudit 'verify_binary.py' @('--root',$InputRoot)
-Invoke-PythonAudit 'observer_repro.py' @('--hub-source',(Join-Path $InputRoot 'Stronghold2AnalyseHub\Stronghold2AnalyseHub\core\granny_observer.cpp'))
-Invoke-PythonAudit 'audit_data.py' @('--root',$InputRoot,'--snapshot','after')
-Write-Output 'Audit checks passed. All generated files are in this audit workspace.'
+Invoke-PythonAudit 'verify_binary.py' @('--root',$InputRoot,'--work',$Work)
+Invoke-PythonAudit 'observer_repro.py' @('--hub-source',(Join-Path $InputRoot 'Stronghold2AnalyseHub\Stronghold2AnalyseHub\core\granny_observer.cpp'),'--work',$Work,'--inputs','work')
+Invoke-PythonAudit 'audit_data.py' @('--root',$InputRoot,'--work',$Work,'--snapshot','after')
+Write-Output "Audit checks passed. New results: $results (reference files beside the scripts unchanged)."

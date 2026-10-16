@@ -1,12 +1,14 @@
-"""Independent stdlib-only, read-only recount. Writes only beside this script.
+"""Independent stdlib-only, read-only recount. Published copy: writes only to <work>/results (--work, env SH2_AUDIT_WORK,
+default %TEMP%/sh2-independent-audit-work); the reference files beside this script are never written.
 No repository tool imports; recorded addresses are integers/labels, never dereferenced.
 """
-import argparse, csv, hashlib, json, math, statistics, subprocess
+import argparse, csv, hashlib, json, math, os, statistics, subprocess, tempfile
 from pathlib import Path
 from collections import Counter, defaultdict
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_ROOT = HERE.parents[2]  # published copy: <RE-Projects>/SH2-Perf/audits/<this dir>
+DEFAULT_WORK = Path(os.environ.get('SH2_AUDIT_WORK') or Path(tempfile.gettempdir())/'sh2-independent-audit-work')  # published copy: new runs write only to <work>/results, exports are read from <work>/binary
 IDS = {'A1': 'rec-20261015T121438Z-7d436886', 'G1': 'rec-20261015T122211Z-dff71642'}
 
 def sha(p):
@@ -61,12 +63,18 @@ def quantile(xs, q):
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument('--root',type=Path,default=DEFAULT_ROOT)
-    ap.add_argument('--snapshot', choices=['before','after']); args=ap.parse_args(); root=args.root
+    ap.add_argument('--snapshot', choices=['before','after']); ap.add_argument('--work',type=Path,default=DEFAULT_WORK)
+    args=ap.parse_args(); root=args.root; out=args.work/'results'; out.mkdir(parents=True,exist_ok=True)
+    # Published copy: a new run compares only against its own baseline in <work>/results, never against the historical
+    # identity_before.json beside this script (that file documents the original audit's inputs).
+    if args.snapshot=='after' and not (out/'identity_before.json').is_file():
+        raise SystemExit(f'No baseline snapshot in {out}: run --snapshot before with this --work first. '
+                         'The historical identity_before.json beside this script is a reference, not a baseline.')
     ident=identity(root)
     if args.snapshot:
-        p=HERE/('identity_'+args.snapshot+'.json'); p.write_text(json.dumps(ident,indent=2),encoding='utf-8')
+        p=out/('identity_'+args.snapshot+'.json'); p.write_text(json.dumps(ident,indent=2),encoding='utf-8')
         if args.snapshot=='after':
-            before=json.loads((HERE/'identity_before.json').read_text(encoding='utf-8'))
+            before=json.loads((out/'identity_before.json').read_text(encoding='utf-8'))
             assert before==ident, 'Input identity changed; inspect before/after.'
         print(f'Identity {args.snapshot}: {len(ident["files"])} files, repo states recorded; '+('unchanged' if args.snapshot=='after' else 'snapshot saved'))
         return
@@ -159,14 +167,14 @@ def main():
                  'warning':'Aggregated retained-key distribution only. Never an event replay. Addresses are inert integer labels.',
                  'keys':[{'key':int(k,16),'clock_calls':sum(r['clock_calls'] for r in rs), 'sample_calls':sum(r['sample_calls'] for r in rs),
                           'first_frame':rs[0]['first_frame'],'frees':rs[0]['frees']} for k,rs in bykey.items()]}
-        (HERE/'workload_distribution.json').write_text(json.dumps(fixture,separators=(',',':')),encoding='utf-8')
-    (HERE/'data_results.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
+        (out/'workload_distribution.json').write_text(json.dumps(fixture,separators=(',',':')),encoding='utf-8')
+    (out/'data_results.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
     g=result['captures']['G1']['recount']
     print('Manifest/import SHA-256 and sizes: A1 and G1 verified; instance totals + losses reconcile with metadata.')
     print('Boundary calls absent from completed frame rows:',result['captures']['G1']['unframed_boundary_tail'])
     print(json.dumps({k:v for k,v in g.items() if k not in ['phase','selected_rows','boundary_marker_deltas']},indent=None))
     for name,x in result['captures'].items():
         for m in ['1','3']: print(name,m,json.dumps(x['phases'][m]))
-    print('Full results: analysis/data_results.json; real aggregate fixture: analysis/workload_distribution.json')
+    print('Full results:', out/'data_results.json', '- real aggregate fixture:', out/'workload_distribution.json')
 
 if __name__=='__main__': main()

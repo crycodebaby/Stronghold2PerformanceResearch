@@ -6,10 +6,12 @@ The old Find/Lookup/Hash and clock/sample logic below mirror hub 32ebc38.
 The alternative is a design model: bounded frame clocks + sample-only history,
 explicit unknowns, evictions, free invalidation, and an independent counter ledger.
 """
-import argparse, collections, hashlib, json, random, sys, unittest
+import argparse, collections, hashlib, json, os, random, sys, tempfile, unittest
 from pathlib import Path
 
 HERE=Path(__file__).resolve().parent
+DEFAULT_WORK = Path(os.environ.get('SH2_AUDIT_WORK') or Path(tempfile.gettempdir())/'sh2-independent-audit-work')  # published copy: new runs write only to <work>/results, exports are read from <work>/binary
+INPUTS=HERE  # published copy: --inputs work reads the distributions written by audit_data.py into <work>/results
 MASK=0xffffffff
 
 def hash32(p):
@@ -125,7 +127,7 @@ class Tests(unittest.TestCase):
         a.validate(); RESULTS['collision']={'old_used':t.used,'old_drops':dict(t.counts),'alternative':dict(a.counts)}
 
     def test_02_more_than_8192_keys_and_real_distribution_orders(self):
-        f=json.loads((HERE/'workload_distribution.json').read_text())
+        f=json.loads((INPUTS/'workload_distribution.json').read_text())
         real=f['keys']; clocks=[r for r in real if r['sample_calls']==0]; samples=[r for r in real if r['sample_calls']]
         self.assertEqual((len(real),len(clocks),len(samples)),(8134,5919,2215))
         seen={r['key'] for r in real}; extra=[]; key=0x60000000
@@ -153,7 +155,7 @@ class Tests(unittest.TestCase):
                 for _ in range(r['clock_calls']): a.clock(r['key'],0)
             self.assertEqual(len(a.history),0)
         # Two synthetic sampled frames with repetition bins from the actual paused rows.
-        hist=json.loads((HERE/'data_results.json').read_text())['captures']['G1']['recount']['sample_repetition_histogram']
+        hist=json.loads((INPUTS/'data_results.json').read_text())['captures']['G1']['recount']['sample_repetition_histogram']
         repeats=[int(k) for k,v in hist.items() for _ in range(v)]
         for fno in [100,101]:
             a.begin_frame(fno)
@@ -244,13 +246,20 @@ class Tests(unittest.TestCase):
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument('--hub-source',type=Path,default=HERE.parents[2]/'Stronghold2AnalyseHub'/'Stronghold2AnalyseHub'/'core'/'granny_observer.cpp')
-    args=ap.parse_args(); expected=json.loads((HERE/'identity_before.json').read_text())['files'][r'Stronghold2AnalyseHub\Stronghold2AnalyseHub\core\granny_observer.cpp']
-    digest=hashlib.sha256(args.hub_source.read_bytes().replace(b'\r\n',b'\n')).hexdigest()  # published copy: LF-normalised (git blob bytes) so CRLF checkouts match; assert digest==expected,'Source changed; re-audit semantic model.'
+    ap.add_argument('--work',type=Path,default=DEFAULT_WORK); ap.add_argument('--inputs',choices=['reference','work'],default='reference')
+    args=ap.parse_args(); out=args.work/'results'
+    global INPUTS; INPUTS=HERE if args.inputs=='reference' else out
+    # The pin is the audited hub source (historical reference), deliberately not a new run's baseline.
+    expected=json.loads((HERE/'identity_before.json').read_text())['files'][r'Stronghold2AnalyseHub\Stronghold2AnalyseHub\core\granny_observer.cpp']
+    # Published copy: LF-normalised (git blob bytes) so CRLF checkouts match.
+    digest=hashlib.sha256(args.hub_source.read_bytes().replace(b'\r\n',b'\n')).hexdigest()
+    if digest!=expected: raise SystemExit('Source changed; re-audit semantic model.')
     suite=unittest.defaultTestLoader.loadTestsFromTestCase(Tests)
     run=unittest.TextTestRunner(verbosity=2).run(suite)
     output={'source_sha256':digest,'tests_run':run.testsRun,'failures':len(run.failures),'errors':len(run.errors),
-            'limits':'Python model, synthetic event order, no latency/engine identity/output-equivalence proof. Dict performance is not a production design claim.', 'results':RESULTS}
-    (HERE/'repro_results.json').write_text(json.dumps(output,indent=2),encoding='utf-8')
+            'limits':'Python model, synthetic event order, no latency/engine identity/output-equivalence proof. Dict performance is not a production design claim.', 'results':RESULTS,
+            'inputs':args.inputs}
+    out.mkdir(parents=True,exist_ok=True); (out/'repro_results.json').write_text(json.dumps(output,indent=2),encoding='utf-8')
     sys.exit(0 if run.wasSuccessful() else 1)
 
 if __name__=='__main__': main()

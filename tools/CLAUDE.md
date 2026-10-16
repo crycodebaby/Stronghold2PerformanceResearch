@@ -25,6 +25,7 @@ Run every tool as `python -I tools/<name>.py` from the repo root; `--help`/no ar
 | `vtable_candidates.py` | keyword filter over the vtable CSV |
 | `lint_docs.py` | docs checks, run by pre-push |
 | `run_checks.py` | every check without game or raw data (suites + lint; `--audit`, `--e2e` optional); used by CI |
+| `test_audit_workdir.py` | the audit copy's `--work` contract: exports read from `<work>/binary`, results only in `<work>/results`, own snapshot baseline, changed hub source rejected, reference files unchanged |
 | `granny_raw/` | GR2 → Granny raw dump via the game's DLL (local only) |
 | `granny_pose.py`, `granny_pose/`, `test_granny_pose.py` | isolated Win32 real-DLL pose contract + independent affine helper/differential host; hash/ABI gates, own data, guard pages, exact rounding witness; no game start/install; results under build/knowledge-pose |
 | `recheck_granny_audit.py` | pinned external audit re-run in ignored copy; --audit-root required; reference and production inputs unchanged |
