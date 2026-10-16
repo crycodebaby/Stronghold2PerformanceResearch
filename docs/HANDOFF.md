@@ -4,6 +4,8 @@
 
 Updated: 2026-10-15. Read [STATE.md](STATE.md) for history and open tasks; this file only covers the current order.
 
+For the incoming project lead (2026-10-16): [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md) defines the current goal, evidence, sources and first bounded assignment. Read it before resuming any protocol below; G2 is not prepared.
+
 ## Current order — EXP-008R, corrected observer
 - Evidence and exact restart protocol: [evidence/EXP-008_OBSERVER_CORRECTION.md](evidence/EXP-008_OBSERVER_CORRECTION.md). Hub `32ebc38a05ea`, metadata v2; Silver 2.2.0. All changes local; no push, no optimisation or gameplay change.
 - Old A1 `rec-20261015T110452Z-e10a0594` remains historical control. Old G1 `rec-20261015T111010Z-d6bf1a9b` is manifest-verified but has 498,935 instance aggregation failures. No complete per-instance conclusions; F136 stays hypothesis. Fresh controls after observer code change.

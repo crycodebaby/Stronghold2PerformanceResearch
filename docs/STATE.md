@@ -4,6 +4,8 @@
 
 Updated: 2026-10-16 · Phase: 1 · **Current order: [HANDOFF.md](HANDOFF.md)**. EXP-008/008R captures archived; both observer G1 runs have intact frame files but incomplete instance detail. Independent audit completed in separate analysis chat; no new game run prepared. No performance gain shown. [Correction and restart evidence](evidence/EXP-008_OBSERVER_CORRECTION.md).
 
+New technical project lead: start with [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md) (2026-10-16): verified subsystem knowledge, bounded own implementations/differential tests and precise read/write scope. This is the current leadership handover; old G2 sequences remain suspended.
+
 - Current operational checkpoint: **EXP-008R-G1 again partial; G2 suspended**. `rec-20261015T122211Z-dff71642`, speed 90/final pause user-confirmed; 126,632 instance probe failures, intact frame records. Narrow positive evidence: some retained pointers have unchanged observed inputs, others change clocks/offset even paused. F136 remains hypothesis. [G1 evidence and next scope](evidence/EXP-008R_G1_PARTIAL.md). TEST granny off/sample off/full, run id/protocol cleared; no next user recording prepared. Original untouched.
 ## Done
 - Independent fresh-agent assignment completed on 2026-10-16: [scope](tasks/INDEPENDENT_AUDIT_2026-10-16.md), local chat `01a141d1-3e64-7c91-84ca-5fb2233db0aa`. Separate report and nine-test simulation reviewed; strict 1,503-row result retained, general equality semantics/pose linkage/tail accounting need corrections. Original repositories unchanged by audit. Proposed next scope: verify pose-buffer contracts, then bounded actual-output comparison, no skipped calls. Not implemented or ready for game capture; broad inference corrections still need curated integration.
