@@ -2,7 +2,21 @@
 
 > Kurzfassung: Aktueller Stand, offene Aufgaben, nächster Schritt. Immer zuerst lesen.
 
-Updated: 2026-10-16 · Phase: 1 · **Current order: [HANDOFF.md](HANDOFF.md)**. EXP-008/008R captures archived; both observer G1 runs have intact frame files but incomplete instance detail. Independent audit completed in separate analysis chat; no new game run prepared. No performance gain shown. [Correction and restart evidence](evidence/EXP-008_OBSERVER_CORRECTION.md).
+Updated: 2026-10-16 · Phase: 1 (measurement and bounded analysis) · **No performance gain has been shown; no change to game behaviour exists.**
+
+## Current status (the only current order)
+| Item | State |
+|---|---|
+| Goal | Original exe Steam 1.5 + switchable drop-in extension; reference scene REAL_LAG_257 (257 units, speed 90) ≥ 45 FPS mean / ≥ 30 FPS 1 % low. Not reached. |
+| Verified version pair | this repository at branch `publish-prep` · hub `publish-prep` `a643f97` with runtime sources equal to `perf-metrics` `32ebc38a05ea` (build of the latest in-game recordings). Checks: [REPRODUCIBILITY.md](REPRODUCIBILITY.md) |
+| Latest in-game data (2026-10-15) | EXP-008R-A1 `rec-20261015T121438Z-7d436886` (observer off, F144); EXP-008R-G1 `rec-20261015T122211Z-dff71642` (observer on; frames intact, 126,632 instance aggregation losses, F145–F147, [evidence](evidence/EXP-008R_G1_PARTIAL.md)) |
+| Open hypothesis | F136: some paused-frame Granny work recomputes unchanged poses. Not proven; no cache/skip may be built on it. |
+| Current assignment | [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md) §8: (1) verify and integrate the [audit](../audits/2026-10-16-independent/README.md) corrections into FINDINGS; (2) establish the pose-output buffer contract of this Granny build (getter, layout, valid size, owner, lifetime); (3) small native test host with own valid data; (4) then exactly one of: small helper re-implementation with differential tests, or bounded pose-result comparison (≤ 16 generations, no skipped calls). No new game recording before the native tests of that step pass. |
+| Suspended / historical | EXP-008R-G2/A2; all game-run orders in [HANDOFF.md](HANDOFF.md); backlog items under "Open tasks" that predate EXP-006 (KNIGHTS, EXP-001…005). The historical 1–2 FPS multiplayer case (F060) is separate and unrecorded. |
+| Entry for newcomers | [README](../README.md), [STARTER_TASKS.md](STARTER_TASKS.md), [AGENTS.md](../AGENTS.md) |
+
+### Checkpoint notes (2026-10-16)
+EXP-008/008R captures archived; both observer G1 runs have intact frame files but incomplete instance detail. Independent audit completed in a separate analysis session; no new game run prepared. [Correction and restart evidence](evidence/EXP-008_OBSERVER_CORRECTION.md). Operational protocol history: [HANDOFF.md](HANDOFF.md).
 
 New technical project lead: start with [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md) (2026-10-16): verified subsystem knowledge, bounded own implementations/differential tests and precise read/write scope. This is the current leadership handover; old G2 sequences remain suspended.
 
@@ -48,6 +62,7 @@ New technical project lead: start with [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HA
 - [x] Protection fixes (work order "Schutzluecken", D013, F114–F116, evidence `docs/evidence/ACCEPTANCE_2026-10-15.md`): benchmark use = integrity + description (`reference-v1`) + user release, apart, with coded rejections; pause per phase; one integrity check before every use of bronze (damaged → exit 4, silver kept but `INVALID`); write lock `data/.sh2perf.lock` (real-process tests); manifest names/roles validated, cleanup contained; hub threads must really end before unload (`Lifecycle`), unload crash fixed (8/8 in the stand-in, was 1/4). Tests: `test_hardening` 31, `test_import_safety` 45, `lifecycle_test`, `capture_test`, `e2e_standin`; patches `pipeline_protections.patch` / `hub_lifecycle.patch` for separate review. Silver of the 3 old captures re-derived with 2.1.0 (bronze identical)
 
 ## Open tasks (ordered)
+Backlog in the order it was written; items 00–7 predate EXP-006 and are not the current order (see "Current status").
 0000. **EXP-008R: A1 archived; G1 partial; G2/A2 suspended.** Correct observer state/history design and add real-workload stress test before any new game run. [G1 evidence/next scope](evidence/EXP-008R_G1_PARTIAL.md). No cache/skip/engine patch; F136 remains hypothesis. A new observer build requires fresh matching controls.
 000. **EXP-007 done** (F130–F136): granny2 SSE deform loop `FUN_50008810` large cost in both states (paused 4.39/4.46 ms well repeated, running 3.61/4.93 ms), curve helpers ≈ 2 ms; in flat samples the exe running-only cost is spread over 134/120 known functions (corrected from 169/146), a shared call path is not excluded. EXP-008 prepared (task 0000).
 000b. **EXP-006 done (previous)** (4 valid runs + pilot, F125–F129): sampler bias 2–5 %; running +7.7 ms vs paused (A runs); running − paused ≈ 5.5 ms in Stronghold2.exe; granny2 ≈ 11 ms per frame in both states. **Next: EXP-007 function mode, 2 runs** (HANDOFF.md), then function analysis of reproduced exe/granny2 candidates only.
@@ -63,7 +78,8 @@ New technical project lead: start with [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HA
 7. Low prio: GR2 → standard uncompressed GR2 via file-builder API
 
 ## Next step
-See [HANDOFF.md](HANDOFF.md) for the current order, step table and the next concrete action.
+See "Current status" above (assignment step 1). The paragraphs below are the next steps as written on 2026-10-15 and are superseded.
+
 In-game check of the prepared build (open task 00), then the hub overhead A/B (EXP-005) and F107 from its table. Then the profiler runs on the lag save (open task 0) with the `min` profile, so that the sampled run is not disturbed by hub work.
 
 Previous next step, still open: USER builds the KNIGHTS scenario (optionally also EXP-001-REAL with a real lag save), then EXP-001 (baseline, N=100, P0–P4 with F8 markers) → `ingest.py --exp EXP-001 --scenario KNIGHTS --troops 100`.
@@ -87,5 +103,5 @@ Previous next step, still open: USER builds the KNIGHTS scenario (optionally als
 - Scenario editor may not allow enemy units → fallback in EXPERIMENTS.md
 - `sym.py addr` only knows virtual functions until ExportFunctions exists
 
-## Latest operational checkpoint — EXP-008 correction
+## Operational checkpoint (2026-10-15, superseded by "Current status") — EXP-008 correction
 G1 `rec-20261015T111010Z-d6bf1a9b` remains preserved and partial. First table failures preceded capacity exhaustion (3,176 retained keys by first drop), independently reproduced by collision tests. Corrected hub `32ebc38a05ea`, metadata v2, 8.52 MiB allocation, lifetime resets and stale-link rejection. Silver 2.2.0 re-derived 20 captures after integrity checks (0 damaged); G1 now carries `observer_detail_partial`. No raw files changed. See HANDOFF for fresh A1 preparation; no corrected-build game result yet.

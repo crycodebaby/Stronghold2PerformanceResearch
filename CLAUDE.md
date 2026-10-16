@@ -3,6 +3,8 @@
 Stronghold 2 (Steam, Win32/DX9) faster through **measurement → hooks → patches on the original**.
 Problem: 2×~100 knights ≈ 20 FPS, more troops/melee → 1–2 FPS. Cause unmeasured. Reimplementation = later vision.
 
+Public entry: [README.md](README.md). Tool-neutral agent rules: [AGENTS.md](AGENTS.md). Current order: "Current status" in docs/STATE.md.
+
 ## Routing (task → file)
 
 | Task | Read / use |

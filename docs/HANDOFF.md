@@ -1,12 +1,12 @@
 # HANDOFF
 
-> Kurzfassung: Aktueller Auftrag EXP-008R: korrigierter Granny-Beobachter, neuer Vergleich mit demselben Build; altes G1 ist unvollständig. Nur der oberste aktuelle Abschnitt steuert den nächsten Lauf. Darunter stehen historische Übergaben, deren Zustände nicht mehr aktuell sind.
+> Kurzfassung: Historisches Betriebsprotokoll der Spielläufe (EXP-INGAME bis EXP-008R, 2026-10-15/16): Abläufe, Nutzeranleitungen, Rückwege, Prüfstände. Kein aktueller Auftrag — der steht in STATE.md („Current status“) und PROJECT_LEAD_HANDOFF.md. G2/A2 sind ausgesetzt; nichts hier ausführen.
 
-Updated: 2026-10-15. Read [STATE.md](STATE.md) for history and open tasks; this file only covers the current order.
+**Historical since 2026-10-16.** Kept unchanged below as evidence of how each run was prepared and checked. The current order is "Current status" in [STATE.md](STATE.md). Last edited as an operational order: 2026-10-15.
 
 For the incoming project lead (2026-10-16): [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md) defines the current goal, evidence, sources and first bounded assignment. Read it before resuming any protocol below; G2 is not prepared.
 
-## Current order — EXP-008R, corrected observer
+## Last operational order (2026-10-15/16, suspended) — EXP-008R, corrected observer
 - Evidence and exact restart protocol: [evidence/EXP-008_OBSERVER_CORRECTION.md](evidence/EXP-008_OBSERVER_CORRECTION.md). Hub `32ebc38a05ea`, metadata v2; Silver 2.2.0. All changes local; no push, no optimisation or gameplay change.
 - Old A1 `rec-20261015T110452Z-e10a0594` remains historical control. Old G1 `rec-20261015T111010Z-d6bf1a9b` is manifest-verified but has 498,935 instance aggregation failures. No complete per-instance conclusions; F136 stays hypothesis. Fresh controls after observer code change.
 - Next sequence: EXP-008R-A1 **off** → EXP-008R-G1 **on** → EXP-008R-G2 **on** → EXP-008R-A2 **off**. Sampler off, full, speed 90, same save/camera. Agent verifies/imports each run before switching for the next; stop for diagnosis if G1 detail is incomplete.
@@ -84,7 +84,7 @@ Protocol and evaluation rules fixed in advance: [EXPERIMENTS.md](EXPERIMENTS.md)
 - Save file: no file named LAG_217_Reiter exists in `Documents\Stronghold 2\Saves` or the Steam cloud list; the user loads it by its in-game name. Its file identity is not recorded.
 - Old `SH2Perf_out` recordings of EXP-INGAME are still there (already imported); `ingest.py import` needs `--recording`.
 
-## Current order
+## Order (2026-10-15, superseded): in-game acceptance
 In-game acceptance of the measurement instrumentation (hub D011/D012/D013) in Stronghold 2 Steam 1.5, steps of [SETUP.md](SETUP.md) "Check in Stronghold 2". **Nothing about performance** is shown or claimed yet; stand-in results are no game result.
 
 Excluded: engine/game-code patches, new measurement functions, databases, Docker services, larger rebuilds, push or publishing, changes to the original installation or to raw recordings (`captures/`, `SH2Perf_out`), performance claims from stand-in runs.
@@ -135,8 +135,8 @@ User actions needed: start the game from the TEST folder, load LAG_217_Reiter (R
 User completed the simplified check and confirms speed 90 throughout. Three captures imported/verified and annotated; see EXPERIMENTS.md EXP-INGAME and F118–F121. Sources retained. Pause annotations false follow the user-confirmed instructions; F8 was only a marker. No benchmark release.
 Passed in this session: F9, second recording, Alt-Tab with logged reset, END without active recording. Not performed: END during recording or process exit during recording. No sampler capture and no controlled performance gain. Next prepare a fixed-camera pause/run and sampler-off/on protocol; do not repeat generic hardening. Old acceptance rows and Next action above describe the pre-session state.
 
-## Latest operational handoff — A1 checked, G1 ready
+## Operational handoff (2026-10-15, superseded) — A1 checked, G1 ready
 A1 rec-20261015T110452Z-e10a0594 is archived and verified; see EXPERIMENTS.md. TEST configuration is now EXP-008-G1 / granny on / sampler off / full / planned speed 90. User should restart TEST, reload the same save and repeat the protocol. Do not run variant.py again before this G1 unless a mismatch is found. No game process was running during configuration. Do not report the final-linked-instance grouping as historical per-model deform counts (see EXPERIMENTS caveat); this derived statistic is excluded from the experiment interpretation. No observer game data exists yet. Sources retained, original untouched.
 
-## Latest operational checkpoint — G1 partial, do not run G2 yet
+## Operational checkpoint (2026-10-15, superseded) — G1 partial, do not run G2 yet
 G1 rec-20261015T111010Z-d6bf1a9b is imported/verified, user confirms speed 90. Raw frame integrity is good, but 498,935 instance-table failures make complete per-instance conclusions invalid. Details in EXPERIMENTS and F141/F142. Diagnose bounded instance table/lifetimes/probe saturation before repeating observation. Counters before lookup are useful; tracked subset is not representative by default. TEST now granny off / sample off / full, experiment and protocol cleared, planned speed 90 retained; no game process running. No G2 prepared, no binary changed. All source files retained. After changing observer code, use fresh matching controls rather than silently reusing old A1.
