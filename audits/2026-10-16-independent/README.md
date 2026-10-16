@@ -35,7 +35,7 @@ checkout has exactly the hashed bytes. Each replacement was applied by an exact,
 | `AuditPath.java` | `44fc42f4689c83bd88ae1032f7da6cc7edb8ba340db31a58e814745300332b5b` | identical | — |
 | `HANDOFF.md` | `1ac3fcb705f2a284c9b0fcca92285c7eeacd7dfcaf40d25ac56d5c6c0ee146e0` | `5c84dc067c06b61b5b19da6a8ce5b0711f630b61abeeb4e8395ce1893a9f02e8` | P1 (1×), P2 (2×), P3 (1×) |
 | `INDEPENDENT_AUDIT_2026-10-16.md` | `2bdf89b91931e06fc1ce672eec07cf818c8e29cec47be0fac514fa65affc1c9b` | `9fe933312fb346d94fcbab34fad5337a02d50e3245c049d3e8c97d0cfb519f25` | P1, P2 (1× each) |
-| `audit_data.py` | `624808078a85b3f5db3fe88f14295902b4faeca026fd5202b2c6a2aff22fa45a` | `10f85340c9d0e64bce1341db1ba8505187a18ef2f9d2eb81d75ea036dffeebc2` | S1, S4 |
+| `audit_data.py` | `624808078a85b3f5db3fe88f14295902b4faeca026fd5202b2c6a2aff22fa45a` | `b53690c27ada2d1c2a2c6f7ce39004fee5c5ce4a1be89e4204f338d62cc8ce19` | S1, S4, S5 |
 | `verify_binary.py` | `7f7e4360d68e5d39a00b77048b7603810599639d27910192b287a504a9866920` | `21676df076ab2682641c94ddff68a8100f8bd4741fb3aac0bdbdaceae13053a7` | S1, S4 |
 | `observer_repro.py` | `3e2e6975c1b0a78c769b0c60e0546a397cc4b05ef7871dac38c37d11bce113f0` | `12a0f6ae7513bc12167db4d8c49eaba5375e8cb25592a86d343387d96db25fc4` | S1, S2, S4 |
 | `run_audit.ps1` | `b67c5b3ed016a8cb1071ad967578c6a11a42a3646f9a75ecf6fe221a2e9342d6` | `967d3d610bcf750cb4d9dfe3f8f0e3936b7e7f1ed58275ed6c34609cd2357741` | S1, S3, S4 |
@@ -67,6 +67,14 @@ checkout has exactly the hashed bytes. Each replacement was applied by an exact,
   distributions from this folder (`--inputs reference`, default) or from the run's own `audit_data.py` output
   (`--inputs work`, used by `run_audit.ps1`). The pin of the audited hub source stays the historical
   `identity_before.json` entry, on purpose. Guarded by `tools/test_audit_workdir.py` (no game, no raw data).
+- **S5** (2026-10-16, later) historical commit ids. `audit_data.py` records the diff since the audit assignment states
+  `02bce97` (research) and `32ebc38` (hub). Those ids exist only in the original local history; in the clean export of
+  the research repository the snapshot failed with `unknown revision`. The ids are now resolved explicitly: directly in
+  the original history, through `docs/export/EXPORT_MAP.tsv` at `HEAD` in an export, and otherwise recorded as
+  `missing` or `ambiguous` with `diff_from_assignment: null`; the output then says "historical diff ... UNAVAILABLE -
+  not checked", never "unchanged". The diff is supplementary; the file-hash identity and the own-baseline comparison
+  are unchanged. Missing raw recordings now stop with "Missing local input (raw recording, not published)" instead of a
+  traceback, so a missing private input is not mistaken for a broken export. Guarded by `tools/test_audit_history.py`.
 - **Correction to S2** (2026-10-16, later): the first published edit of `observer_repro.py` put a comment in front of the
   hash `assert` on the same line, which disabled the hub-source check; runs before this correction did not verify the
   source pin. The check is now a separate statement and exits with "Source changed" on a different source (covered

@@ -34,8 +34,18 @@ def main():
     source = args.audit_root.resolve()
     target = paths.REPO / "build" / "knowledge-pose" / "audit-recheck"
     hub_source = paths.HUB / "Stronghold2AnalyseHub" / "core" / "granny_observer.cpp"
-    if digest(hub_source) != HUB_HASH:
+    # LF-normalised: HUB_HASH is the git blob content; a Windows checkout with core.autocrlf=true has CRLF.
+    if hashlib.sha256(hub_source.read_bytes().replace(b"\r\n", b"\n")).hexdigest() != HUB_HASH:
         raise ValueError("Hub source changed; the pinned semantic model needs a new audit")
+    # The pinned original audit_data.py diffs against these ids of the original local history. A clean export of this
+    # repository has other ids; use the published copy (audits/2026-10-16-independent/, resolves them via
+    # docs/export/EXPORT_MAP.tsv) there instead of reporting a failed audit step.
+    for repo, ref in ((paths.REPO, "02bce97"), (paths.HUB, "32ebc38")):
+        found = subprocess.run(["git", "-C", str(repo), "rev-parse", "--verify", "--quiet", ref + "^{commit}"],
+                               capture_output=True, text=True).returncode == 0
+        if not found:
+            raise ValueError(f"Original history required: commit {ref} is not in {repo.name} (e.g. a clean export); "
+                             "run audits/2026-10-16-independent/ with --work instead")
     for rel, expected in PINNED.items():
         if digest(source / rel) != expected:
             raise ValueError("Audit reference changed: " + rel)

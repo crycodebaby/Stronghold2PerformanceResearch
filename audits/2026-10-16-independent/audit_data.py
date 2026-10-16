@@ -32,12 +32,67 @@ def readcsv(p):
 def git(repo, *args):
     return subprocess.check_output(['git', '--no-optional-locks', '-C', str(repo), *args], text=True).strip()
 
+# Published copy (S5): the audit assignment states, as commit ids of the original local history. In a clean export of
+# the research repository these ids are resolved through docs/export/EXPORT_MAP.tsv; nothing is guessed. The diff since
+# the assignment is supplementary information; the identity checks are the file hashes below.
+ASSIGNMENT = {'SH2-Perf': '02bce97', 'Stronghold2AnalyseHub': '32ebc38'}
+EXPORT_MAP = 'docs/export/EXPORT_MAP.tsv'
+
+def git_try(repo, *args):
+    r = subprocess.run(['git', '--no-optional-locks', '-C', str(repo), *args], capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+def resolve_commit(repo, ref):
+    """status: 'original' (id exists here), 'mapped' (via EXPORT_MAP at HEAD), 'missing' or 'ambiguous'."""
+    full = git_try(repo, 'rev-parse', '--verify', '--quiet', ref + '^{commit}')
+    if full:
+        return {'requested': ref, 'status': 'original', 'commit': full, 'via': None}
+    local = [c for c in (git_try(repo, 'rev-parse', '--disambiguate=' + ref) or '').split()
+             if git_try(repo, 'cat-file', '-t', c) == 'commit']
+    if len(local) > 1:
+        return {'requested': ref, 'status': 'ambiguous', 'commit': None, 'via': None, 'candidates': sorted(local)}
+    table = git_try(repo, 'show', 'HEAD:' + EXPORT_MAP)
+    if table is None:
+        return {'requested': ref, 'status': 'missing', 'commit': None, 'via': None,
+                'reason': 'id not in this history and no ' + EXPORT_MAP + ' at HEAD'}
+    hits = set()
+    for line in table.splitlines():
+        cols = line.strip().split('\t')
+        if line.startswith('#') or len(cols) != 2 or cols[0] == 'original':
+            continue
+        if cols[0].lower().startswith(ref.lower()):
+            hits.add((cols[0], cols[1]))
+    if not hits:
+        return {'requested': ref, 'status': 'missing', 'commit': None, 'via': EXPORT_MAP, 'reason': 'no row for this id'}
+    if len(hits) > 1:
+        return {'requested': ref, 'status': 'ambiguous', 'commit': None, 'via': EXPORT_MAP,
+                'candidates': sorted(f'{o}->{e}' for o, e in hits)}
+    original, exported = hits.pop()
+    full = git_try(repo, 'rev-parse', '--verify', '--quiet', exported + '^{commit}')
+    if not full:
+        return {'requested': ref, 'status': 'missing', 'commit': None, 'via': EXPORT_MAP,
+                'reason': f'mapped commit {exported} is not in this history'}
+    return {'requested': ref, 'status': 'mapped', 'commit': full, 'original': original, 'via': EXPORT_MAP}
+
+def describe_history(name, rec):
+    r = rec['assignment']
+    if r['status'] == 'original':
+        return f'{name}: diff since {r["requested"]} recorded (original id)'
+    if r['status'] == 'mapped':
+        return f'{name}: diff since {r["requested"]} recorded via {r["via"]} ({r["original"][:12]} -> {r["commit"][:12]})'
+    why = r.get('reason') or ', '.join(r.get('candidates', []))
+    return f'{name}: historical diff since {r["requested"]} UNAVAILABLE ({r["status"]}: {why}) - not checked'
+
 def identity(root):
     result = {'repos': {}, 'files': {}}
     for name in ['SH2-Perf', 'Stronghold2AnalyseHub']:
         repo = root/name
+        if git_try(repo, 'rev-parse', '--git-dir') is None:
+            raise SystemExit(f'Missing local input: git repository {repo}')
+        ref = resolve_commit(repo, ASSIGNMENT[name])
+        diff = git(repo, 'diff', ref['commit'] + '..HEAD', '--stat') if ref['commit'] else None
         result['repos'][name] = {'head': git(repo,'rev-parse','HEAD'), 'status': git(repo,'status','--porcelain=v1'),
-                                'diff_from_assignment': git(repo,'diff', '02bce97..HEAD' if name=='SH2-Perf' else '32ebc38..HEAD', '--stat')}
+                                'diff_from_assignment': diff, 'assignment': ref}
         # Hash all tracked files, plus all raw files in the two recordings.
         for s in git(repo,'ls-files').splitlines():
             p=repo/s
@@ -47,6 +102,8 @@ def identity(root):
             p=root/label/name
             if p.is_file(): result['files'][str(p.relative_to(root))]=sha(p)
     for cap in IDS.values():
+        if not (root/'SH2-Perf'/'captures'/cap).is_dir():
+            raise SystemExit(f"Missing local input (raw recording, not published): {root/'SH2-Perf'/'captures'/cap}")
         for p in (root/'SH2-Perf'/'captures'/cap).iterdir():
             if p.is_file(): result['files'][str(p.relative_to(root))]=sha(p)
         p=root/'SH2-Perf'/'data'/'annotations'/(cap+'.json')
@@ -76,9 +133,11 @@ def main():
         if args.snapshot=='after':
             before=json.loads((out/'identity_before.json').read_text(encoding='utf-8'))
             assert before==ident, 'Input identity changed; inspect before/after.'
-        print(f'Identity {args.snapshot}: {len(ident["files"])} files, repo states recorded; '+('unchanged' if args.snapshot=='after' else 'snapshot saved'))
+        print(f'Identity {args.snapshot}: {len(ident["files"])} files, repo states recorded; '+('file identity unchanged' if args.snapshot=='after' else 'snapshot saved'))
+        for name, rec in ident['repos'].items(): print('  ' + describe_history(name, rec))
         return
     result={'identity':ident,'captures':{}}
+    for name, rec in ident['repos'].items(): print(describe_history(name, rec))
     for name,cap in IDS.items():
         d=root/'SH2-Perf'/'captures'/cap
         m=json.loads((d/'manifest.json').read_text()); imp=json.loads((d/'import.json').read_text())
