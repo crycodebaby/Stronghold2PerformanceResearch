@@ -26,6 +26,8 @@ All class A rows were run on 2026-10-16 from fresh clones without build folders 
 | Python 3.11 | same suites | A | `test_import_safety`, `test_hardening` fail (`os.path.isjunction` is 3.12+) |
 | Install hub into a TEST copy | `python -I tools/variant.py baseline`, `status` | B | not re-run for publication |
 | In-game recording, import, evaluation | EXPERIMENTS.md protocols, `ingest.py`, `grannyobs.py`, `ab_compare.py` | B | not re-run; last real runs 2026-10-15 |
+| Granny pose contract host (F150–F152) | `python -I tools/granny_pose.py [--dll <your granny2.dll>]`, then `tools/test_granny_pose.py` | B (real `granny2.dll` of your install, MSVC/CMake; own generated data only, no game start) | see below |
+| Audit recount in an isolated copy (F148) | `python -I tools/recheck_granny_audit.py --audit-root <audit workspace>` | C (needs the audit's local `work/` exports and our raw recordings) | not re-run for publication |
 | Static binary facts (RVAs, signatures, call sites) | `ghidra_scripts/*.java` headless on your own exe/DLLs, `audits/.../verify_binary.py` | B | not re-run for publication |
 | Recount of A1/G1 numbers | `audits/.../audit_data.py`, `ingest.py verify` | C | not possible without the raw recordings |
 
@@ -45,6 +47,8 @@ All class A rows were run on 2026-10-16 from fresh clones without build folders 
 - **The independent audit**: its observer model runs anywhere (class A); its recounts need our raw data (C); its binary
   checks need your own game files plus fresh exports (B). Details in
   [audits/2026-10-16-independent/README.md](../audits/2026-10-16-independent/README.md).
+- **The pose block** (F149–F153) needs your own `granny2.dll` (SHA-256 above) and, for F149, the exe and Ghidra
+  exports; the host never uses game assets or recorded pointers, so it is class B, not C.
 - **User-confirmed context** (game speed 90, paused phases, the historical multiplayer report F060) cannot be
   re-checked at all; it is recorded as user statement, separate from measured values.
 

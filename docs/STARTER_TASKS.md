@@ -1,33 +1,31 @@
 # STARTER_TASKS — three small, checkable entry tasks
 
-> Kurzfassung: Drei kleine Einstiegsaufgaben mit festem Abnahmekriterium: Auditkorrekturen in FINDINGS übernehmen (ohne Spiel), Schlussrest-Prüfung in grannyobs.py (ohne Spiel), Grenz-ABI auf eigener Spielkopie unabhängig bestätigen (eigenes Spiel). Stand 2026-10-16.
+> Kurzfassung: Drei kleine Einstiegsaufgaben mit festem Abnahmekriterium: Prüfung verwaister F-/D-Verweise im Doku-Linter (ohne Spiel), Schlussrest-Prüfung in grannyobs.py (ohne Spiel), Grenz-ABI auf eigener Spielkopie unabhängig bestätigen (eigenes Spiel). Stand 2026-10-16.
 
 Each task is useful on its own, fits in a small pull request and has an acceptance check that someone else can
 repeat. Read [README.md](../README.md), [CONTRIBUTING.md](../CONTRIBUTING.md) and the "Current status" in
 [STATE.md](STATE.md) first. Claim a task by opening an issue before starting.
 
-## T1 — Integrate two audit corrections into FINDINGS (no game)
+## T1 — Guard against dangling fact references in the docs linter (no game)
 
-**Why**: the [independent audit](../audits/2026-10-16-independent/README.md) found limits that FINDINGS does not yet
-state; later work must not build on the older, broader reading (STATE "Done", audit entry).
+**Why**: findings (F###) and decisions (D###) are cited across the docs, the README and audits. Today
+`tools/lint_docs.py` checks that an id is defined at most once, but not that every cited id exists, so a renumbered or
+mistyped id would go unnoticed (two `D015` drafts met in one merge on 2026-10-16).
 
-**Do**:
-1. Read audit report sections 2 ("Prüfung der tragenden Behauptungen", "Neu: unzugeordneter Schlussrest und
-   Phasengrenzen", "Vier unterschiedliche Gleichheiten") and `data_results.json` → `captures.G1.unframed_boundary_tail`.
-2. Add two new rows to [FINDINGS.md](FINDINGS.md) (next free F numbers): (a) the meaning and limit of
-   `all_observed_same` (not a general sample-to-sample clock comparison; which group nevertheless survives stricter
-   checks); (b) the 609 boundary calls (clock 372, sample 187, deform 25, composite 25) counted in the totals without a
-   frame row although frame drops are 0.
-3. Add a cross-reference "(limit: F###)" to F146 without changing its existing text.
+**Do**: add a `refs` check to `tools/lint_docs.py`: every `F\d{3}` / `D\d{3}` mentioned in a tracked `*.md` file must be
+defined in [FINDINGS.md](FINDINGS.md) / [DECISIONS.md](DECISIONS.md). Report file and id. Add `tools/test_lint_docs.py`
+that builds a tiny temporary docs tree with one defined and one dangling id and asserts that only the dangling one is
+reported. Add the new suite to `SUITES` in `tools/run_checks.py`.
 
-**Done when**: each new row has a status, a precise statement, and evidence pointing to the audit file, section and
-JSON key; you re-checked the 609 figure from `data_results.json`; `python -I tools/run_checks.py` passes; STATE.md
-mentions the integration.
+**Done when**: the new test passes, the current repository lints clean (it did on 2026-10-16: 0 dangling ids), and
+`python -I tools/run_checks.py` passes. The linter stays stdlib-only and prints at most one line per error.
 
 ## T2 — Report the unframed tail in `grannyobs.py` (no game)
 
 **Why**: an observer recording can count calls in its totals (`<stem>_granny.json`) that never reach a frame row, and
-today's reader does not show it ([GRANNY_OBSERVER.md](FORMATS/GRANNY_OBSERVER.md); audit finding above).
+today's reader does not show it. In EXP-008R-G1 these were 609 calls (clock 372, sample 187, deform 25, composite 25;
+F148, audit `data_results.json` → `captures.G1.unframed_boundary_tail`) while frame drops read 0
+([GRANNY_OBSERVER.md](FORMATS/GRANNY_OBSERVER.md)).
 
 **Do**: in `tools/grannyobs.py`, compute per function `calls in granny_meta − sum over frame rows` and print it as an
 explicit "unframed tail" line (marked partial when non-zero). Add a synthetic case to `tools/test_grannyobs.py` (no

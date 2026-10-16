@@ -29,6 +29,7 @@ Not observed (examples, all imported by the exe as well): `GrannySetControlClock
 - clock *same*: the 32 bits equal those of the previous clock call on that instance (any earlier frame). *changed* / *noprev* (first call seen in this recording) accordingly.
 - sample inputs *same*: bone count, offset matrix bits, local-pose and world-pose pointers all equal to the previous sample call on that instance. Pointers equal ≠ pointed-to data equal.
 - `all_observed_same` (per sample call): this frame's latest clock call on the instance was *same* **and** the sample inputs are *same*. It says "repeated with unchanged observed values" — not "identical results", not "all inputs unchanged" (control clocks etc. are not observed), not "computation unnecessary".
+- Audit correction (F148): the last clock-call comparison is **not a comparison of clock bits at two samples**. `clock(10), sample; clock(20), clock(20), sample` can report same despite a sample-clock change; the reverse counterexample also exists. Only the strict F146 subset survives the added `clock_changed=clock_noprev=0`, min=max and clock_calls=sample_calls checks. A read-fault offset and null share an invalid representation in this observer; do not treat a fault followed by null as proven equality.
 - deform inputs *same*: all five pointer/count arguments equal to the previous call on that deformer. The matrix contents are not compared.
 
 ## Link deform → model instance (per deform call)
@@ -41,6 +42,8 @@ Chain: deform `matrix buffer` == pointer **returned** by the composite getter fo
 | `link_ambiguous` | W was sampled by two different instances in its last sample frame |
 Static support: both exe deform call sites pass `GrannyGetWorldPoseComposite4x4Array([[obj+0x4c]+4])` as the matrix buffer, the same `+0x4c` holder whose `[+0]` is passed to clock/sample and `[+4]` as world pose (F138). The link is pointer equality within a session, not a proof that the deformed mesh belongs to that instance.
 
+Audit correction (F148): a failed instance lookup returns before updating the pose link. A missed second sampler of the same pose can therefore leave an apparently unique `link_frame`. Zero `link_ambiguous` under losses is not proof of actual uniqueness; the counterexample is a test-model boundary, not a proven G1 occurrence.
+
 ## Files per recording (roles in the manifest)
 | File | Role | Content |
 |---|---|---|
@@ -49,10 +52,11 @@ Static support: both exe deform call sites pass `GrannyGetWorldPoseComposite4x4A
 | `<stem>_granny_instances.csv` | `granny_instances` | one row per (instance, marker slot 0–3, 4 = ≥ 4): first/last frame, clock frames/calls/same/changed/noprev/repeat_in_frame/change_in_frame/min/max, sample frames/calls/same/changed/noprev/repeat, per-input change counts (`ch_bone_count`, `ch_offset`, `ch_local_pose`, `ch_world_pose`), `all_observed_same`, `offset_faults`, last bone count + world pose, frees, used_after_free, exe call sites (rva, `0xFFFFFFFF` = not from the exe), multi_site |
 | `<stem>_granny_deformers.csv` | `granny_deformers` | one row per (deformer, marker slot): first/last frame, frames, calls, same/changed/noprev/repeat_in_frame, per-argument change counts, vertex count min/max, link classes, link instance changes, last linked instance, frees, used_after_free, call site, multi_site |
 
-A recording with the observer active but without its files is `capture_ok = false`. Per-object rows use the marker at call time; frame rows the marker at frame end (they differ only on the F8 frame).
+A recording with the observer active but without its files is `capture_ok = false`. Per-object rows use the marker at call time; frame rows the marker at frame end. They can disagree across the marker-transition interval; no exact reallocation is possible from aggregates. Object first/last frame, last pose/count, free/reuse and callsite fields are whole-pointer values repeated in marker rows, not phase-local lifetime histories.
 
 ## Completeness is separate from frame integrity
 - `owner_detail_complete` requires zero table failures, frame-row losses and matrix-read faults; it covers observed imports on the owner thread only. Other-thread counts and unobserved calls remain separate limits. Zero losses in v1 can establish aggregation completeness but do not repair its earlier lifetime semantics.
 - Silver 2.2.0 records `quality.granny_observer` as complete / partial / unknown. Partial or unknown blocks benchmark release even when all file hashes and frame records are intact; it does not rewrite raw `capture_ok` or frame integrity.
 - `grannyobs.py` suppresses per-instance conclusions for incomplete detail. Boundary call counters are incremented before table lookups; object counts can be partial. Missing frame rows also limit phase call totals.
+- Audit correction (F148): `End` does not emit the pending last `t.cur`. `owner_detail_complete`/zero frame drops do **not** prove all observed calls have a frame row. G1 metadata minus rows = 372 clock + 187 sample + 25 deform + 25 composite = 609 unassigned final calls. Completed-frame sums, recording totals and object-marker sums have distinct scopes. See [reproduced audit and pose contract](../evidence/POSE_CONTRACT_2026-10-16.md).
 - The last linked-instance pointer in a deformer row is not a historical model assignment. No per-model deformer count is derived from it. Vertex min/max do not establish the total number of processed vertices.

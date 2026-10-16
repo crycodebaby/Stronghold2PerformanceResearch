@@ -50,10 +50,13 @@ The detailed documentation is partly German; entry documents are English. Facts 
 | Granny animation runtime | `granny2.dll` is a large per-frame cost in both states (F127, estimate in F129 is a hypothesis); its SSE vertex-deform loop and B-spline/knot helpers are located (F132–F134) |
 | Exe → Granny boundary | six imports, all `__stdcall`, argument roles verified (F137); the deform call carries no model instance (F138); clock sources per call site (F139) |
 | Paused frames still animate | in the confirmed pause of EXP-008R-G1 each frame issues ≈ 2,842 sample and ≈ 2,185 deform calls ([evidence](docs/evidence/EXP-008R_G1_PARTIAL.md)) |
-| Retained pointers | 1,503 retained pointer rows receive identical observed inputs throughout the pause; 135 others get changing clocks/offsets (F146, F147) |
+| Retained pointers | 1,503 retained pointer rows receive identical observed inputs throughout the pause; 135 others get changing clocks/offsets (F146, F147); the audit's narrower reading of these counts is F148 |
+| Exe animation path | exe RVA `0x38E4D0` selects a 20-byte record (instance, world pose, local pose), passes offset and clock, samples, then frees completed controls; may recurse (F149) |
+| Granny pose contract | World-Pose layout/ownership of this Granny build established in an own x86 host; an own affine Composite helper matches the real DLL within a predeclared tolerance but is **not** bit-identical (443 of 1,620 cases differ in rounding) (F150–F152) |
 
 **Not established:** that any work is redundant, that results (poses, vertices) are identical, that caching or skipping
-is safe, how many milliseconds could be saved, or a mapping from model pointers to soldiers. F136 ("some paused-frame
+is safe, how many milliseconds could be saved, a mapping from model pointers to soldiers, or who owns the game-side pose
+objects and for how long (F153). F136 ("some paused-frame
 Granny work recomputes unchanged poses") remains a **hypothesis**.
 
 ## Limits you should know before relying on anything
@@ -63,8 +66,7 @@ Granny work recomputes unchanged poses") remains a **hypothesis**.
   latest real-game run (F145); per-instance tables are incomplete, only frame-level call counts are complete. The
   [independent audit](audits/2026-10-16-independent/README.md) adds: `all_observed_same` is not a general
   sample-to-sample clock comparison; missing samples can hide ambiguous pose links; 609 final calls have no frame row
-  although frame drops read 0; the native test uses a fake `granny2.dll`. These corrections are not yet fully merged
-  into FINDINGS.
+  although frame drops read 0; the native test uses a fake `granny2.dll`. These corrections are integrated as F148.
 - **Sampling biases frame times** by ≈ 2–5 % in the game (F125); sampled runs are not benchmark runs.
 - **One machine, one scene.** All recordings come from one PC (see `data/index.jsonl`) and mostly one save.
 - **Raw data are not published** (absolute paths in logs, game-derived Ghidra exports). Numbers in the docs can be
@@ -105,7 +107,7 @@ earlier game-run orders; do not execute it.
 
 | Repository | Version | Meaning |
 |---|---|---|
-| Stronghold2PerformanceResearch | the commit that contains this table (branch `publish-prep`) | docs, tools and audit copy checked on 2026-10-16 |
+| Stronghold2PerformanceResearch | the commit that contains this table (branch `publish-prep`, includes `main` `160f141`) | docs, tools, audit copy and pose block checked on 2026-10-16 |
 | Stronghold2AnalyseHub | branch `publish-prep` `a643f97`; runtime sources identical to `perf-metrics` `32ebc38a05ea` | `32ebc38a05ea` is the hub build of the latest in-game recordings (EXP-008R-A1/G1) |
 
 Checked together on 2026-10-16 from fresh clones: hub build and native tests, all game-free Python checks, the audit

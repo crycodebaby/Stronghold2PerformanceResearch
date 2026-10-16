@@ -2,6 +2,12 @@
 
 > Kurzfassung: G1 preserves all frames and demonstrates repeated animation calls during the user-confirmed pause, including stable observed inputs for retained pointers and changing inputs on others. Instance detail is again incomplete; no population percentage, redundant-work verdict, patch or overhead result follows.
 
+Audit addendum 2026-10-16: [reproduced corrections, F148](POSE_CONTRACT_2026-10-16.md).
+The strict 1,503-row result survives added clock checks. General `all_observed_same`
+is not sample-to-sample clock equality; missing samples can hide pose ambiguity;
+609 final calls have no frame row despite zero row drops. The following remains the
+historical G1 analysis with those limits applied, not a complete event history.
+
 ## Recording and validity
 - Capture `rec-20261015T122211Z-dff71642` (`20261015_142211`), imported and manifest-verified (7 files), finalized by user_toggle. 2,542 frames / 75.24 s; zero frame drops, write losses, write errors, observer frame-row drops or offset-read faults. Sources preserved.
 - Hub `32ebc38a05ea`, clean; session/prepared DLL `4a56b62e…`, exe `f3ccdf9b…`, proxy `13c89519…`; full / sample off / granny on. All six import slots patched. Owner/render TID 49360; zero foreign-thread calls.

@@ -2,6 +2,12 @@
 
 > Kurzfassung: Einstieg und Auftrag für einen neuen technischen Projektleiter. Ziel ist überprüfbares Wissen über abgegrenzte Stronghold-2-/Engine-Teilpfade bis zu testbaren eigenen Implementierungen und später belegten Performance-Eingriffen. Stand 2026-10-16; alte G2-Aufträge sind ausgesetzt, kein Performancegewinn nachgewiesen.
 
+Fortschritt seit Erstellung: Der erste begrenzte Auftrag aus Abschnitt 8 ist bearbeitet;
+[nativer Pose-Vertrag, eigener Composite-Helfer und Auditkorrekturen](evidence/POSE_CONTRACT_2026-10-16.md).
+Der Nachbau ist im allgemeinen Float-Bereich nicht bitgleich. Für Fortsetzung zuerst
+den aktuellen Anfang von [HANDOFF.md](HANDOFF.md) lesen: Exe-Pose-Besitz/Lebensdauer,
+kein erneuter Start der hier historischen Erstauftragsliste und keine neue Aufnahme.
+
 ## 1. Rolle und Ziel
 
 Übernimm die technische Projektleitung als Senior Reverse Engineer und Software Architect. Arbeite kritisch, selbstständig und ergebnisoffen. Frühere Agentenberichte sind zu überprüfende Aussagen; Nutzerbeobachtungen sind Kontext und teilweise bestätigte Abläufe, nicht automatisch gemessene Ursachen.

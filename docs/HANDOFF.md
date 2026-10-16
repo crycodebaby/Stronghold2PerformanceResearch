@@ -1,12 +1,23 @@
 # HANDOFF
 
-> Kurzfassung: Historisches Betriebsprotokoll der Spielläufe (EXP-INGAME bis EXP-008R, 2026-10-15/16): Abläufe, Nutzeranleitungen, Rückwege, Prüfstände. Kein aktueller Auftrag — der steht in STATE.md („Current status“) und PROJECT_LEAD_HANDOFF.md. G2/A2 sind ausgesetzt; nichts hier ausführen.
+> Kurzfassung: Auditkorrekturen und erster nativer Pose-Wissensbaustein abgeschlossen. Nächster begrenzter Auftrag: Besitz/Lebensdauer der Exe-H-Poseobjekte statisch nachweisen. Keine neue Spielaufnahme; alle alten G2-/Installationssequenzen sind ausgesetzt.
 
-**Historical since 2026-10-16.** Kept unchanged below as evidence of how each run was prepared and checked. The current order is "Current status" in [STATE.md](STATE.md). Last edited as an operational order: 2026-10-15.
+Updated: 2026-10-16. Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
 
-For the incoming project lead (2026-10-16): [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md) defines the current goal, evidence, sources and first bounded assignment. Read it before resuming any protocol below; G2 is not prepared.
+Only the first section below is a current order. Every later section is a historical operations log (game-run sequences, user guides, way-back instructions) kept as evidence; do not execute it.
 
-## Last operational order (2026-10-15/16, suspended) — EXP-008R, corrected observer
+## Current order — Exe H-pose ownership/lifetime
+
+- Completed block: [contract, audit corrections, exact limits and reproduction](evidence/POSE_CONTRACT_2026-10-16.md), F148–F153. Real-DLL host: 142 layout cases, 1,620 differential cases, 238,768 components; 0 criterion failures. Own affine helper is numerically close but differs in 443 cases; no universal bit identity or replacement permission. Nine audit model tests + two integration tests pass.
+- Reproduce from repo root: `python -I tools/granny_pose.py`, then `python -I tools/test_granny_pose.py`; audit: `python -I tools/recheck_granny_audit.py --audit-root <local-audit-root>`; docs: `python -I tools/lint_docs.py`. MSVC/CMake/Win32 required; writes only isolated ignored build outputs. Reports include identities/source hashes and a float counterexample.
+- **Exactly one next experiment:** trace allocation, capacity source, transfers/reuse and freeing of the 20-byte H records used by Exe RVA `0x38E4D0`. Start from IAT uses of New/FreeWorldPose, New/FreeLocalPose and InstantiateModel; resolve stores to O+0x18/+0x1c/+0x4c. Same hashes and read-only separate Ghidra copy; prove each claimed edge with RVA/bytes. Do not infer a soldier identity.
+- Acceptance/result decisions are in the evidence's final section. Library ownership is established in own valid hosts; the particular game-side owner/lifetime is not yet fully proven. Unresolved indirect transfers remain an explicit boundary. No output observer implementation is claimed.
+- Do not resume G2, install a build or request a recording. Original/TEST, Hub source/builds, captures, audit reference and original Ghidra DB stay unchanged. SH2-Perf own code/docs only; no push/publication. New agents update STATE and this section after the next result.
+
+## Historical checkpoint — EXP-008R, corrected observer (superseded)
+
+The sequence below records the previous checkpoint; it is not an active work order.
+
 - Evidence and exact restart protocol: [evidence/EXP-008_OBSERVER_CORRECTION.md](evidence/EXP-008_OBSERVER_CORRECTION.md). Hub `32ebc38a05ea`, metadata v2; Silver 2.2.0. All changes local; no push, no optimisation or gameplay change.
 - Old A1 `rec-20261015T110452Z-e10a0594` remains historical control. Old G1 `rec-20261015T111010Z-d6bf1a9b` is manifest-verified but has 498,935 instance aggregation failures. No complete per-instance conclusions; F136 stays hypothesis. Fresh controls after observer code change.
 - Next sequence: EXP-008R-A1 **off** → EXP-008R-G1 **on** → EXP-008R-G2 **on** → EXP-008R-A2 **off**. Sampler off, full, speed 90, same save/camera. Agent verifies/imports each run before switching for the next; stop for diagnosis if G1 detail is incomplete.

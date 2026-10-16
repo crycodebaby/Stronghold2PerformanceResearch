@@ -2,9 +2,10 @@
 
 Independent re-check of the EXP-008R Granny-observer evidence and of the exe animation path around RVA `0x0038E4D0`.
 The report ([INDEPENDENT_AUDIT_2026-10-16.md](INDEPENDENT_AUDIT_2026-10-16.md), German) and its start file
-([HANDOFF.md](HANDOFF.md)) are kept as written. Its corrections are **not yet fully integrated** into
-[docs/FINDINGS.md](../../docs/FINDINGS.md); [docs/STATE.md](../../docs/STATE.md) tracks that as open work. The audit is
-evidence to check, not an authority: it states its own limits.
+([HANDOFF.md](HANDOFF.md)) are kept as written. Its corrections were reproduced and integrated into
+[docs/FINDINGS.md](../../docs/FINDINGS.md) as F148 (and F149 for the exe path), see
+[docs/evidence/POSE_CONTRACT_2026-10-16.md](../../docs/evidence/POSE_CONTRACT_2026-10-16.md). The audit is evidence to
+check, not an authority: it states its own limits.
 
 ## Origin
 
