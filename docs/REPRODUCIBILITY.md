@@ -20,16 +20,17 @@ All class A rows were run on 2026-10-16 from fresh clones without build folders 
 | Hub Win32 build | `cmake -S . -B build -A Win32` + `cmake --build build --config Release` | A | OK, 0 compiler warnings |
 | Hub native tests | `ctest --test-dir build -C Release -LE timing` (capture, lifecycle, Granny observer with fake DLL, sampler functional checks) | A | 4/4 OK; a forced functional failure (`SH2HUB_SAMPLE_MS=1000`) makes `sampler_functional` fail as intended |
 | Hub sampler overhead | `ctest ... -L timing` (`sampler_overhead` = `sampler_test --checks overhead`) | A, hardware- and load-dependent, reported, not gating | Varies: repeated runs on 2026-10-16 measured 3.8–6.3 % (one pass, most above the 5 % threshold) while other work ran on the machine (load is a possible, unproven cause); all functional checks passed in every run. Earlier results 2–4 % (F103) and 4.6–5.1 % (F123). Threshold unchanged |
-| Python suites + docs lint | `python -I tools/run_checks.py` (incl. `test_audit_workdir`) | A | 8/8 OK; with `--audit --e2e` 10/10 OK |
+| Python suites + docs lint | `python -I tools/run_checks.py` (incl. `test_audit_workdir`, `test_audit_history`) | A | 9/9 OK; with `--audit --e2e` 11/11 OK; in the clean export 9/9 and with `--audit` 10/10 |
 | Audit observer model | `python -I tools/run_checks.py --audit` | A (needs hub source equal to `32ebc38`) | 9/9 OK in a temporary work dir, results equal to the reference `repro_results.json`; a changed hub source is rejected (this check was ineffective in the first published copy, see the audit README) |
 | Audit work-dir contract | `python -I tools/test_audit_workdir.py` | A | 6/6 OK (6/6 fail against the previous scripts) |
+| Historical commit ids in the audit copy | `python -I tools/test_audit_history.py` (temporary git repos: original, rewritten, missing, ambiguous mapping) | A | 7/7 OK (7/7 fail against the previous script) |
 | End-to-end stand-in | `python -I tools/run_checks.py --e2e` | A (needs hub build + interactive desktop) | E2E OK |
 | Python 3.11 | same suites | A | `test_import_safety`, `test_hardening` fail (`os.path.isjunction` is 3.12+) |
 | Install hub into a TEST copy | `python -I tools/variant.py baseline`, `status` | B | not re-run for publication |
 | In-game recording, import, evaluation | EXPERIMENTS.md protocols, `ingest.py`, `grannyobs.py`, `ab_compare.py` | B | not re-run; last real runs 2026-10-15 |
 | Granny pose contract host (F150–F152) | `python -I tools/granny_pose.py [--dll <your granny2.dll>]`, then `tools/test_granny_pose.py` | B (real `granny2.dll` of your install, MSVC/CMake; own generated data only, no game start) | `granny_pose.py --dll <copy of the local Steam 1.5 granny2.dll>` from a fresh clone: 10 export/pop checks, 30 fingerprints, 142 layout + 1,620 differential cases, 0 failures, 443 rounding cases, max abs 1.53e-5 (= F150–F152). `test_granny_pose.py` not run: it reads `granny2.dll` from the sibling `Stronghold 2` folder, absent in the clean clone |
 | Full audit with new exports | `powershell -File audits/2026-10-16-independent/run_audit.ps1 -ExportBinary -Work <dir>` | B + C (game files, raw recordings, Ghidra 12.1.4 and the project database) | not re-run; the work-dir handover is covered by the class A test above |
-| Audit recount in an isolated copy (F148) | `python -I tools/recheck_granny_audit.py --audit-root <audit workspace>` | C (needs the audit's local `work/` exports and our raw recordings) | not re-run for publication |
+| Audit recount in an isolated copy (F148) | `python -I tools/recheck_granny_audit.py --audit-root <audit workspace>` | C (needs the audit's local `work/` exports and our raw recordings) and the **original** local history (its pinned scripts diff against `02bce97`); in a clean export it stops with "Original history required" | not re-run for publication |
 | Static binary facts (RVAs, signatures, call sites) | `ghidra_scripts/*.java` headless on your own exe/DLLs, `audits/.../verify_binary.py` | B | not re-run for publication |
 | Recount of A1/G1 numbers | `audits/.../audit_data.py`, `ingest.py verify` | C | not possible without the raw recordings |
 
@@ -46,7 +47,9 @@ All class A rows were run on 2026-10-16 from fresh clones without build folders 
   1.5 files and the published Ghidra scripts, but the Ghidra database is not published. Function boundaries depend on
   Ghidra version (12.1.4), auto-analysis options and the manual edits listed in
   [evidence/ANALYSIS_STATE_EXP-007.md](evidence/ANALYSIS_STATE_EXP-007.md).
-- **The independent audit**: its observer model runs anywhere (class A); its recounts need our raw data (C); its binary
+- **The independent audit**: its observer model runs anywhere (class A); in a clean export of this repository the
+  historical assignment ids resolve through `docs/export/EXPORT_MAP.tsv`, but a snapshot still needs our raw recordings
+  and stops with "Missing local input" without them; its recounts need our raw data (C); its binary
   checks need your own game files plus fresh exports (B). Details in
   [audits/2026-10-16-independent/README.md](../audits/2026-10-16-independent/README.md).
 - **The pose block** (F149–F153) needs your own `granny2.dll` (SHA-256 above) and, for F149, the exe and Ghidra
