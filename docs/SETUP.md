@@ -4,6 +4,11 @@
 
 Host: Windows 10/11 x64. Install via winget (as done 2026-10-15):
 
+Native pose knowledge host (2026-10-16): `python -I tools/granny_pose.py` builds an
+isolated Win32 target with the tools below; `python -I tools/test_granny_pose.py`
+checks rejection gates and the exact rounding witness. No installation, game start,
+asset input or download. [Contract, results, limits and commands](evidence/POSE_CONTRACT_2026-10-16.md).
+
 | Tool | winget id / source | Version | Path |
 |---|---|---|---|
 | JDK 21 | `EclipseAdoptium.Temurin.21.JDK` | 21.0.12.101 | `C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot` |
