@@ -19,8 +19,8 @@ All class A rows were run on 2026-10-16 from fresh clones without build folders 
 |---|---|---|---|
 | Hub Win32 build | `cmake -S . -B build -A Win32` + `cmake --build build --config Release` | A | OK, 0 compiler warnings |
 | Hub native tests | `ctest --test-dir build -C Release -LE timing` (capture, lifecycle, Granny observer with fake DLL, sampler functional checks) | A | 4/4 OK; a forced functional failure (`SH2HUB_SAMPLE_MS=1000`) makes `sampler_functional` fail as intended |
-| Hub sampler overhead | `ctest ... -L timing` (`sampler_overhead` = `sampler_test --checks overhead`) | A, hardware- and load-dependent, reported, not gating | **FAIL** in every run on 2026-10-16: slowdown 5.3–6.1 % > 5 % threshold while other work ran on the machine (load is a possible, unproven cause); all functional checks passed. Earlier results 2–4 % (F103) and 4.6–5.1 % (F123). Threshold unchanged |
-| Python suites + docs lint | `python -I tools/run_checks.py` (incl. `test_audit_workdir`) | A | 8/8 OK (with this commit's docs) |
+| Hub sampler overhead | `ctest ... -L timing` (`sampler_overhead` = `sampler_test --checks overhead`) | A, hardware- and load-dependent, reported, not gating | Varies: repeated runs on 2026-10-16 measured 3.8–6.3 % (one pass, most above the 5 % threshold) while other work ran on the machine (load is a possible, unproven cause); all functional checks passed in every run. Earlier results 2–4 % (F103) and 4.6–5.1 % (F123). Threshold unchanged |
+| Python suites + docs lint | `python -I tools/run_checks.py` (incl. `test_audit_workdir`) | A | 8/8 OK; with `--audit --e2e` 10/10 OK |
 | Audit observer model | `python -I tools/run_checks.py --audit` | A (needs hub source equal to `32ebc38`) | 9/9 OK in a temporary work dir, results equal to the reference `repro_results.json`; a changed hub source is rejected (this check was ineffective in the first published copy, see the audit README) |
 | Audit work-dir contract | `python -I tools/test_audit_workdir.py` | A | 6/6 OK (6/6 fail against the previous scripts) |
 | End-to-end stand-in | `python -I tools/run_checks.py --e2e` | A (needs hub build + interactive desktop) | E2E OK |
