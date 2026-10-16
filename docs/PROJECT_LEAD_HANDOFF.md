@@ -26,7 +26,7 @@ Alle folgenden kurzen Projektpfade beziehen sich auf den Root von SH2-Perf.
 - captures/ — unveränderte Rohaufnahmen und Binäranalyse-Exporte; nicht in Git. Bestehende Quellen nicht verändern, löschen oder umbenennen.
 - data/annotations/ — bestätigter Nutzerkontext; nicht durch Vermutungen ergänzen.
 - data/silver/ und data/index.jsonl — abgeleitete Auswertungen, keine Ersatzquelle für Rohdaten.
-- [Separater Audit-Arbeitsordner](../../../../Documents/Codex/2026-10-16/stronghold2-independent-audit/) — analysis/ ist der kanonische Bericht-/Skriptbestand, work/ enthält die lokalen Binäranalyse-Exporte und Arbeitskopien. outputs/analysis/ ist eine Auslieferungskopie. Für vollständige Reproduktion den gesamten Audit-Arbeitsordner lesen können; aus dessen Root arbeiten. Als unveränderte Referenz behandeln. Dieser lokale Link ist maschinenbezogen.
+- [audits/2026-10-16-independent/](../audits/2026-10-16-independent/README.md) — veröffentlichte Kopie von Bericht, Skripten und abgeleiteten Ergebnissen des separaten Audits, mit Herkunft und Änderungsliste (seit 2026-10-16 im Repository). Der ursprüngliche lokale Audit-Arbeitsordner (`analysis/` kanonisch, `work/` mit Binäranalyse-Exporten und Arbeitskopien) bleibt außerhalb des Repositorys; vollständige Reproduktion mit Rohdaten und Ghidra-Exporten nur dort bzw. mit eigener Spielinstallation. Als unveränderte Referenz behandeln.
 
 Der Zugriff auf die Ordner dient dem lokalen Arbeiten. Ein GitHub-Clone des Hubs allein enthält weder unsere gesamte Projektkenntnis noch die Rohdaten oder Ghidra-Datenbanken.
 
@@ -37,7 +37,7 @@ Zuerst anwendbare Projektanweisungen lesen, insbesondere [CLAUDE.md](../CLAUDE.m
 1. Diese Übergabe vollständig.
 2. [STATE.md](STATE.md): aktueller Checkpoint und offene Arbeiten.
 3. Nur den obersten aktuellen Abschnitt von [HANDOFF.md](HANDOFF.md); die folgenden alten Arbeitsaufträge nicht ausführen.
-4. [Auditbericht](../../../../Documents/Codex/2026-10-16/stronghold2-independent-audit/analysis/INDEPENDENT_AUDIT_2026-10-16.md) und [Audit-Handoff](../../../../Documents/Codex/2026-10-16/stronghold2-independent-audit/analysis/HANDOFF.md).
+4. [Auditbericht](../audits/2026-10-16-independent/INDEPENDENT_AUDIT_2026-10-16.md) und [Audit-Handoff](../audits/2026-10-16-independent/HANDOFF.md).
 5. [FINDINGS.md](FINDINGS.md), besonders F125–F147; [FUNCTIONS.md](FUNCTIONS.md); relevante EXP-006/007/008R-Abschnitte in [EXPERIMENTS.md](EXPERIMENTS.md).
 6. Bei konkreter Arbeit: [Granny-Datenvertrag](FORMATS/GRANNY_OBSERVER.md), [DECISIONS.md](DECISIONS.md), [SETUP.md](SETUP.md), [Analysezustand EXP-007](evidence/ANALYSIS_STATE_EXP-007.md).
 7. Dann nur die für den gewählten Auftrag nötigen Rohdaten, Quellen und Binärstellen.

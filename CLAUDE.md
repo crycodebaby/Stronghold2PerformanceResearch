@@ -16,7 +16,7 @@ Problem: 2×~100 knights ≈ 20 FPS, more troops/melee → 1–2 FPS. Cause unme
 | Named functions (mittel/hoch) | [docs/FUNCTIONS.md](docs/FUNCTIONS.md) |
 | File formats | [docs/FORMATS/](docs/FORMATS/) |
 | Rebuild tools/environment | [docs/SETUP.md](docs/SETUP.md) |
-| Overview of all folders in `RE-Projects` | [../README.md](../README.md) |
+| Overview of the local workspace folders (`RE-Projects`) | [docs/WORKSPACE.md](docs/WORKSPACE.md) |
 | Hub capture files, switches, `latest.json` | [docs/FORMATS/HUB_CAPTURE.md](docs/FORMATS/HUB_CAPTURE.md) |
 | Granny observer (EXP-008) data contract | [docs/FORMATS/GRANNY_OBSERVER.md](docs/FORMATS/GRANNY_OBSERVER.md) → `tools/grannyobs.py` |
 | Per-recording manifest, provenance, safe import | [docs/FORMATS/CAPTURE_MANIFEST.md](docs/FORMATS/CAPTURE_MANIFEST.md) |
