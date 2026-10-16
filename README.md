@@ -81,7 +81,7 @@ both repositories side by side into a short path; the tools find the hub as the 
 
 ```
 mkdir C:\src\RE-Projects & cd C:\src\RE-Projects
-git clone https://github.com/OWNER/Stronghold2PerformanceResearch SH2-Perf
+git clone https://github.com/crycodebaby/Stronghold2PerformanceResearch SH2-Perf
 git clone https://github.com/crycodebaby/Stronghold2AnalyseHub
 cd Stronghold2AnalyseHub
 cmake -S . -B build -A Win32 && cmake --build build --config Release
@@ -108,7 +108,7 @@ earlier game-run orders; do not execute it.
 | Repository | Version | Meaning |
 |---|---|---|
 | Stronghold2PerformanceResearch | the commit that contains this table (branch `publish-prep`, includes `main` `160f141`) | docs, tools, audit copy and pose block checked on 2026-10-16 |
-| Stronghold2AnalyseHub | branch `publish-prep` `a643f97`; runtime sources identical to `perf-metrics` `32ebc38a05ea` | `32ebc38a05ea` is the hub build of the latest in-game recordings (EXP-008R-A1/G1) |
+| Stronghold2AnalyseHub | branch `publish-prep` `40a105b`; runtime sources (`Stronghold2AnalyseHub/`, `proxy/`, `launcher/`) identical to `perf-metrics` `32ebc38a05ea`, earlier commit ids kept | `32ebc38a05ea` is the hub build of the latest in-game recordings (EXP-008R-A1/G1) |
 
 Checked together on 2026-10-16 from fresh clones: hub build and native tests, all game-free Python checks, the audit
 model and the stand-in end-to-end run (results in [REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md)). Locally only; no

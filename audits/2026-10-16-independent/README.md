@@ -58,7 +58,7 @@ checkout has exactly the hashed bytes. Each replacement was applied by an exact,
 - **S3** `run_audit.ps1` writes its work files (Ghidra project copy, exports) to `-Work`, default
   `%TEMP%\sh2-independent-audit-work`, instead of a `work/` folder beside the scripts, so nothing large or game-derived
   lands inside the repository.
-- **S4** (2026-10-17) one work-dir contract for the whole chain. Every script takes `--work` (env `SH2_AUDIT_WORK`,
+- **S4** (2026-10-16, later) one work-dir contract for the whole chain. Every script takes `--work` (env `SH2_AUDIT_WORK`,
   default `%TEMP%\sh2-independent-audit-work`, the same default as `run_audit.ps1 -Work`), which passes it to every
   call. New results and identity snapshots go to `<work>/results/`; `verify_binary.py` reads the Ghidra exports from
   `<work>/binary/exe/references.txt` (before: fixed `../work/binary/...`, which missed the exports written to `-Work`).
@@ -67,7 +67,7 @@ checkout has exactly the hashed bytes. Each replacement was applied by an exact,
   distributions from this folder (`--inputs reference`, default) or from the run's own `audit_data.py` output
   (`--inputs work`, used by `run_audit.ps1`). The pin of the audited hub source stays the historical
   `identity_before.json` entry, on purpose. Guarded by `tools/test_audit_workdir.py` (no game, no raw data).
-- **Correction to S2** (2026-10-17): the first published edit of `observer_repro.py` put a comment in front of the
+- **Correction to S2** (2026-10-16, later): the first published edit of `observer_repro.py` put a comment in front of the
   hash `assert` on the same line, which disabled the hub-source check; runs before this correction did not verify the
   source pin. The check is now a separate statement and exits with "Source changed" on a different source (covered
   by the regression test).

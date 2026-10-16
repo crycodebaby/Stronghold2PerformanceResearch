@@ -18,15 +18,17 @@ All class A rows were run on 2026-10-16 from fresh clones without build folders 
 | Check | Command | Class | Result 2026-10-16 |
 |---|---|---|---|
 | Hub Win32 build | `cmake -S . -B build -A Win32` + `cmake --build build --config Release` | A | OK, 0 compiler warnings |
-| Hub native tests | `ctest --test-dir build -C Release -LE timing` (capture, lifecycle, Granny observer with fake DLL) | A | 3/3 OK |
-| Hub sampler overhead | `ctest ... -L timing` (`sampler_test`) | A, load-dependent | **FAIL** 4/4 runs: slowdown 5.3–6.1 % > 5 % threshold on a busy machine; attribution checks passed. Earlier result 2–4 % (F103) |
-| Python suites + docs lint | `python -I tools/run_checks.py` | A | 7/7 OK (with this commit's docs) |
-| Audit observer model | `python -I tools/run_checks.py --audit` | A (needs hub source at `32ebc38`) | 9/9 OK, `repro_results.json` reproduced byte-identically |
+| Hub native tests | `ctest --test-dir build -C Release -LE timing` (capture, lifecycle, Granny observer with fake DLL, sampler functional checks) | A | 4/4 OK; a forced functional failure (`SH2HUB_SAMPLE_MS=1000`) makes `sampler_functional` fail as intended |
+| Hub sampler overhead | `ctest ... -L timing` (`sampler_overhead` = `sampler_test --checks overhead`) | A, hardware- and load-dependent, reported, not gating | **FAIL** in every run on 2026-10-16: slowdown 5.3–6.1 % > 5 % threshold while other work ran on the machine (load is a possible, unproven cause); all functional checks passed. Earlier results 2–4 % (F103) and 4.6–5.1 % (F123). Threshold unchanged |
+| Python suites + docs lint | `python -I tools/run_checks.py` (incl. `test_audit_workdir`) | A | 8/8 OK (with this commit's docs) |
+| Audit observer model | `python -I tools/run_checks.py --audit` | A (needs hub source equal to `32ebc38`) | 9/9 OK in a temporary work dir, results equal to the reference `repro_results.json`; a changed hub source is rejected (this check was ineffective in the first published copy, see the audit README) |
+| Audit work-dir contract | `python -I tools/test_audit_workdir.py` | A | 6/6 OK (6/6 fail against the previous scripts) |
 | End-to-end stand-in | `python -I tools/run_checks.py --e2e` | A (needs hub build + interactive desktop) | E2E OK |
 | Python 3.11 | same suites | A | `test_import_safety`, `test_hardening` fail (`os.path.isjunction` is 3.12+) |
 | Install hub into a TEST copy | `python -I tools/variant.py baseline`, `status` | B | not re-run for publication |
 | In-game recording, import, evaluation | EXPERIMENTS.md protocols, `ingest.py`, `grannyobs.py`, `ab_compare.py` | B | not re-run; last real runs 2026-10-15 |
 | Granny pose contract host (F150–F152) | `python -I tools/granny_pose.py [--dll <your granny2.dll>]`, then `tools/test_granny_pose.py` | B (real `granny2.dll` of your install, MSVC/CMake; own generated data only, no game start) | `granny_pose.py --dll <copy of the local Steam 1.5 granny2.dll>` from a fresh clone: 10 export/pop checks, 30 fingerprints, 142 layout + 1,620 differential cases, 0 failures, 443 rounding cases, max abs 1.53e-5 (= F150–F152). `test_granny_pose.py` not run: it reads `granny2.dll` from the sibling `Stronghold 2` folder, absent in the clean clone |
+| Full audit with new exports | `powershell -File audits/2026-10-16-independent/run_audit.ps1 -ExportBinary -Work <dir>` | B + C (game files, raw recordings, Ghidra 12.1.4 and the project database) | not re-run; the work-dir handover is covered by the class A test above |
 | Audit recount in an isolated copy (F148) | `python -I tools/recheck_granny_audit.py --audit-root <audit workspace>` | C (needs the audit's local `work/` exports and our raw recordings) | not re-run for publication |
 | Static binary facts (RVAs, signatures, call sites) | `ghidra_scripts/*.java` headless on your own exe/DLLs, `audits/.../verify_binary.py` | B | not re-run for publication |
 | Recount of A1/G1 numbers | `audits/.../audit_data.py`, `ingest.py verify` | C | not possible without the raw recordings |
@@ -59,4 +61,4 @@ All class A rows were run on 2026-10-16 from fresh clones without build folders 
 - Python 3.12 or newer is required; 3.14.3 is the verified version.
 - `core.autocrlf=true` checks out CRLF files; anything that hashes source files must normalise line endings (the
   audit copy does, see its README).
-- `sampler_test`'s overhead threshold is sensitive to machine load; CI reports it without gating.
+- The sampler's overhead threshold depends on hardware and load; only that entry (`sampler_overhead`) is non-gating.
