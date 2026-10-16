@@ -24,6 +24,7 @@ Run every tool as `python -I tools/<name>.py` from the repo root; `--help`/no ar
 | `pe_info.py` | PE header/imports/exports |
 | `vtable_candidates.py` | keyword filter over the vtable CSV |
 | `lint_docs.py` | docs checks, run by pre-push |
+| `run_checks.py` | every check without game or raw data (suites + lint; `--audit`, `--e2e` optional); used by CI |
 | `granny_raw/` | GR2 → Granny raw dump via the game's DLL (local only) |
 
 Conventions:

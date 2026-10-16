@@ -1,0 +1,22 @@
+# Game-free checks: Python test suites (temp folders only) and the docs linter. No game files or raw recordings.
+# Prepared and run locally with the same command (python -I tools/run_checks.py); a GitHub run has not happened yet.
+name: checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: windows-2022   # the tools target Windows paths, file locks and junctions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"   # verified locally with 3.14.3; 3.11 fails (os.path.isjunction)
+      - name: Game-free checks
+        run: python -I tools/run_checks.py
