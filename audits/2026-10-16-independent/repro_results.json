@@ -1,0 +1,103 @@
+{
+  "source_sha256": "2018c612b5ff372982655fbcb09c60c88cce5edadb4c4a124c2e743b2b96bcd8",
+  "tests_run": 9,
+  "failures": 0,
+  "errors": 0,
+  "limits": "Python model, synthetic event order, no latency/engine identity/output-equivalence proof. Dict performance is not a production design claim.",
+  "results": {
+    "collision": {
+      "old_used": 128,
+      "old_drops": {
+        "peak_probe": 128,
+        "probe_failure": 1
+      },
+      "alternative": {
+        "frames": 2,
+        "clock": 258,
+        "sample": 258,
+        "unknown": 129,
+        "equal": 129
+      }
+    },
+    "aggregate_seeded_synthetic_orders": {
+      "clock_history_first": {
+        "cumulative_keys": 9158,
+        "used": 8192,
+        "admitted_sample_keys": 1249,
+        "synthetic_weighted_lost_calls": {
+          "clock": 3498608,
+          "sample": 2900150
+        },
+        "table": {
+          "peak_probe": 128,
+          "probe_failure": 6241971,
+          "capacity_failure": 156787
+        }
+      },
+      "sample_history_first": {
+        "cumulative_keys": 9158,
+        "used": 8192,
+        "admitted_sample_keys": 2215,
+        "synthetic_weighted_lost_calls": {
+          "clock": 1009,
+          "sample": 0
+        },
+        "table": {
+          "peak_probe": 128,
+          "probe_failure": 604,
+          "capacity_failure": 405
+        }
+      }
+    },
+    "alternative_aggregate_seeded_stream": {
+      "real_clock_only_calls": 203180,
+      "synthetic_extra_clock_keys": 1024,
+      "history_keys": 2215,
+      "counts": {
+        "frames": 5,
+        "clock": 210768,
+        "sample": 6564,
+        "unknown": 2215,
+        "different": 2860,
+        "equal": 1489
+      }
+    },
+    "clock_counterexample": "clock 10/sample A; clock 20; clock 20/sample A => old true, sample tuple differs",
+    "explicit_failures": {
+      "frames": 1,
+      "clock": 3,
+      "sample": 4,
+      "unknown": 4,
+      "clock_state_overflow": 1,
+      "missing_clock_at_sample": 1,
+      "history_eviction": 2,
+      "transport_loss": 3,
+      "explicit_partial_tail_events": 5
+    },
+    "pose_link_counterexample": "same-frame label can survive an unretained model sampling the same world pose; require invalidation/taint on missed sample",
+    "random_oracle": {
+      "events": 30000,
+      "asserted_equal": 633,
+      "counts": {
+        "frames": 200,
+        "sample": 11991,
+        "missing_clock_at_sample": 8461,
+        "unknown": 11273,
+        "clock": 14972,
+        "free": 3037,
+        "lifetime_reset": 3037,
+        "offset_fault": 593,
+        "history_eviction": 8041,
+        "clock_state_overflow": 6171,
+        "equal": 633,
+        "different": 85
+      }
+    },
+    "tail_reproduction": {
+      "total": 7,
+      "frame_row_sum": 4,
+      "old_frame_rows_dropped": 0,
+      "pending_unwritten": 3
+    }
+  }
+}

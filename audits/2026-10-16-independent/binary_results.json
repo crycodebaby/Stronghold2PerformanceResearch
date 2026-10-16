@@ -1,0 +1,123 @@
+{
+  "exe_sha256": "f3ccdf9bb41158202dffc000e5f2036a82f4c1ce8c5c89462f6140000f32d34b",
+  "granny_sha256": "94d56fd7e9ef8adde51425da339722a584e28e71235bc8a89d8175c2276050fd",
+  "exe_image_base": "0x400000",
+  "granny_image_base": "0x50000000",
+  "machine": "x86/PE32",
+  "import_export_checks": [
+    {
+      "export": "_GrannySetModelClock@8",
+      "iat_rva": "0x500ab8",
+      "export_rva": "0x4f4e0",
+      "ret_rva": "0x4f4f2",
+      "callee_pop_bytes": 8
+    },
+    {
+      "export": "_GrannySampleModelAnimationsAccelerated@20",
+      "iat_rva": "0x500a98",
+      "export_rva": "0x4f6d0",
+      "ret_rva": "0x4f6f1",
+      "callee_pop_bytes": 20
+    },
+    {
+      "export": "_GrannyDeformVertices@24",
+      "iat_rva": "0x500afc",
+      "export_rva": "0x52f90",
+      "ret_rva": "0x52fb6",
+      "callee_pop_bytes": 24
+    },
+    {
+      "export": "_GrannyGetWorldPoseComposite4x4Array@4",
+      "iat_rva": "0x500af4",
+      "export_rva": "0x52bb0",
+      "ret_rva": "0x52bbd",
+      "callee_pop_bytes": 4
+    },
+    {
+      "export": "_GrannyFreeModelInstance@4",
+      "iat_rva": "0x500aa0",
+      "export_rva": "0x4f4c0",
+      "ret_rva": "0x4f4cb",
+      "callee_pop_bytes": 4
+    },
+    {
+      "export": "_GrannyFreeMeshDeformer@4",
+      "iat_rva": "0x500a60",
+      "export_rva": "0x52f80",
+      "ret_rva": "0x52f8b",
+      "callee_pop_bytes": 4
+    }
+  ],
+  "direct_calls_to_rva_38e4d0": [
+    {
+      "call_rva": "0x36b6f6",
+      "caller_rva": "0x36b210"
+    },
+    {
+      "call_rva": "0x38e82f",
+      "caller_rva": "0x38e4d0"
+    },
+    {
+      "call_rva": "0x36bf61",
+      "caller_rva": "0x36bf10"
+    },
+    {
+      "call_rva": "0x8f6ee",
+      "caller_rva": "0x8f630"
+    },
+    {
+      "call_rva": "0xce9e8",
+      "caller_rva": "0xce860"
+    },
+    {
+      "call_rva": "0xcea06",
+      "caller_rva": "0xce860"
+    },
+    {
+      "call_rva": "0xcf120",
+      "caller_rva": "0xcef80"
+    },
+    {
+      "call_rva": "0xcf13d",
+      "caller_rva": "0xcef80"
+    },
+    {
+      "call_rva": "0xd48c3",
+      "caller_rva": "0xd4760"
+    },
+    {
+      "call_rva": "0xd5774",
+      "caller_rva": "0xd5630"
+    },
+    {
+      "call_rva": "0xd5b51",
+      "caller_rva": "0xd59f0"
+    },
+    {
+      "call_rva": "0x3731ba",
+      "caller_rva": "0x372fa0"
+    },
+    {
+      "call_rva": "0x373266",
+      "caller_rva": "0x372fa0"
+    },
+    {
+      "call_rva": "0x373307",
+      "caller_rva": "0x372fa0"
+    },
+    {
+      "call_rva": "0x396764",
+      "caller_rva": "0x3965e0"
+    },
+    {
+      "call_rva": "0x1c1659",
+      "caller_rva": "0x1c12b0"
+    },
+    {
+      "call_rva": "0x1c1736",
+      "caller_rva": "0x1c12b0"
+    }
+  ],
+  "sample_return_rva": "0x38e6df",
+  "granny_import_count": 49
+}

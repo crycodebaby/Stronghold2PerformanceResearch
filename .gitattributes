@@ -1,3 +1,5 @@
 * text=auto
 .githooks/* text eol=lf
 *.sh text eol=lf
+# Imported audit files: keep the exact bytes whose SHA-256 is listed in their README
+audits/** -text

@@ -1,0 +1,9 @@
+{
+  "test_exe_sha256": "22b0c2f80de431ca28c7abe3ce949c9719a9546143806313ad9da8e149a9c972",
+  "fake_dll_sha256": "49375744734c928e290272283bdd156443bbc25beab470f0fc52a70692ea5ebd",
+  "copied_test_matches": true,
+  "copied_fake_matches": true,
+  "exit_code": 0,
+  "output": "granny_observer_test: OK (0 failure(s)); output <audit-workspace>\\work\\standin\\temp\\sh2_granny_observer_test_21824\\",
+  "limit": "Existing stand-in binary with fake Granny; not the installed production DLL, no real game execution."
+}
