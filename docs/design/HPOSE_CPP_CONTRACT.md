@@ -19,6 +19,11 @@ including literal boundary cases and exhaustive small valid ranges. Logs/source/
 our rejected cases. The game's geometric fallback for an excluded index is deliberately outside this model. These
 are own-contract tests, not differential execution of the game or evidence of speedup. No sanitizer run is claimed.
 
+Follow-up: the [native acceptance contract](../evidence/HPOSE_NATIVE_ACCEPTANCE_2026-10-17.md) now validates a
+versioned JSON host report before atomically persisting success. The independent runner uses CMake on PATH or
+`--cmake`; no Hub or Granny helper is needed. Game-free failure tests run in the ordinary Python suite. A mandatory
+Win32 build/run step is prepared in the workflow; no new GitHub run has been claimed.
+
 ## Representation and ownership
 
 - Separate file RVA, target-process address, H-record index, bone count and byte extent. A `uint32_t` captured address

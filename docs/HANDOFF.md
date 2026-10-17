@@ -8,6 +8,11 @@ Only the first section below is a current order. Every later section is a histor
 
 ## Current order — Exe H-pose ownership/lifetime
 
+- Tooling acceptance follow-up: [native JSON/process/report gates](evidence/HPOSE_NATIVE_ACCEPTANCE_2026-10-17.md)
+  completed locally, ten runner tests normal/-O plus standalone Win32 run. Workflow now includes the native step;
+  no new online CI or push. `record_range.h` and research findings unchanged. Do not repeat general tooling hardening
+  before the next bounded allocation investigation.
+
 - New bounded result F154/F155: [creation and handover](evidence/HPOSE_CREATION_2026-10-17.md), entry `0x38E0A0`,
   Granny returns at H+0/+4/+8; same O+0x18/+0x1C range and O+0x4C selection at `0x38E4D0`. Record count C and
   requested bone count N are different. Own C++ range/layout preparation has no live-pointer access or ownership.

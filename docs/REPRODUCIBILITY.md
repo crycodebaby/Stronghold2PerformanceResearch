@@ -6,7 +6,7 @@
 
 | Class | Needs | Published? |
 |---|---|---|
-| **A — no game** | Windows, Python ≥ 3.12, for the hub VS 2022 Build Tools + CMake | everything needed is in the two repositories |
+| **A — no game** | Windows, Python ≥ 3.12; native hosts/hub also VS 2022 Build Tools + CMake | own H-record host needs this research repo only; hub checks need its separate repo |
 | **B — own game** | your own Stronghold 2 **Steam 1.5** installation (exe SHA-256 `f3ccdf9bb41158202dffc000e5f2036a82f4c1ce8c5c89462f6140000f32d34b`, `granny2.dll` `94d56fd7e9ef8adde51425da339722a584e28e71235bc8a89d8175c2276050fd`), a TEST copy of it, optionally Ghidra 12.1.4 | game files are never published; you bring them |
 | **C — local raw data** | the original recordings in `captures/`, the project's Ghidra database, the audit's `work/` exports | not published (personal paths in logs, game-derived disassembly, size) |
 
@@ -25,6 +25,11 @@ Research `main` `46b14eb2cefa`, hub `main` `d3a763a33777` (runtime sources equal
 None of these runs touches the game. They show neither a performance change nor behaviour inside Stronghold 2.
 
 ## Checks and their last result
+
+Local native-acceptance follow-up: [result contract and failure tests](evidence/HPOSE_NATIVE_ACCEPTANCE_2026-10-17.md).
+`test_hpose_native.py` is part of normal Python checks (ten tests, no compiler). `hpose_native.py` is an additional
+mandatory Win32 workflow step; standalone source-copy run passed locally. This workflow change is not yet pushed or
+verified on GitHub. The original published-state CI results below remain historical.
 
 Local follow-up 2026-10-17, not published: the [H-record creation block](evidence/HPOSE_CREATION_2026-10-17.md)
 adds `tools/test_hpose_creation.py` (class A: six synthetic verifier tests), `tools/hpose_native.py` (class A:

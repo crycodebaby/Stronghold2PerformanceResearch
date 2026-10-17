@@ -62,6 +62,6 @@ int main() {
         check(invalid.status == Status::index_out_of_range && invalid.address == 0,
               "first excluded index is rejected");
     }
-    std::printf("H-record own range model: %u checks, %u failures; no target memory access.\n", checks, failures);
+    std::printf("{\"schema\":\"sh2perf.hpose-range-test\",\"version\":1,\"completed\":true,\"checks\":%u,\"failures\":%u}\n", checks, failures);
     return failures ? 1 : 0;
 }
