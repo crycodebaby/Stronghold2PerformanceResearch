@@ -26,6 +26,14 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Local sample follow-up: [conditional World/Composite write extent](evidence/POSE_SAMPLE_EXTENT_2026-10-17.md),
+33 pinned entries/46 ranges, five import/three export bindings. Nine synthetic tests and matching-original-file
+verifier normal/-O pass; integrated `run_checks.py` passes 15/15 groups. Independent review confirms final exports and eight candidate target/store bindings.
+Parent independently rechecks every manifest range with the audit PE reader. Original code was not executed.
+Reproduce: `python -I tools/test_pose_sample.py` (class A) and
+`python -I tools/pose_sample_verify.py --exe <exe> --dll <dll>` (class B, read-only). No unconditional initialized
+Sample-output span, native/Hub change or new GitHub CI run. Earlier results below retain their own revisions.
+
 Local initializer follow-up: [bounded resource effects](evidence/HPOSE_INITIALIZER_EFFECTS_2026-10-17.md) reuses
 the resource verifier with schema 2: 20 functions/24 ranges, nine imports, one table slot and 16 new bindings.
 Fifteen tests and the original-file verifier pass normally and with `-O`; independent review and parent recheck

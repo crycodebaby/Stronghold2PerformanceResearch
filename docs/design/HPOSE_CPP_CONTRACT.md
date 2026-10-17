@@ -53,6 +53,10 @@ Win32 build/run step is prepared in the workflow; no new GitHub run has been cla
   an invalid input that original machine arithmetic would wrap; label that as a safety restriction, not equivalence.
 - An address alone is not a generation. Cross-call comparisons need observed lifetime/reuse boundaries and explicit
   gaps. Equal matrices would still not establish equal hidden state or permission to skip the original call.
+- The [sample writer proof](../evidence/POSE_SAMPLE_EXTENT_2026-10-17.md) covers conditional full 64-byte matrix
+  stores in two direct writers. A future reader must establish the actual selected path, initialized sources and
+  destination capacity; normal Sample return alone is insufficient. Keep World and Composite extents separate
+  from allocation size. Do not turn an unresolved path or a no-write local callback into a valid empty observation.
 - The [bounded cleanup path](../evidence/HPOSE_CLEANUP_2026-10-17.md) clears O+0x4C only after its pose-release
   calls and further helpers. A nonzero selected-H field is therefore insufficient evidence of live referents.
   For a future observer, invalidate an observed generation at the relevant release boundary, before forwarding the

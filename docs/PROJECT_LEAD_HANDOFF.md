@@ -32,6 +32,12 @@ den initialisierten Pose-Ausgabeumfang am Samplepfad, siehe [Entscheidungsgrundl
 Eine vollstaendige Cache-/Klassenrekonstruktion ist keine pauschale Vorbedingung fuer jeden begrenzten Vergleich;
 die untenstehende historische Erstauftragsliste nicht neu starten.
 
+Fortschritt Poseausgabe 2026-10-17: [Sample-Schreibumfang](evidence/POSE_SAMPLE_EXTENT_2026-10-17.md), F167–F170,
+belegt bedingte volle 64-Byte-Matrizen in World und Composite fuer zwei direkte Writer. Kapazitaet, Quellgueltigkeit,
+Dispatch und Elternreihenfolge bleiben Bedingungen; der Spezialcallback hat noch keinen Writervertrag.
+Naechste begrenzte Prioritaet ist dessen Descriptor-/Zielbindung an DLL `0x2C44 -> 0x2460`, keine Rekonstruktion
+aller Controls. Der aktuelle Einstieg steht in STATE/HANDOFF; ein Livevergleich ist weiterhin nicht freigegeben.
+
 ## 1. Rolle und Ziel
 
 Übernimm die technische Projektleitung als Senior Reverse Engineer und Software Architect. Arbeite kritisch, selbstständig und ergebnisoffen. Frühere Agentenberichte sind zu überprüfende Aussagen; Nutzerbeobachtungen sind Kontext und teilweise bestätigte Abläufe, nicht automatisch gemessene Ursachen.

@@ -34,6 +34,7 @@ Run every tool as `python -I tools/<name>.py` from the repo root; `--help`/no ar
 | `hpose_allocation_verify.py`, `test_hpose_allocation.py` | read-only capacity/new/transfer function and import checks; synthetic rejection tests, no game execution |
 | `hpose_cleanup_verify.py`, `test_hpose_cleanup.py` | read-only cleanup/direct destruction-chain function and import checks; synthetic rejection tests, no game execution |
 | `hpose_resource_verify.py`, `test_hpose_resource.py` | schema-2 read-only resource/initializer fingerprints, argument/store/name bindings and pinned table slot; rejects incomplete/changed evidence, does not resolve all dynamic H-resource targets |
+| `pose_sample_verify.py`, `test_pose_sample.py` | pinned Exe/DLL sample-path and writer-range fingerprints, import/export identities and synthetic rejection tests; no original execution or unconditional initialized Sample-output claim |
 | `hpose_native.py`, `hpose_contract/` | own C++17 Win32 range/index contract; strict versioned JSON result and atomic success report, isolated build, CMake on PATH or --cmake; no target memory/Hub/Granny input |
 | `test_hpose_native.py` | game/compiler-free runner tests with real own child processes, strict JSON, stale reports, timeouts and injected write failures |
 

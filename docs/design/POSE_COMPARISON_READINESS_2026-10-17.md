@@ -56,3 +56,18 @@ Kein automatischer Folgeauftrag fuer jede neu gefundene virtuelle Funktion. Die 
 ist der gueltige und initialisierte World-/Composite-Ausgabeumfang am bekannten Samplepfad. Erst danach wird die kleinste
 verbleibende Lebensdauer-/Beobachtungsfrage bestimmt. Dieses Dokument startet keine zusaetzliche Analyse,
 Observerimplementierung, Spielaufnahme oder Originalausfuehrung im laufenden Initialisierungspaket.
+
+## Fortschritt: bedingter Ausgabeumfang
+
+Der [statische Sample-Baustein](../evidence/POSE_SAMPLE_EXTENT_2026-10-17.md) trennt jetzt vollstaendige
+64-Byte-Stores pro World-/Composite-Matrix von deren Quellgueltigkeit und der Auswahl des tatsaechlichen
+Writerpfads. Die zwei direkten Writer haben unterschiedliche Kapazitaetspruefungen. Der bekannte Spielaufruf
+verwendet einen Startindex von null; eine allgemeine Worker-Indexsemantik wird daraus nicht abgeleitet.
+Eine Kontroll-/Callbackkante und die Herkunft gueltiger Local-Pose-Werte verhindern weiterhin einen pauschalen
+initialisierten Bereich allein aus dem Sample-Return. Dieser Fortschritt erfuellt Punkt 2 oben nur bedingt;
+Generationen, Leseintervall und Ereignisvollstaendigkeit sind damit nicht geschlossen.
+
+Genau naechster Beweis: die Spezialkante DLL `0x2C44 -> 0x2460` an einen belegten Descriptor und ein konkretes
+Callbackziel binden, danach dessen Ausgabeumfang. Der Scope beginnt beim ersten Praedikat-true-Knoten,
+wenn der naechste Knoten fehlt oder das Praedikat false liefert. Ein sauber lokalisierter unbekannter Producer
+ist ein zulaessiger Abschluss. Keine automatische Ausweitung auf alle Controls oder LocalPose-Mathematik.

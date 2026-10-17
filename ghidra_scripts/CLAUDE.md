@@ -14,6 +14,7 @@ Java GhidraScripts, run headless against the project `../ghidra-projects/SH2`
 | `AnnotateFunctions.java` | `<out.txt> addr#name#comment...` | **writes**: name and/or plate comment for FUNCTIONS.md knowledge; no spaces, commas or `\|` in arguments (the .bat goes through cmd) |
 | `FunctionBrief.java` | `<addr hex> <out.txt>` | ≤ 30-line structural summary; wrapper `tools/fbrief.py` |
 | `PoseContract.java` | `<output-dir> <depth> <VA>...` | bounded read-only function/callee byte export, no decompilation; use separate project copy; local evidence in ignored build/knowledge-pose |
+| `PoseSampleExtent.java` | `<output-dir> f:<entryVA> / r:<startVA>:<endVA> / d:<startVA>:<length> ...` | identity-gated, bounded read-only existing instruction/data export, including non-function labels; no analysis or DB mutation; raw output stays ignored locally |
 | `hpose_creation.java` | `<output-dir> <VA>...` | pinned Exe identity, bounded IAT references/function evidence on a separate read-only copy; raw listings stay local under build/hpose-creation |
 | `hpose_resource.java` | `<output-dir> <VA>...` | pinned Exe, bounded function/reference export for resource provenance; `x:<VA>` omits direct function export, local ignored output only |
 

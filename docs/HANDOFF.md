@@ -1,12 +1,21 @@
 # HANDOFF
 
-> Kurzfassung: Drei Ressourceninitialisierer und ihre begrenzten direkten Effekte sind belegt; globale Lookup-/Lebenszeitfragen bleiben offen. Naechster Schritt: initialisierten Pose-Ausgabeumfang am bekannten Samplepfad nachweisen. Keine automatische Cache-Rekursion, Aufnahme oder Installation.
+> Kurzfassung: Zwei direkte Posewriter haben bedingte volle 64-Byte-Ausgaben; der gesamte Sampleaufruf noch keinen unbedingten Lesebereich. Naechster Schritt: genau einen Descriptor-/Callbackpfad an DLL 0x2C44 -> 0x2460 binden. Keine Aufnahme, Installation oder automatische Cache-Rekursion.
 
-Updated: 2026-10-17 (bounded initializer effects and readiness decision). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
+Updated: 2026-10-17 (conditional sample write extent). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
 
 Only the first section below is a current order. Every later section is a historical operations log (game-run sequences, user guides, way-back instructions) kept as evidence; do not execute it.
 
 ## Current order — Exe H-pose ownership/lifetime
+
+- F167–F170: [sample write extent](evidence/POSE_SAMPLE_EXTENT_2026-10-17.md). Exe sample arguments and DLL
+  branching connect to two direct writers. For the known first-index-zero subpaths, each writes complete World
+  and Composite matrices in `[0,B)` under explicit source/capacity/hierarchy/dispatch conditions. All eight known
+  candidate target bindings and 64-byte stores independently checked. Local source starts at 80*f, not 80*a;
+  a is only a guard addend here. The special callback and valid LocalPose production remain open. Neither normal
+  Sample return nor HeaderN authorizes a full live read. Nine tests and original-file gates normal/-O pass;
+  33 pinned entries/46 ranges, five imports/three exports. Reproduce:
+  `python -I tools/pose_sample_verify.py --exe <exe> --dll <dll>` and `python -I tools/test_pose_sample.py`.
 
 - F163–F166: [initializer effects](evidence/HPOSE_INITIALIZER_EFFECTS_2026-10-17.md). Optional filename-driven
   lightmap reference list R+0x14, normalmap R+0x28, lights/occlusion R+0x24. Pointer-list stride 4 differs from H20.
@@ -56,7 +65,12 @@ Only the first section below is a current order. Every later section is a histor
 
 - Completed block: [contract, audit corrections, exact limits and reproduction](evidence/POSE_CONTRACT_2026-10-16.md), F148–F153. Real-DLL host: 142 layout cases, 1,620 differential cases, 238,768 components; 0 criterion failures. Own affine helper is numerically close but differs in 443 cases; no universal bit identity or replacement permission. Nine audit model tests + two integration tests pass.
 - Reproduce from repo root: `python -I tools/granny_pose.py`, then `python -I tools/test_granny_pose.py`; audit: `python -I tools/recheck_granny_audit.py --audit-root <local-audit-root>`; docs: `python -I tools/lint_docs.py`. MSVC/CMake/Win32 required; writes only isolated ignored build outputs. Reports include identities/source hashes and a float counterexample.
-- **Exactly one next experiment:** static initialized-output-extent proof at SampleModelAnimationsAccelerated (Exe 0x38E6D9/return 0x38E6DF; Granny RVA 0x4F6D0). Establish which World/Composite matrix indices are written on the bounded normal path and how requested count relates to proven capacity. Allocation alone is not initialized output. Record exact remaining write/alias boundaries; no full animation reconstruction, original execution, observer build or recording in that next static scope.
+- **Exactly one next experiment:** static descriptor/callback binding at DLL `0x2C44 -> 0x2460`. Select the
+  predicate-true first control when the next node is absent or its `0x1B540` predicate is false. Bind
+  `D=*(first.node+0x18)`, target `*(D+0x10)`, arguments `(first.node,B,A,W,0)` and that one target's output
+  extent. Stop at a precise unresolved producer/alias edge if static binding fails; do not reconstruct all controls.
+  This does not close the separate LocalPose-production or generation/read-window questions. No original execution,
+  observer implementation or recording.
 - Acceptance/result decisions are in the evidence's final section. Library ownership is established in own valid hosts; the particular game-side owner/lifetime is not yet fully proven. Unresolved indirect transfers remain an explicit boundary. No output observer implementation is claimed.
 - Do not resume G2, install a build or request a recording. Original/TEST, Hub source/builds, captures, audit reference and original Ghidra DB stay unchanged. SH2-Perf own code/docs only. New agents update STATE and this section after the next result.
 - Publication (2026-10-17): both repositories are public ([STATE.md](STATE.md) "Published state"). Work in a clone of the published research history with normal commits and pull requests; no re-export, no rewrite of published or hub ids. Push or open a PR only when the task asks for it. Publication changes nothing in this order.
