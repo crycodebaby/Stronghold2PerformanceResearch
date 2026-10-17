@@ -20,7 +20,7 @@ Research `main` `46b14eb2cefa`, hub `main` `d3a763a33777` (runtime sources equal
 | GitHub CI, game-free | hub `build-test` (Win32 build, `ctest -LE timing`): [push 621a9d6](https://github.com/crycodebaby/Stronghold2AnalyseHub/actions/runs/38983295967), [PR #1](https://github.com/crycodebaby/Stronghold2AnalyseHub/actions/runs/38983296023), [`main` d3a763a](https://github.com/crycodebaby/Stronghold2AnalyseHub/actions/runs/38983478344) | build OK; 4/4 gating tests OK in each run |
 | Local, extra inputs (hub sibling, desktop) | fresh clones of both published states side by side: `run_checks.py --audit --e2e` | 11/11 OK, including the case skipped in CI (6/6 in `test_audit_workdir`), audit model equal to the reference, stand-in end-to-end run OK |
 | Not run (inputs not published) | `audit_data.py --snapshot before` · `recheck_granny_audit.py` · `test_granny_pose.py` | stop with "Missing local input" · "Original history required" · "Run tools/granny_pose.py first" (needs your own `granny2.dll`); these are not passes |
-| Non-gating overhead test | hub `sampler_overhead` (label `timing`) | CI step green in all three runs, no number in the log (`ctest --output-on-failure` prints output only on failure); local fresh clone 2026-10-17: **5.5 %, above the 5 % threshold, failed**. Not a performance acceptance |
+| Non-gating overhead test | hub `sampler_overhead` (label `timing`) | CI step green in all three runs, no number in the log (`ctest --output-on-failure` prints output only on failure); local fresh clones 2026-10-17: **5.5 % and 5.2 %, above the 5 % threshold, failed**. Not a performance acceptance |
 
 None of these runs touches the game. They show neither a performance change nor behaviour inside Stronghold 2.
 
