@@ -41,6 +41,10 @@ SH2Perf_out/ ── tools/ingest.py (verify → stage → atomic import) ──�
 
 The detailed documentation is partly German; entry documents are English. Facts keep their IDs across languages.
 
+For a readable map of the current animation/pose knowledge, start with
+[Animation knowledge map](docs/ANIMATION_KNOWLEDGE_MAP.md) (German): creation, selection, matrix output and
+cleanup, with evidence links, explicit conditions and unresolved connections. The current assignment remains in STATE.
+
 ## What is known (verified, with evidence)
 
 | Topic | Finding |

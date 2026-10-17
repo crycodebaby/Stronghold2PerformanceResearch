@@ -2,7 +2,7 @@
 
 > Kurzfassung: Aktueller Stand, offene Aufgaben, nächster Schritt. Immer zuerst lesen.
 
-Updated: 2026-10-17 · Phase: 1 (measurement and bounded analysis) · **No performance gain has been shown; no change to game behaviour exists.**
+Updated: 2026-10-18 · Phase: 1 (measurement and bounded analysis) · **No performance gain has been shown; no change to game behaviour exists.**
 
 ## Current status (the only current order)
 | Item | State |
@@ -22,7 +22,13 @@ Updated: 2026-10-17 · Phase: 1 (measurement and bounded analysis) · **No perfo
 | Open hypothesis | F136: some paused-frame Granny work recomputes unchanged poses. Not proven; no cache/skip may be built on it. |
 | Current assignment | Next bounded static proof: first-bone fast route 0x1C8DB -> 0x44F40. Bind its three source branches to known writer slots and delimit first-matrix output and the following loop's count/indices. Target already known; no automatic reconstruction of all Track+8 targets, controls or curve mathematics. No original execution or observer. [Boundary](evidence/POSE_SPECIAL_CALLBACK_2026-10-17.md), [prerequisites](design/POSE_COMPARISON_READINESS_2026-10-17.md) |
 | Suspended / historical | EXP-008R-G2/A2; all game-run orders in [HANDOFF.md](HANDOFF.md); backlog items under "Open tasks" that predate EXP-006 (KNIGHTS, EXP-001…005). The historical 1–2 FPS multiplayer case (F060) is separate and unrecorded. |
-| Entry for newcomers | [README](../README.md), [STARTER_TASKS.md](STARTER_TASKS.md), [AGENTS.md](../AGENTS.md) |
+| Entry for newcomers | [README](../README.md), [animation knowledge map](ANIMATION_KNOWLEDGE_MAP.md), [STARTER_TASKS.md](STARTER_TASKS.md), [AGENTS.md](../AGENTS.md) |
+
+### Navigation update (2026-10-18)
+[Animation knowledge map](ANIMATION_KNOWLEDGE_MAP.md) connects the existing F148–F174 evidence by subsystem
+rather than report date. It separates known paths, validity conditions and open edges, with a lifecycle diagram
+and maintenance rules. No new binary finding or change to the current fast-route research assignment.
+Independent semantic documentation review found no blocking issue; integrated game-free checks pass 15/15 groups.
 
 ### Checkpoint notes (2026-10-17)
 Special-callback F171–F174 separates factory/descriptor provenance from actual live binding. Under the exact

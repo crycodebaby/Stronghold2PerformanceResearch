@@ -2,6 +2,9 @@
 
 > Kurzfassung: Einstieg und Auftrag für einen neuen technischen Projektleiter. Ziel ist überprüfbares Wissen über abgegrenzte Stronghold-2-/Engine-Teilpfade bis zu testbaren eigenen Implementierungen und später belegten Performance-Eingriffen. Stand 2026-10-16; alte G2-Aufträge sind ausgesetzt, kein Performancegewinn nachgewiesen.
 
+Orientierung seit 2026-10-18: Die [Wissenskarte Animation/Pose](ANIMATION_KNOWLEDGE_MAP.md) verbindet
+die belegten Stationen mit ihren Nachweisen und offenen Grenzen. Der aktuelle Auftrag steht weiterhin in STATE.
+
 Fortschritt seit Erstellung: Der erste begrenzte Auftrag aus Abschnitt 8 ist bearbeitet;
 [nativer Pose-Vertrag, eigener Composite-Helfer und Auditkorrekturen](evidence/POSE_CONTRACT_2026-10-16.md).
 Der Nachbau ist im allgemeinen Float-Bereich nicht bitgleich. Für Fortsetzung zuerst

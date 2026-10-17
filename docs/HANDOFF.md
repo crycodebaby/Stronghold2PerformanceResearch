@@ -2,7 +2,9 @@
 
 > Kurzfassung: Ein Animationsdescriptor und der bedingte volle Matrixpraefix seines Callbacks sind belegt. Schnellroute und indirekter Trackcallback bleiben offen. Naechste Prioritaet: bekannter erster-Bone-Schnellweg 0x1C8DB -> 0x44F40. Keine Aufnahme oder Installation.
 
-Updated: 2026-10-17 (bounded special-callback path). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
+Updated: 2026-10-18 (knowledge navigation; research remains at the bounded special-callback result).
+Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
+Use the [animation knowledge map](ANIMATION_KNOWLEDGE_MAP.md) for the connected path and evidence links.
 
 Only the first section below is a current order. Every later section is a historical operations log (game-run sequences, user guides, way-back instructions) kept as evidence; do not execute it.
 
