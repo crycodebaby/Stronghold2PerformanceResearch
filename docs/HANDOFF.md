@@ -1,12 +1,19 @@
 # HANDOFF
 
-> Kurzfassung: Auditkorrekturen und erster nativer Pose-Wissensbaustein abgeschlossen. Nächster begrenzter Auftrag: Besitz/Lebensdauer der Exe-H-Poseobjekte statisch nachweisen. Keine neue Spielaufnahme; alle alten G2-/Installationssequenzen sind ausgesetzt.
+> Kurzfassung: Ein Erzeugungs-/Auswahlpfad der H-Pose-Datensaetze ist jetzt belegt. Naechster begrenzter Schritt: Allokationsbytes/Kapazitaetsstores hinter Exe RVA 0x38D500. Besitz/Freigabe/Reuse bleiben offen; keine neue Spielaufnahme oder Installation.
 
-Updated: 2026-10-17 (publication note only; the order is unchanged). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
+Updated: 2026-10-17 (bounded creation/selection result). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
 
 Only the first section below is a current order. Every later section is a historical operations log (game-run sequences, user guides, way-back instructions) kept as evidence; do not execute it.
 
 ## Current order — Exe H-pose ownership/lifetime
+
+- New bounded result F154/F155: [creation and handover](evidence/HPOSE_CREATION_2026-10-17.md), entry `0x38E0A0`,
+  Granny returns at H+0/+4/+8; same O+0x18/+0x1C range and O+0x4C selection at `0x38E4D0`. Record count C and
+  requested bone count N are different. Own C++ range/layout preparation has no live-pointer access or ownership.
+- Reproduce: `python -I tools/hpose_creation_verify.py --exe <exe> --dll <dll>`; game-free verifier tests:
+  `python -I tools/test_hpose_creation.py`; native own model: `python -I tools/hpose_native.py` (MSVC Win32/CMake).
+  Fingerprints prove byte locations, not semantics. See evidence for exact RVAs, input identities and limits.
 
 - Tooling follow-up 2026-10-17: T2 now reports global call-to-frame accounting with synthetic tests and an old-CLI
   counterexample ([evidence](evidence/T2_FRAME_ACCOUNTING_2026-10-17.md)). Owner-detail/Silver quality and native
@@ -16,7 +23,7 @@ Only the first section below is a current order. Every later section is a histor
 
 - Completed block: [contract, audit corrections, exact limits and reproduction](evidence/POSE_CONTRACT_2026-10-16.md), F148–F153. Real-DLL host: 142 layout cases, 1,620 differential cases, 238,768 components; 0 criterion failures. Own affine helper is numerically close but differs in 443 cases; no universal bit identity or replacement permission. Nine audit model tests + two integration tests pass.
 - Reproduce from repo root: `python -I tools/granny_pose.py`, then `python -I tools/test_granny_pose.py`; audit: `python -I tools/recheck_granny_audit.py --audit-root <local-audit-root>`; docs: `python -I tools/lint_docs.py`. MSVC/CMake/Win32 required; writes only isolated ignored build outputs. Reports include identities/source hashes and a float counterexample.
-- **Exactly one next experiment:** trace allocation, capacity source, transfers/reuse and freeing of the 20-byte H records used by Exe RVA `0x38E4D0`. Start from IAT uses of New/FreeWorldPose, New/FreeLocalPose and InstantiateModel; resolve stores to O+0x18/+0x1c/+0x4c. Same hashes and read-only separate Ghidra copy; prove each claimed edge with RVA/bytes. Do not infer a soldier identity.
+- **Exactly one next experiment:** follow `0x38D500` and its immediate allocation/store helper from growth path `0x38D6D0`: prove requested capacity to actual bytes and begin/end/capacity stores in the same container. Full C/list-count origin and release/reuse remain separate open questions. Same hashes and read-only separate Ghidra copy; prove each claimed edge with RVA/bytes. Do not infer a soldier identity.
 - Acceptance/result decisions are in the evidence's final section. Library ownership is established in own valid hosts; the particular game-side owner/lifetime is not yet fully proven. Unresolved indirect transfers remain an explicit boundary. No output observer implementation is claimed.
 - Do not resume G2, install a build or request a recording. Original/TEST, Hub source/builds, captures, audit reference and original Ghidra DB stay unchanged. SH2-Perf own code/docs only. New agents update STATE and this section after the next result.
 - Publication (2026-10-17): both repositories are public ([STATE.md](STATE.md) "Published state"). Work in a clone of the published research history with normal commits and pull requests; no re-export, no rewrite of published or hub ids. Push or open a PR only when the task asks for it. Publication changes nothing in this order.

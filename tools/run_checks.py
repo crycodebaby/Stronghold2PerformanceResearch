@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import paths  # noqa: E402
 
 SUITES = ["test_variant", "test_ingest", "test_ab_compare", "test_import_safety", "test_hardening", "test_grannyobs",
-          "test_audit_workdir", "test_audit_history"]
+          "test_audit_workdir", "test_audit_history", "test_hpose_creation"]
 AUDIT = paths.REPO / "audits" / "2026-10-16-independent"
 
 

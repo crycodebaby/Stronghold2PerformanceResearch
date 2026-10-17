@@ -1,0 +1,130 @@
+{
+  "exe_sha256": "f3ccdf9bb41158202dffc000e5f2036a82f4c1ce8c5c89462f6140000f32d34b",
+  "dll_sha256": "94d56fd7e9ef8adde51425da339722a584e28e71235bc8a89d8175c2276050fd",
+  "functions": [
+    {
+      "rva": "0x38cf70",
+      "ranges": [
+        {
+          "rva": "0x38cf70",
+          "length": 92
+        }
+      ],
+      "sha256": "a13c3ca75321b2d994812aebd3339f44211288cf4b4fcca76cd91d5e313fc7c5"
+    },
+    {
+      "rva": "0x38d040",
+      "ranges": [
+        {
+          "rva": "0x38d040",
+          "length": 44
+        }
+      ],
+      "sha256": "e26fb99748395ba8d10e0259f8359129b3d214b13624df6d30d71761284104cb"
+    },
+    {
+      "rva": "0x38d6d0",
+      "ranges": [
+        {
+          "rva": "0x38d6d0",
+          "length": 121
+        }
+      ],
+      "sha256": "41c2592812074afef98fff9df9bdaae624def7988335c239558568fa937a0874"
+    },
+    {
+      "rva": "0x38dc70",
+      "ranges": [
+        {
+          "rva": "0x38dc70",
+          "length": 178
+        }
+      ],
+      "sha256": "ea4bc0625e0de08063012cc80f9fa019c15d412dc222292edf86da1c464c0ed6"
+    },
+    {
+      "rva": "0x38ddc0",
+      "ranges": [
+        {
+          "rva": "0x38ddc0",
+          "length": 732
+        }
+      ],
+      "sha256": "e541a6b90c2fbe8e5ae2d34374b1ad085b451831e32de1193d86330ae3bfa9e7"
+    },
+    {
+      "rva": "0x38e0a0",
+      "ranges": [
+        {
+          "rva": "0x38e0a0",
+          "length": 794
+        }
+      ],
+      "sha256": "c6453c688d3b6a6605a07a0d2d9c54a4fe9c853b5760228853fb426f710d72c1"
+    },
+    {
+      "rva": "0x38e4d0",
+      "ranges": [
+        {
+          "rva": "0x38e4d0",
+          "length": 554
+        },
+        {
+          "rva": "0x38e700",
+          "length": 344
+        }
+      ],
+      "sha256": "ac2dbe828b18a811ef6659ac6696a8df997c00395588e8eb20faa7559ed5ef98"
+    }
+  ],
+  "edges": [
+    {
+      "label": "create-instance",
+      "rva": "0x38e270",
+      "length": 24,
+      "sha256": "5e6ccab875acddddff8ab1b94be39a885c4f627f19b9eae742a36d4a88d1a0b4"
+    },
+    {
+      "label": "create-world",
+      "rva": "0x38e288",
+      "length": 22,
+      "sha256": "223907e623e4c0a9bafaf84f06e8dfa4547d594c40a08eb4bdea65f03c19c315"
+    },
+    {
+      "label": "create-local",
+      "rva": "0x38e29e",
+      "length": 25,
+      "sha256": "3891d3e68b96c4df921014728adac7f355e9b371c556aaca236458cc7d313efa"
+    },
+    {
+      "label": "record-step",
+      "rva": "0x38e2c0",
+      "length": 11,
+      "sha256": "dc10e6191f4b42d030c75f31394f9ed143295329b4ce4e01c11a2100fe48b141"
+    },
+    {
+      "label": "initial-selection",
+      "rva": "0x38e2d1",
+      "length": 36,
+      "sha256": "6eaea02521bc64e324ad886cf2f945f4b80f824bace9131013e0df2d0ca4caa1"
+    },
+    {
+      "label": "index-check",
+      "rva": "0x38e51f",
+      "length": 8,
+      "sha256": "14f93072d4755603c10b420138a8dd92e27e4e6b10eb8f1e82b88fb2532fd220"
+    },
+    {
+      "label": "indexed-selection",
+      "rva": "0x38e613",
+      "length": 15,
+      "sha256": "e8ac685d051d7c48145a4e078b2a7453e133c00ee6ca402583415aaaa13fe934"
+    },
+    {
+      "label": "resize-input",
+      "rva": "0x38e24b",
+      "length": 15,
+      "sha256": "af6ba8f36769846af30b96b1e69a6f350d825212d985836a115c2d4080d98736"
+    }
+  ]
+}

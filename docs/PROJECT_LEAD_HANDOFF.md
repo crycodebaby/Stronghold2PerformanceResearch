@@ -14,6 +14,11 @@ beschreiben den Stand dieser Übergabe vom 2026-10-16. Weitergearbeitet wird auf
 Forschungshistorie; zitierte lokale Kennungen löst [export/EXPORT_MAP.tsv](export/EXPORT_MAP.tsv) auf.
 Der nächste Forschungsauftrag bleibt unverändert: Besitz und Lebensdauer der Exe-H-Pose-Datensätze.
 
+Fortschritt 2026-10-17: [ein Erzeugungs-/Auswahlpfad](evidence/HPOSE_CREATION_2026-10-17.md) ist statisch
+belegt (F154/F155), mit unabhaengiger Bytepruefung und eigener begrenzter C++-Adressarithmetik. Vollstaendige
+Kapazitaet/Besitz/Freigabe/Reuse fehlen weiter. Der aktuelle HANDOFF grenzt als naechsten Schritt den Allokatorpfad
+hinter RVA `0x38D500` ein; die untenstehende historische Erstauftragsliste nicht neu starten.
+
 ## 1. Rolle und Ziel
 
 Übernimm die technische Projektleitung als Senior Reverse Engineer und Software Architect. Arbeite kritisch, selbstständig und ergebnisoffen. Frühere Agentenberichte sind zu überprüfende Aussagen; Nutzerbeobachtungen sind Kontext und teilweise bestätigte Abläufe, nicht automatisch gemessene Ursachen.

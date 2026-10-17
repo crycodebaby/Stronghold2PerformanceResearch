@@ -26,6 +26,12 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Local follow-up 2026-10-17, not published: the [H-record creation block](evidence/HPOSE_CREATION_2026-10-17.md)
+adds `tools/test_hpose_creation.py` (class A: six synthetic verifier tests), `tools/hpose_native.py` (class A:
+MSVC Win32 own range/layout host, no game inputs), and `tools/hpose_creation_verify.py --exe <exe> --dll <dll>`
+(class B: read-only matching original files). New static Ghidra checks use a separate project copy; no game run.
+The result counts in the dated tables below describe their earlier revisions, not these new local checks.
+
 All class A rows were run on 2026-10-16 from fresh clones without build folders or databases (Windows 10, Python
 3.14.3, CMake 4.4.4, MSVC 19.44, hub `publish-prep` whose runtime sources equal `32ebc38`).
 
