@@ -20,6 +20,10 @@ Updated: 2026-10-17 · Phase: 1 (measurement and bounded analysis) · **No perfo
 | Entry for newcomers | [README](../README.md), [STARTER_TASKS.md](STARTER_TASKS.md), [AGENTS.md](../AGENTS.md) |
 
 ### Checkpoint notes (2026-10-17)
+Public `origin/main` at `898a394` was merged normally into the local research branch after checkpoint `af14eea`;
+the incoming Discord workflow is unchanged. The integrated tree passed 12/12 regular check groups and the own
+native host passed 6393 conditions with zero failures. Research remains local; no push or new GitHub CI run.
+
 Creation-to-selection (F154/F155) and allocator-argument/transfer path (F156/F157) are now bounded static results.
 Native C++ preparation implements checked address/byte arithmetic only; no original allocator or game computation
 is replaced. Next: cleanup candidate `0x38E3C0`, not heap-rounding measurement.

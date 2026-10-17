@@ -12,12 +12,12 @@ Only the first section below is a current order. Every later section is a histor
   `0x38D500` -> `0x39A840` -> nominal CRT new requests 20*n, not measured heap reserve. Five-word H transfer,
   old-array delete and capacity/end/begin stores are distinct from Granny pose construction/destruction.
   Reproduce: `python -I tools/hpose_allocation_verify.py --exe <exe> --dll <dll>`; synthetic verifier:
-  `python -I tools/test_hpose_allocation.py`. Own native byte model adds ten literal cases; now6393 checks total.
+  `python -I tools/test_hpose_allocation.py`. Own native byte model adds ten literal cases; now 6393 checks total.
 
 - Tooling acceptance follow-up: [native JSON/process/report gates](evidence/HPOSE_NATIVE_ACCEPTANCE_2026-10-17.md)
   completed locally, ten runner tests normal/-O plus standalone Win32 run. Workflow now includes the native step;
   no new online CI or push. `record_range.h` and research findings unchanged. Do not repeat general tooling hardening
-  before the next bounded allocation investigation.
+  before the next bounded cleanup/lifetime investigation.
 
 - New bounded result F154/F155: [creation and handover](evidence/HPOSE_CREATION_2026-10-17.md), entry `0x38E0A0`,
   Granny returns at H+0/+4/+8; same O+0x18/+0x1C range and O+0x4C selection at `0x38E4D0`. Record count C and
