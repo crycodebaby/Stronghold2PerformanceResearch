@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "modules": [
     {
       "module": "exe",
@@ -13,6 +13,16 @@
               "rva": "0x500a98",
               "length": 4,
               "sha256": "28605a01ff8472ae7bfef253fb11141abce50aba98b5d20b6869a6f4893886aa"
+            }
+          ]
+        },
+        {
+          "id": "d-00900ad4-4",
+          "ranges": [
+            {
+              "rva": "0x500ad4",
+              "length": 4,
+              "sha256": "8959a13136ed953dbfa6a0624ecc1e37754dce769dc6d34a0077267a1bd6d3dd"
             }
           ]
         },
@@ -69,12 +79,52 @@
           ]
         },
         {
+          "id": "d-50061d58-28",
+          "ranges": [
+            {
+              "rva": "0x61d58",
+              "length": 28,
+              "sha256": "7ffe150bcebf345b958cd4a6ce4f733784a9bd59ebf491376c760f678ce71de4"
+            }
+          ]
+        },
+        {
+          "id": "d-50061ed0-28",
+          "ranges": [
+            {
+              "rva": "0x61ed0",
+              "length": 28,
+              "sha256": "d126cab60d0948a7796ee7e1b7d89ab99b4ce16795187cae396c8093ecb1947d"
+            }
+          ]
+        },
+        {
           "id": "f-50001ac0",
           "ranges": [
             {
               "rva": "0x1ac0",
               "length": 170,
               "sha256": "4d7e3addc7be53732937ef1bbc789a5c5681a276eeaf0391a663f817d3f4e829"
+            }
+          ]
+        },
+        {
+          "id": "f-500022c0",
+          "ranges": [
+            {
+              "rva": "0x22c0",
+              "length": 107,
+              "sha256": "88102e6d0fbc666cf7051dd37746dc04fac790a069359ba3733fa04d42e79ae5"
+            }
+          ]
+        },
+        {
+          "id": "f-500023b0",
+          "ranges": [
+            {
+              "rva": "0x23b0",
+              "length": 75,
+              "sha256": "2f9936e7a98b07f543aebd8c9529f07b028f26260269179fa5acafd758eb270e"
             }
           ]
         },
@@ -199,6 +249,86 @@
           ]
         },
         {
+          "id": "f-5001b570",
+          "ranges": [
+            {
+              "rva": "0x1b570",
+              "length": 5,
+              "sha256": "6d072d11a5144359746b0e9d2eaf5a06531a0162b9f7d07a44dd01f51006e142"
+            }
+          ]
+        },
+        {
+          "id": "f-5001bdb0",
+          "ranges": [
+            {
+              "rva": "0x1bdb0",
+              "length": 18,
+              "sha256": "8cda5ba206c73f6a77841790185b05926a501daffd8ed9185c4e9a430dd6e873"
+            }
+          ]
+        },
+        {
+          "id": "f-5001bfd0",
+          "ranges": [
+            {
+              "rva": "0x1bfd0",
+              "length": 326,
+              "sha256": "53d809a289214b10bc540c8e3026f29c556d8cd99d2f6505fe40dc1bbeea19c6"
+            }
+          ]
+        },
+        {
+          "id": "f-5001c400",
+          "ranges": [
+            {
+              "rva": "0x1c400",
+              "length": 70,
+              "sha256": "5b86adfba6f1cb37058ca0f1e7330cacac8f9d1d10870f23dbbe02a01cc6682e"
+            }
+          ]
+        },
+        {
+          "id": "f-5001c450",
+          "ranges": [
+            {
+              "rva": "0x1c450",
+              "length": 66,
+              "sha256": "bf998604e5ae730f1fa9dfec1c73b416333d48c6e2cd319b7a54f0d95b0c1b52"
+            }
+          ]
+        },
+        {
+          "id": "f-5001d040",
+          "ranges": [
+            {
+              "rva": "0x1d040",
+              "length": 91,
+              "sha256": "8faf34dcc464836ba428b9e9694ed94e4300de66db6d3ce42ca1af150f53754a"
+            }
+          ]
+        },
+        {
+          "id": "f-5001d2b0",
+          "ranges": [
+            {
+              "rva": "0x1d2b0",
+              "length": 604,
+              "sha256": "5187fb1989549ea2bc0a9b73952816b0534ad6e9f38b2fdb4265321df1fa1ad3"
+            }
+          ]
+        },
+        {
+          "id": "f-5001d980",
+          "ranges": [
+            {
+              "rva": "0x1d980",
+              "length": 158,
+              "sha256": "554c02f6f85b52f29f7456670b5d54ad06ed86c420b2d3a8fdab587f8fab88d0"
+            }
+          ]
+        },
+        {
           "id": "f-5002e9e0",
           "ranges": [
             {
@@ -265,6 +395,36 @@
               "rva": "0x3a5d0",
               "length": 403,
               "sha256": "d0618e5843728ee8af8afa143b4420425d4047d060f66938b36ad1aeba8626dc"
+            }
+          ]
+        },
+        {
+          "id": "f-50044da0",
+          "ranges": [
+            {
+              "rva": "0x44da0",
+              "length": 51,
+              "sha256": "91acf2e9c0ef7d9af572ad7ca37050851238a6c9e2b8d36a90b8a96a90fa8c63"
+            }
+          ]
+        },
+        {
+          "id": "f-50044de0",
+          "ranges": [
+            {
+              "rva": "0x44de0",
+              "length": 109,
+              "sha256": "1f50d92ffd2185afdad7c8bd6404813be24323f11181bbbbea3c58f6ea5247c8"
+            }
+          ]
+        },
+        {
+          "id": "f-50044f30",
+          "ranges": [
+            {
+              "rva": "0x44f30",
+              "length": 6,
+              "sha256": "d551d3bfb8de5bfb09aa69a5822212b8e5f5de2c49453d035993df3c693e7145"
             }
           ]
         },
@@ -339,6 +499,36 @@
           ]
         },
         {
+          "id": "f-50050f70",
+          "ranges": [
+            {
+              "rva": "0x50f70",
+              "length": 26,
+              "sha256": "fdc584680c8e3e98f8e050ed9f586e2b621e0dbbd9c0f78249d18c26b0fccf58"
+            }
+          ]
+        },
+        {
+          "id": "f-50050fd0",
+          "ranges": [
+            {
+              "rva": "0x50fd0",
+              "length": 16,
+              "sha256": "08a785bcf3b2edcd5ea040956b8c27b297c66093e0814910744af424defcf664"
+            }
+          ]
+        },
+        {
+          "id": "f-50051130",
+          "ranges": [
+            {
+              "rva": "0x51130",
+              "length": 36,
+              "sha256": "aeffb3f7b580e15405f6db1198a103f677a5630d16fa79309145a3bcf1ba8bde"
+            }
+          ]
+        },
+        {
           "id": "r-50015620-50015cbf",
           "ranges": [
             {
@@ -405,6 +595,26 @@
               "rva": "0x15cb0",
               "length": 11,
               "sha256": "ceefe6974228ba2beed3c252b03b854acfd528cee3df17884676e65f0f0cb94d"
+            }
+          ]
+        },
+        {
+          "id": "r-5001c780-5001ca40",
+          "ranges": [
+            {
+              "rva": "0x1c780",
+              "length": 705,
+              "sha256": "b20eb36c753866bf1379dc3931f7052ddc715bfc9c866c2de073b573ceaa40cc"
+            }
+          ]
+        },
+        {
+          "id": "r-50044f40-5004501a",
+          "ranges": [
+            {
+              "rva": "0x44f40",
+              "length": 219,
+              "sha256": "a5a28179d067e7f74282e869a0e7742438361d33869927e184672661885b4b89"
             }
           ]
         }

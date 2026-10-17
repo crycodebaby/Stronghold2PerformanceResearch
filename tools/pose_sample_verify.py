@@ -13,13 +13,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from hpose_creation_verify import checked_pe, EXE_SHA, DLL_SHA
 from pe_info import PE
 
-MANIFEST_SHA = '1f7ca931ae43b7fd154bb4075dbe499b19230c3fdd2abad79c6389906bda77e5'
+MANIFEST_SHA = 'c06dbf7b1a4a579f9bc45885b18e5df7c0403024292e858fd1e178087c12a4a5'
 MODULES = {'exe': (EXE_SHA, 0x400000), 'dll': (DLL_SHA, 0x50000000)}
 IMPORTS = {0x500a98: '_GrannySampleModelAnimationsAccelerated@20',
            0x500b10: '_GrannyGetSourceSkeleton@4', 0x500aac: '_GrannyInstantiateModel@4',
-           0x500ab0: '_GrannyNewWorldPose@4', 0x500ab4: '_GrannyNewLocalPose@4'}
+           0x500ab0: '_GrannyNewWorldPose@4', 0x500ab4: '_GrannyNewLocalPose@4',
+           0x500ad4: '_GrannyPlayControlledAnimation@12'}
 EXPORTS = {'_GrannySampleModelAnimationsAccelerated@20': 0x4f6d0,
-           '_GrannyGetSourceSkeleton@4': 0x4f4d0, '_GrannyInstantiateModel@4': 0x4f4b0}
+           '_GrannyGetSourceSkeleton@4': 0x4f4d0, '_GrannyInstantiateModel@4': 0x4f4b0,
+           '_GrannyPlayControlledAnimation@12': 0x50f70,
+           '_GrannyEndControlledAnimation@4': 0x50fd0, '_GrannyPlayControlledPose@20': 0x51130}
 
 
 def unique_object(pairs):
@@ -38,7 +41,7 @@ def load_manifest(path):
 
 
 def validate_manifest(m):
-    if not isinstance(m, dict) or set(m) != {'schema', 'modules'} or type(m['schema']) is not int or m['schema'] != 1:
+    if not isinstance(m, dict) or set(m) != {'schema', 'modules'} or type(m['schema']) is not int or m['schema'] != 2:
         raise ValueError('manifest schema mismatch')
     if not isinstance(m['modules'], list) or len(m['modules']) != 2:
         raise ValueError('module coverage mismatch')
@@ -134,7 +137,7 @@ def verify(exe, dll, manifest):
     if any(exports.get(symbol) != rva for symbol, rva in EXPORTS.items()):
         raise ValueError('export identity mismatch')
     ranges = sum(verify_bytes(mod, readers[mod['module']]) for mod in manifest['modules'])
-    return {'identity': 'verified', 'modules': 2, 'evidence_entries': 33, 'ranges': ranges,
+    return {'identity': 'verified', 'modules': 2, 'evidence_entries': 54, 'ranges': ranges,
             'imports': len(IMPORTS), 'exports': len(EXPORTS), 'game_executed': False,
             'unconditional_sample_initialized_span_proven': False}
 

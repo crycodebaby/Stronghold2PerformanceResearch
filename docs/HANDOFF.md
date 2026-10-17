@@ -1,12 +1,20 @@
 # HANDOFF
 
-> Kurzfassung: Zwei direkte Posewriter haben bedingte volle 64-Byte-Ausgaben; der gesamte Sampleaufruf noch keinen unbedingten Lesebereich. Naechster Schritt: genau einen Descriptor-/Callbackpfad an DLL 0x2C44 -> 0x2460 binden. Keine Aufnahme, Installation oder automatische Cache-Rekursion.
+> Kurzfassung: Ein Animationsdescriptor und der bedingte volle Matrixpraefix seines Callbacks sind belegt. Schnellroute und indirekter Trackcallback bleiben offen. Naechste Prioritaet: bekannter erster-Bone-Schnellweg 0x1C8DB -> 0x44F40. Keine Aufnahme oder Installation.
 
-Updated: 2026-10-17 (conditional sample write extent). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
+Updated: 2026-10-17 (bounded special-callback path). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
 
 Only the first section below is a current order. Every later section is a historical operations log (game-run sequences, user guides, way-back instructions) kept as evidence; do not execute it.
 
 ## Current order — Exe H-pose ownership/lifetime
+
+- F171–F174: [special-callback provenance and prefix](evidence/POSE_SPECIAL_CALLBACK_2026-10-17.md).
+  Node factory 0x23B0 stores D; animation producer passes 0x61D58, whose file slot +0x10 points to 0x1C780.
+  This is a conditional construction binding, not all live-node provenance. Callback C=min(B,BindingCount);
+  bypass firstfast and choose known direct helpers on every iteration to obtain complete World/Composite [0,C).
+  The exact prelude comparison is node+0x20==2, not a mask test; a general C=0 no-write result is not established.
+  Firstfast and Track+8 at 0x1C9C1 remain outside the positive span. Verifier expanded, no clone: schema 2,
+  54 entries/67 ranges, six imports/six exports, 12 tests normal/-O. Original-file gates and independent review pass.
 
 - F167–F170: [sample write extent](evidence/POSE_SAMPLE_EXTENT_2026-10-17.md). Exe sample arguments and DLL
   branching connect to two direct writers. For the known first-index-zero subpaths, each writes complete World
@@ -65,12 +73,12 @@ Only the first section below is a current order. Every later section is a histor
 
 - Completed block: [contract, audit corrections, exact limits and reproduction](evidence/POSE_CONTRACT_2026-10-16.md), F148–F153. Real-DLL host: 142 layout cases, 1,620 differential cases, 238,768 components; 0 criterion failures. Own affine helper is numerically close but differs in 443 cases; no universal bit identity or replacement permission. Nine audit model tests + two integration tests pass.
 - Reproduce from repo root: `python -I tools/granny_pose.py`, then `python -I tools/test_granny_pose.py`; audit: `python -I tools/recheck_granny_audit.py --audit-root <local-audit-root>`; docs: `python -I tools/lint_docs.py`. MSVC/CMake/Win32 required; writes only isolated ignored build outputs. Reports include identities/source hashes and a float counterexample.
-- **Exactly one next experiment:** static descriptor/callback binding at DLL `0x2C44 -> 0x2460`. Select the
-  predicate-true first control when the next node is absent or its `0x1B540` predicate is false. Bind
-  `D=*(first.node+0x18)`, target `*(D+0x10)`, arguments `(first.node,B,A,W,0)` and that one target's output
-  extent. Stop at a precise unresolved producer/alias edge if static binding fails; do not reconstruct all controls.
-  This does not close the separate LocalPose-production or generation/read-window questions. No original execution,
-  observer implementation or recording.
+- **Exactly one next experiment:** static first-bone fast route `0x1C8DB -> 0x44F40`, selected by exact mode 2
+  and a nonnull first-track field. Target is already bound through constant getter 0x44F30. Check three source
+  branches and argument bindings to known slots 0x61A78/0x61A84, first World/Composite destination and subsequent
+  loop index/count interaction. C=0 requires a composed valid-domain argument, not a local branch counterexample.
+  Reuse existing kernels/verifier; no full curve/Track+8 reconstruction. This closes neither actual live descriptor
+  preservation nor generation/read-window obligations. No original execution, observer or recording.
 - Acceptance/result decisions are in the evidence's final section. Library ownership is established in own valid hosts; the particular game-side owner/lifetime is not yet fully proven. Unresolved indirect transfers remain an explicit boundary. No output observer implementation is claimed.
 - Do not resume G2, install a build or request a recording. Original/TEST, Hub source/builds, captures, audit reference and original Ghidra DB stay unchanged. SH2-Perf own code/docs only. New agents update STATE and this section after the next result.
 - Publication (2026-10-17): both repositories are public ([STATE.md](STATE.md) "Published state"). Work in a clone of the published research history with normal commits and pull requests; no re-export, no rewrite of published or hub ids. Push or open a PR only when the task asks for it. Publication changes nothing in this order.

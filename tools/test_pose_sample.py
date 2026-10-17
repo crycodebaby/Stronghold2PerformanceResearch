@@ -18,7 +18,7 @@ class PoseSampleTests(unittest.TestCase):
 
     def test_complete_pinned_manifest(self):
         self.assertEqual(len(self.m['modules']), 2)
-        self.assertEqual(sum(len(m['evidence']) for m in self.m['modules']), 33)
+        self.assertEqual(sum(len(m['evidence']) for m in self.m['modules']), 54)
 
     def test_missing_duplicate_module_or_entry(self):
         mutations = [lambda m: m['modules'].pop(),
@@ -109,6 +109,40 @@ class PoseSampleTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn('manifest schema mismatch', result.stderr)
             self.assertNotIn('Traceback', result.stderr)
+
+    def test_new_descriptor_and_callback_entries_required(self):
+        required = {'dll': {'d-50061d58-28', 'd-50061ed0-28', 'f-500023b0',
+                            'f-5001c400', 'r-5001c780-5001ca40', 'f-50044da0', 'f-50044de0'},
+                    'exe': {'d-00900ad4-4'}}
+        for mod in self.m['modules']:
+            ids = {entry['id'] for entry in mod['evidence']}
+            self.assertTrue(required[mod['module']] <= ids)
+            for entry_id in required[mod['module']]:
+                m = copy.deepcopy(self.m)
+                target = next(x for x in m['modules'] if x['module'] == mod['module'])
+                target['evidence'] = [x for x in target['evidence'] if x['id'] != entry_id]
+                with self.assertRaises(ValueError):
+                    v.validate_manifest(m)
+
+    def test_new_table_hash_tamper_rejected(self):
+        for entry_id in ['d-50061d58-28', 'd-50061ed0-28']:
+            m = copy.deepcopy(self.m)
+            entry = next(x for x in m['modules'][1]['evidence'] if x['id'] == entry_id)
+            entry['ranges'][0]['sha256'] = '0' * 64
+            with self.assertRaises(ValueError):
+                v.validate_manifest(m)
+
+    def test_schema_one_and_new_callback_range_extent_rejected(self):
+        m = copy.deepcopy(self.m)
+        m['schema'] = 1
+        with self.assertRaises(ValueError):
+            v.validate_manifest(m)
+        for delta in [-1, 1]:
+            m = copy.deepcopy(self.m)
+            entry = next(x for x in m['modules'][1]['evidence'] if x['id'] == 'r-5001c780-5001ca40')
+            entry['ranges'][0]['length'] += delta
+            with self.assertRaises(ValueError):
+                v.validate_manifest(m)
 
 
 if __name__ == '__main__':

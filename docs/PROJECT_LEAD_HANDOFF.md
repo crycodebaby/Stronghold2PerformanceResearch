@@ -38,6 +38,12 @@ Dispatch und Elternreihenfolge bleiben Bedingungen; der Spezialcallback hat noch
 Naechste begrenzte Prioritaet ist dessen Descriptor-/Zielbindung an DLL `0x2C44 -> 0x2460`, keine Rekonstruktion
 aller Controls. Der aktuelle Einstieg steht in STATE/HANDOFF; ein Livevergleich ist weiterhin nicht freigegeben.
 
+Fortschritt Spezialcallback 2026-10-17: [Descriptorherkunft und enger Callbackpfad](evidence/POSE_SPECIAL_CALLBACK_2026-10-17.md),
+F171–F174, binden einen Animationskonstruktor an einen konkreten Callbackkandidaten. Ohne Schnellroute und mit
+bekannten direkten Helfern ist dessen vollstaendiger Matrixpraefix bedingt belegt. Kein allgemeiner Samplevertrag.
+Naechste Prioritaet ist der kleine bereits zielgebundene Schnellweg `0x1C8DB -> 0x44F40`; Track+8 und konkrete
+Lebensdauer/Leseintervalle bleiben offen. Keine automatische Rekonstruktion aller Track-/Controltypen.
+
 ## 1. Rolle und Ziel
 
 Übernimm die technische Projektleitung als Senior Reverse Engineer und Software Architect. Arbeite kritisch, selbstständig und ergebnisoffen. Frühere Agentenberichte sind zu überprüfende Aussagen; Nutzerbeobachtungen sind Kontext und teilweise bestätigte Abläufe, nicht automatisch gemessene Ursachen.

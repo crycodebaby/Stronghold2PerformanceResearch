@@ -71,3 +71,16 @@ Genau naechster Beweis: die Spezialkante DLL `0x2C44 -> 0x2460` an einen belegte
 Callbackziel binden, danach dessen Ausgabeumfang. Der Scope beginnt beim ersten Praedikat-true-Knoten,
 wenn der naechste Knoten fehlt oder das Praedikat false liefert. Ein sauber lokalisierter unbekannter Producer
 ist ein zulaessiger Abschluss. Keine automatische Ausweitung auf alle Controls oder LocalPose-Mathematik.
+
+## Fortschritt Spezialcallback und aktuelle Prioritaet
+
+Der [Spezialcallback-Baustein](../evidence/POSE_SPECIAL_CALLBACK_2026-10-17.md), F171–F174, liefert einen
+konstruktorbezogenen Descriptor-/Zielkandidaten und einen bedingten vollen World-/Composite-Praefix `[0,C)`
+mit `C=min(B,BindingCount)`. Voraussetzung sind Schnellweg-Bypass und bekannte direkte Helfer in allen
+Schleifendurchlaeufen. Es gibt keinen universellen Callbackspan; eine vorgelagerte erste-Matrix-Schnellroute
+und indirekte Tracksampler bleiben offen. Tablewerte alleine ersetzen weiterhin keine konkrete Zielbindung.
+
+Aktuelle Folgeprioritaet ist die kleine bekannte Schnellroute `0x1C8DB -> 0x44F40`, ihre drei Quellzweige,
+ersten Matrixziele und Countinteraktion mit dem Restloop. Die vorherigen Folgeauftraege oben beschreiben ihre
+jeweiligen Zwischenstaende. Keine automatische Komplettrekonstruktion aller Controls/Tracks. Die Fragen nach
+gueltigen Quellen, beobachteten Generationen und Leseintervall werden dadurch nicht aufgehoben.

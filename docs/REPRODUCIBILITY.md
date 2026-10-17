@@ -26,6 +26,13 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Local special-callback follow-up: [descriptor provenance and conditional prefix](evidence/POSE_SPECIAL_CALLBACK_2026-10-17.md).
+Existing sample verifier schema 2 retains the earlier 33 entries and adds 21: 54 entries/67 ranges, six import/six
+export bindings. Twelve synthetic tests and original-file gates pass normal/-O. Independent review confirms final
+578 Exe/2886 DLL byte lines and semantic bindings; parent audit PE reader separately checks all manifest ranges.
+Integrated `run_checks.py` passes 15/15 groups. No original execution, new native/Hub code or GitHub CI run.
+Commands below remain the same.
+
 Local sample follow-up: [conditional World/Composite write extent](evidence/POSE_SAMPLE_EXTENT_2026-10-17.md),
 33 pinned entries/46 ranges, five import/three export bindings. Nine synthetic tests and matching-original-file
 verifier normal/-O pass; integrated `run_checks.py` passes 15/15 groups. Independent review confirms final exports and eight candidate target/store bindings.

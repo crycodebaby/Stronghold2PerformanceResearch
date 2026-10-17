@@ -57,6 +57,9 @@ Win32 build/run step is prepared in the workflow; no new GitHub run has been cla
   stores in two direct writers. A future reader must establish the actual selected path, initialized sources and
   destination capacity; normal Sample return alone is insufficient. Keep World and Composite extents separate
   from allocation size. Do not turn an unresolved path or a no-write local callback into a valid empty observation.
+- The [special callback](../evidence/POSE_SPECIAL_CALLBACK_2026-10-17.md) has an optional first-matrix fast route
+  before its loop guard. A zero loop count alone cannot authorize an empty whole-call observation. Known helper
+  writes cover a conditional prefix bounded additionally by the binding count; do not substitute HeaderN for it.
 - The [bounded cleanup path](../evidence/HPOSE_CLEANUP_2026-10-17.md) clears O+0x4C only after its pose-release
   calls and further helpers. A nonzero selected-H field is therefore insufficient evidence of live referents.
   For a future observer, invalidate an observed generation at the relevant release boundary, before forwarding the
