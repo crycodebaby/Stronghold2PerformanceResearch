@@ -62,6 +62,13 @@ Game files or assets (`*.exe`, `*.dll`, `*.gr2`, …, see `.gitignore`), Ghidra 
 disassembly listings, raw recordings, personal absolute paths. Ghidra scripts emit addresses, names, counts and strings
 only (D008).
 
+## Discord notices
+
+`.github/workflows/discord-notify.yml` posts a short notice to the community Discord when a pull request is opened or
+merged (#changelog) and when a release is published (#announcements). It needs two repository secrets with Discord
+webhook URLs: `DISCORD_WEBHOOK_CHANGELOG` and `DISCORD_WEBHOOK_ANNOUNCEMENTS`. Without them the workflow skips and
+nothing fails. Titles and the first lines of the description are posted as plain text, so write them to be read there.
+
 ## Pull requests
 
 Small and focused: one finding, one tool change or one document per PR. Explain the question it answers. Do not mix
