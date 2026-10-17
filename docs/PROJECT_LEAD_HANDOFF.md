@@ -8,6 +8,12 @@ Der Nachbau ist im allgemeinen Float-Bereich nicht bitgleich. Für Fortsetzung z
 den aktuellen Anfang von [HANDOFF.md](HANDOFF.md) lesen: Exe-Pose-Besitz/Lebensdauer,
 kein erneuter Start der hier historischen Erstauftragsliste und keine neue Aufnahme.
 
+Veröffentlichung seit 2026-10-17: Beide Repositories sind öffentlich (Stand und Prüfungen in
+[STATE.md](STATE.md) „Published state“). Die Angaben zu Remote, Push und Commit-Kennungen in Abschnitt 4 und 9
+beschreiben den Stand dieser Übergabe vom 2026-10-16. Weitergearbeitet wird auf der öffentlichen, bereinigten
+Forschungshistorie; zitierte lokale Kennungen löst [export/EXPORT_MAP.tsv](export/EXPORT_MAP.tsv) auf.
+Der nächste Forschungsauftrag bleibt unverändert: Besitz und Lebensdauer der Exe-H-Pose-Datensätze.
+
 ## 1. Rolle und Ziel
 
 Übernimm die technische Projektleitung als Senior Reverse Engineer und Software Architect. Arbeite kritisch, selbstständig und ergebnisoffen. Frühere Agentenberichte sind zu überprüfende Aussagen; Nutzerbeobachtungen sind Kontext und teilweise bestätigte Abläufe, nicht automatisch gemessene Ursachen.
