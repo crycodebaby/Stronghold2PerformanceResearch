@@ -23,7 +23,7 @@ import paths  # noqa: E402
 
 SUITES = ["test_variant", "test_ingest", "test_ab_compare", "test_import_safety", "test_hardening", "test_grannyobs",
           "test_audit_workdir", "test_audit_history", "test_hpose_creation", "test_hpose_native", "test_hpose_allocation",
-          "test_hpose_cleanup"]
+          "test_hpose_cleanup", "test_hpose_resource"]
 AUDIT = paths.REPO / "audits" / "2026-10-16-independent"
 
 

@@ -26,6 +26,13 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Local resource follow-up: [constructor-bound release candidate](evidence/HPOSE_RESOURCE_RELEASE_2026-10-17.md),
+15 function fingerprints/18 ranges, six Exe import identities and one pinned table slot against matching game files,
+read-only. Ten new game/compiler-free tests and the original-file verifier pass normally and with `-O`.
+Independent review checks all 1925 exported instructions and the bounded interpretation. Actual dynamic target
+at 0x38E428 remains unresolved. Final integrated ordinary checks pass 14/14 groups;
+no game/Granny execution or native source change in this step, and no new GitHub CI run.
+
 Local cleanup follow-up: [H-record Free fields and teardown](evidence/HPOSE_CLEANUP_2026-10-17.md) adds eight
 compiler-free tests, passed normally and with `-O`. Read-only checks against matching own Exe/DLL files pass
 six function/six import gates in both modes. An independent reviewer checked all 403 exported instruction bytes
