@@ -228,6 +228,18 @@ class FrameAccounting(unittest.TestCase):
                 self.assertIn(f"frame-call accounting: {status}", run.stdout)
                 self.assertNotIn("--- marker", run.stdout)
 
+    def test_cli_oversized_csv_field_is_unknown(self):
+        with tempfile.TemporaryDirectory() as td:
+            stem = self.write_recording(Path(td))
+            path = Path(f"{stem}_granny_frames.csv")
+            text = path.read_text(encoding="utf-8").replace("0,0,1,7,", "0,0,1," + "7" * 140000 + ",")
+            path.write_text(text, encoding="utf-8")
+            run = subprocess.run([sys.executable, "-I", str(READER), str(stem)], capture_output=True, text=True)
+            self.assertNotEqual(run.returncode, 0)
+            self.assertIn("frame-call accounting: unknown", run.stdout)
+            self.assertNotIn("Traceback", run.stderr)
+            self.assertNotIn("--- marker", run.stdout)
+
     def test_cli_missing_file_or_invalid_metadata_is_unknown(self):
         for value in ([], None, {"version": True}, {"version": 99}):
             with self.subTest(value=value), tempfile.TemporaryDirectory() as td:

@@ -66,3 +66,20 @@ duplicate-header CLI checks. An agent response is not an acceptance test or a cl
 
 The next research task remains the game-side H-pose ownership/lifetime chain. T1/T3, new captures, observer production
 changes, engine patches, cache/skip logic and performance claims were outside this work.
+
+## Independent Sol 6.1 review and small correction
+
+A fresh native subagent selected as `gpt-6.1-sol` reviewed local commit `a1b43cc` read-only, with no Antigravity call.
+It independently passed the then-current 18 reader tests and reproduced the expected old-reader CLI assertion failure.
+It found no defect in the accounting core within that review, but reproduced an uncaught `csv.Error`: a synthetic CSV
+counter containing 140,000 ASCII digits exceeded the CSV parser field limit. The CLI exited nonzero with a traceback
+instead of its intended `unknown` report. Such a value is not a plausible native counter; this was a low-priority
+input-handling defect, not a false balanced result or a new game finding.
+
+The lead added `FrameAccounting.test_cli_oversized_csv_field_is_unknown`, observed its assertion fail against `a1b43cc`,
+and caught `csv.Error` at the existing load boundary. All 19 reader tests then passed. The test requires nonzero exit,
+an explicit unknown report, no traceback and no phase statistics. No parser size limit was relaxed. This supplements
+the original acceptance above; the published main and companion Hub remain unchanged. A single review task does not
+establish a fair model ranking: the earlier Flash implementation timeout and this review had different assignments.
+After the correction, `python -B -I tools/run_checks.py --audit --e2e` passed 11/11 checks, including the 19 reader
+tests, audit model/reference equality and the stand-in integration. No game or raw-data test was added.

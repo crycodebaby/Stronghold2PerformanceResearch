@@ -158,7 +158,7 @@ def main():
     markers = [int(x) for x in a[a.index("--markers") + 1].split(",")] if "--markers" in a else [1, 3]
     try:
         meta, frames, inst, defs = load(a[0])
-    except (OSError, ValueError, TypeError) as exc:
+    except (OSError, ValueError, TypeError, csv.Error) as exc:
         print(f"frame-call accounting: unknown; {exc}")
         return 1
     accounting = frame_accounting(meta, frames)
