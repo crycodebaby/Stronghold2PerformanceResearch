@@ -23,9 +23,13 @@ Cleanup-Kandidat `0x38E3C0` ist inzwischen ebenfalls begrenzt untersucht:
 [Freigabefelder, spaeter Auswahl-Reset und ein direkter Abbaupfad](evidence/HPOSE_CLEANUP_2026-10-17.md), F158/F159.
 Der normale Rueckkehrpfad ist statisch belegt; indirekte Ressourcenaufrufe und durchgaengige Generationen bleiben offen.
 Der indirekte Ressourcenaufruf `0x38E428` hat jetzt einen [konstruktorbezogenen Freigabekandidaten](evidence/HPOSE_RESOURCE_RELEASE_2026-10-17.md),
-F160–F162, aber weiterhin keine geschlossene dynamische Zielbindung. Zwischen Konstruktion und Rueckgabe
-liegen drei offene R-Uebergaben im Initializer; Cache-Treffer bilden eine weitere Herkunftsgrenze.
-Aktueller naechster Schritt ist ausschliesslich die erste Kante `0x395E4F -> 0x394350` im HANDOFF;
+F160–F162, aber weiterhin keine geschlossene dynamische Zielbindung. Bei diesem Zwischenstand waren drei
+R-Uebergaben im Initializer noch ununtersucht; Cache-Treffer bilden weiterhin eine eigene Herkunftsgrenze.
+Die drei Helfer sind jetzt [begrenzt untersucht](evidence/HPOSE_INITIALIZER_EFFECTS_2026-10-17.md), F163–F166:
+dateinamenabhaengige Lightmap-/Normalmap-/Lights-Occlusion-Verweise; eine vermeintliche Kontextweitergabe
+ist lokal geschlossen, globale Lookup-/Lebenszeitfragen bleiben offen. Die Projektleitung priorisiert danach
+den initialisierten Pose-Ausgabeumfang am Samplepfad, siehe [Entscheidungsgrundlage](design/POSE_COMPARISON_READINESS_2026-10-17.md).
+Eine vollstaendige Cache-/Klassenrekonstruktion ist keine pauschale Vorbedingung fuer jeden begrenzten Vergleich;
 die untenstehende historische Erstauftragsliste nicht neu starten.
 
 ## 1. Rolle und Ziel

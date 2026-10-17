@@ -38,7 +38,7 @@ public class hpose_resource extends GhidraScript {
                 boolean inventoryOnly = args[index].startsWith("x:"); Address target = toAddr(inventoryOnly ? args[index].substring(2) : args[index]);
                 ReferenceIterator refs = currentProgram.getReferenceManager().getReferencesTo(target);
                 while (refs.hasNext()) {
-                    if (++references > 10000) throw new IllegalStateException("Reference budget exceeded");
+                    if (++references > 100000) throw new IllegalStateException("Reference budget exceeded");
                     Reference ref = refs.next();
                     Function caller = getFunctionContaining(ref.getFromAddress());
                     output.println(args[index] + "\t" + ref.getFromAddress() + "\t"

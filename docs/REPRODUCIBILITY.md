@@ -26,6 +26,14 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Local initializer follow-up: [bounded resource effects](evidence/HPOSE_INITIALIZER_EFFECTS_2026-10-17.md) reuses
+the resource verifier with schema 2: 20 functions/24 ranges, nine imports, one table slot and 16 new bindings.
+Fifteen tests and the original-file verifier pass normally and with `-O`; independent review and parent recheck
+confirm all 2907 exported instructions. The prior schema-1 resource counts below are historical (`12b8050`).
+The Java reference ceiling changed from 10000 to 100000 after a documented tool-limit failure; the final common
+export compiled/ran with this version. Final integrated ordinary checks pass 14/14 groups.
+No original execution, native source change or new GitHub CI run.
+
 Local resource follow-up: [constructor-bound release candidate](evidence/HPOSE_RESOURCE_RELEASE_2026-10-17.md),
 15 function fingerprints/18 ranges, six Exe import identities and one pinned table slot against matching game files,
 read-only. Ten new game/compiler-free tests and the original-file verifier pass normally and with `-O`.

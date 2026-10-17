@@ -3,6 +3,9 @@
 > Kurzfassung: No single dynamic target of Exe RVA 0x38E428 is proved. A concrete constructor/table candidate releases mesh/file resources and reaches additional indirect calls. Cache provenance and intervening initialization remain explicit boundaries; no lifetime or optimization clearance.
 
 Date: 2026-10-17. Research basis `183762c`, branch `hpose-allocation-proof`.
+Later tooling follow-up: [initializer effects](HPOSE_INITIALIZER_EFFECTS_2026-10-17.md) extends this same verifier
+and manifest to schema 2. The 15-function/schema-1 counts in this dated report describe revision `12b8050`;
+check out that revision to reproduce that original tool/manifest pair. No historical claim is silently upgraded.
 [Scope](../tasks/HPOSE_RESOURCE_RELEASE_2026-10-17.md). Follows [cleanup](HPOSE_CLEANUP_2026-10-17.md),
 [creation](HPOSE_CREATION_2026-10-17.md), [allocation](HPOSE_ALLOCATION_2026-10-17.md).
 All addresses below are **Exe RVAs**, except expressly identified VAs. Exe base `0x00400000`,

@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "exe_sha256": "f3ccdf9bb41158202dffc000e5f2036a82f4c1ce8c5c89462f6140000f32d34b",
   "dll_sha256": "94d56fd7e9ef8adde51425da339722a584e28e71235bc8a89d8175c2276050fd",
   "functions": [
@@ -164,10 +164,162 @@
         }
       ],
       "sha256": "fd2aaa957b8dae102a070cce0a6d1cf24f468ced0f8f2b2dd846724c8918f1fd"
+    },
+    {
+      "rva": "0x25ef50",
+      "ranges": [
+        {
+          "rva": "0x25ef50",
+          "length": 90
+        }
+      ],
+      "sha256": "f39398f4f3b7a176542e0ee1f58eae998f40a26b939a63f007d2897de383ff88"
+    },
+    {
+      "rva": "0x394000",
+      "ranges": [
+        {
+          "rva": "0x394000",
+          "length": 838
+        }
+      ],
+      "sha256": "91b3d29bf7d9f3fd0529a9349d441abe8eaad20cf5e3378ab9a5f4bc14c44da0"
+    },
+    {
+      "rva": "0x394350",
+      "ranges": [
+        {
+          "rva": "0x394350",
+          "length": 282
+        },
+        {
+          "rva": "0x394470",
+          "length": 1322
+        }
+      ],
+      "sha256": "300d0765fcdec5cb36d6a0c61fe6a97644896e289b371119ddff511a6ae68fc0"
+    },
+    {
+      "rva": "0x3949a0",
+      "ranges": [
+        {
+          "rva": "0x3949a0",
+          "length": 400
+        }
+      ],
+      "sha256": "667878bdc19c62a80d00b3951d9ce7c0402c17a86e346f7a0aed0b43be1bca2f"
+    },
+    {
+      "rva": "0x3d8a20",
+      "ranges": [
+        {
+          "rva": "0x3d8a20",
+          "length": 125
+        }
+      ],
+      "sha256": "29ce398ff7307bc3855424c8296d4cc6ca10cdb9c4b77019af99da520dd17398"
     }
   ],
   "table": {
     "rva": "0x5f49d4",
     "value_va": "0x796470"
-  }
+  },
+  "bindings": [
+    {
+      "name": "initializer_lightmap",
+      "rva": "0x395e3f",
+      "length": 21,
+      "sha256": "e23e0b7d4f851476b65a64414e39e530bea5562b995da0b8918d12d8e614ba3a"
+    },
+    {
+      "name": "initializer_normalmap",
+      "rva": "0x395e5a",
+      "length": 14,
+      "sha256": "4adfb3eebc052088398b4177b2c40c94bfe86d10fa041238584258064522cde0"
+    },
+    {
+      "name": "initializer_occlusion",
+      "rva": "0x395e6e",
+      "length": 21,
+      "sha256": "5e6cb02a9d7de6cabdbccd53b59d77694b24aa42cb924ed52a3770f41761c6c3"
+    },
+    {
+      "name": "lightmap_save_R",
+      "rva": "0x394380",
+      "length": 6,
+      "sha256": "94a3bd1f9b2cd6763220718d74231292622dfa61bfc9a3f0c8d843fe70537501"
+    },
+    {
+      "name": "lightmap_reload_R",
+      "rva": "0x39482a",
+      "length": 6,
+      "sha256": "1273bc259905fc6c10b001916529b87b898dde2e0d7db57c7bc04e72457a9d7d"
+    },
+    {
+      "name": "lightmap_reserve_alias",
+      "rva": "0x3948f9",
+      "length": 9,
+      "sha256": "363985fb65fbc9570660b4b8aec9ce5182d6e59ea0beac147e025b387cc2c94a"
+    },
+    {
+      "name": "lightmap_reserve_value",
+      "rva": "0x39495a",
+      "length": 9,
+      "sha256": "3dea1eded855eea98ffa326faf7ce9ca95bbeaeb6a119b1293521bfb186785da"
+    },
+    {
+      "name": "normalmap_store",
+      "rva": "0x394a9d",
+      "length": 6,
+      "sha256": "d51633ad342f8e81d298f70fa194390076ea23d1186f9a5f8d2cc26e6d16ace2"
+    },
+    {
+      "name": "occlusion_store",
+      "rva": "0x39415e",
+      "length": 9,
+      "sha256": "4bae6b20f275e20680769db098209668e8b3fb786858ed8c3c69c7b94a9bb6ca"
+    },
+    {
+      "name": "occlusion_fallback_store",
+      "rva": "0x394290",
+      "length": 9,
+      "sha256": "4bae6b20f275e20680769db098209668e8b3fb786858ed8c3c69c7b94a9bb6ca"
+    },
+    {
+      "name": "reserve_context",
+      "rva": "0x3d8a49",
+      "length": 9,
+      "sha256": "7db5fa3f4ff0d81b69d99c14211f0e99b9d9341ca9f1eb478c661e9b6e4b7677"
+    },
+    {
+      "name": "allocator_kills_context",
+      "rva": "0x25ef53",
+      "length": 3,
+      "sha256": "a9eefd33e17b9cc7a3c924bc14bec1856a86e423b2dbf0f23518ec48b4bf1b5f"
+    },
+    {
+      "name": "extension_table",
+      "rva": "0x5f22c0",
+      "length": 12,
+      "sha256": "2c007cbc151fd92b83ff3e050ddcd44b8347dd1a2abcfd9a0874508b854d8f93"
+    },
+    {
+      "name": "extension_names",
+      "rva": "0x5f22d8",
+      "length": 12,
+      "sha256": "62e74e4b67953aa2a6b2eceb9abd50af40c5e821e2818d31d76e136c7859ccee"
+    },
+    {
+      "name": "normalmap_name",
+      "rva": "0x5f22cc",
+      "length": 12,
+      "sha256": "2dda3956d270b8f4185eef6f5b6b4b940c72fc42e67f0578d4a964a29bdaa128"
+    },
+    {
+      "name": "lightmap_names",
+      "rva": "0x5f4990",
+      "length": 68,
+      "sha256": "cda16585ff5d2b7790184d15ae6d77c8d77c2b96ae8856995e8e079ef752c044"
+    }
+  ]
 }

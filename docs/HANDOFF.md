@@ -1,12 +1,20 @@
 # HANDOFF
 
-> Kurzfassung: H-Erzeugung/Abbau und ein Ressourcen-Freigabekandidat sind belegt; der indirekte Call 0x38E428 ist weiterhin unaufgeloest. Naechster Schritt: R-Escape 0x395E4F nach 0x394350. Keine vollstaendige Generationen-/Ausgabegueltigkeit, Aufnahme oder Installation.
+> Kurzfassung: Drei Ressourceninitialisierer und ihre begrenzten direkten Effekte sind belegt; globale Lookup-/Lebenszeitfragen bleiben offen. Naechster Schritt: initialisierten Pose-Ausgabeumfang am bekannten Samplepfad nachweisen. Keine automatische Cache-Rekursion, Aufnahme oder Installation.
 
-Updated: 2026-10-17 (bounded resource candidate result). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
+Updated: 2026-10-17 (bounded initializer effects and readiness decision). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
 
 Only the first section below is a current order. Every later section is a historical operations log (game-run sequences, user guides, way-back instructions) kept as evidence; do not execute it.
 
 ## Current order — Exe H-pose ownership/lifetime
+
+- F163–F166: [initializer effects](evidence/HPOSE_INITIALIZER_EFFECTS_2026-10-17.md). Optional filename-driven
+  lightmap reference list R+0x14, normalmap R+0x28, lights/occlusion R+0x24. Pointer-list stride 4 differs from H20.
+  The small allocator discards incoming ECX=R+0x20 before use; that one apparent escape is closed. Lookup/global
+  alias effects and dynamic release 0x38E428 remain open. Do not promote direct no-store to global unchangedness.
+  Existing resource verifier/manifest now schema 2; 20 functions/24 ranges, 16 bindings and 15 tests normal/-O.
+  [Readiness decision](design/POSE_COMPARISON_READINESS_2026-10-17.md) selects the next proof independently of a
+  complete cache/type reconstruction. No observer implementation or live comparison is ready.
 
 - F160–F162: [resource provenance and candidate cleanup](evidence/HPOSE_RESOURCE_RELEASE_2026-10-17.md).
   Constructor table slot 0 points to 0x396470 -> 0x3963A0 -> 0x396240 (mesh/file releases), but post-construction
@@ -48,7 +56,7 @@ Only the first section below is a current order. Every later section is a histor
 
 - Completed block: [contract, audit corrections, exact limits and reproduction](evidence/POSE_CONTRACT_2026-10-16.md), F148–F153. Real-DLL host: 142 layout cases, 1,620 differential cases, 238,768 components; 0 criterion failures. Own affine helper is numerically close but differs in 443 cases; no universal bit identity or replacement permission. Nine audit model tests + two integration tests pass.
 - Reproduce from repo root: `python -I tools/granny_pose.py`, then `python -I tools/test_granny_pose.py`; audit: `python -I tools/recheck_granny_audit.py --audit-root <local-audit-root>`; docs: `python -I tools/lint_docs.py`. MSVC/CMake/Win32 required; writes only isolated ignored build outputs. Reports include identities/source hashes and a float counterexample.
-- **Exactly one next experiment:** follow the first unresolved initializer escape, R as ECX at `0x395E4F` to `0x394350`, and its relevant Vptr-affecting stores/escapes. Determine constructor-table persistence for this one edge or name its concrete gap. Later escapes `0x395E63`/`0x395E7E` and cache-hit coverage remain separate obligations. Same hashes/read-only copy; no general cache/engine expansion or UAF inference from addresses alone.
+- **Exactly one next experiment:** static initialized-output-extent proof at SampleModelAnimationsAccelerated (Exe 0x38E6D9/return 0x38E6DF; Granny RVA 0x4F6D0). Establish which World/Composite matrix indices are written on the bounded normal path and how requested count relates to proven capacity. Allocation alone is not initialized output. Record exact remaining write/alias boundaries; no full animation reconstruction, original execution, observer build or recording in that next static scope.
 - Acceptance/result decisions are in the evidence's final section. Library ownership is established in own valid hosts; the particular game-side owner/lifetime is not yet fully proven. Unresolved indirect transfers remain an explicit boundary. No output observer implementation is claimed.
 - Do not resume G2, install a build or request a recording. Original/TEST, Hub source/builds, captures, audit reference and original Ghidra DB stay unchanged. SH2-Perf own code/docs only. New agents update STATE and this section after the next result.
 - Publication (2026-10-17): both repositories are public ([STATE.md](STATE.md) "Published state"). Work in a clone of the published research history with normal commits and pull requests; no re-export, no rewrite of published or hub ids. Push or open a PR only when the task asks for it. Publication changes nothing in this order.

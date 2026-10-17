@@ -21,18 +21,22 @@ class ResourceTests(unittest.TestCase):
                 b = b'X' * r['length']; self.blobs[int(r['rva'], 16)] = b; h.update(b)
             f['sha256'] = h.hexdigest()
         self.blobs[0x5f49d4] = struct.pack('<I', 0x796470)
+        for binding in self.m['bindings']:
+            b = b'B' * binding['length']
+            self.blobs[int(binding['rva'], 16)] = b
+            binding['sha256'] = hashlib.sha256(b).hexdigest()
     def read(self, rva, length):
         return self.blobs[rva]
     def rejected(self, m):
         with self.assertRaises(ValueError): v.verify(m, self.read)
     def test_success(self): v.verify(self.m, self.read)
     def test_identity_version(self):
-        for key, val in [('version',True),('version',2),('exe_sha256','0'*64),('dll_sha256','0'*64)]:
+        for key, val in [('version',True),('version',1),('version',3),('exe_sha256','0'*64),('dll_sha256','0'*64)]:
             m=copy.deepcopy(self.m);m[key]=val;self.rejected(m)
     def test_unknown_fields(self):
-        for target in ('root','function','range','table'):
+        for target in ('root','function','range','table','binding'):
             m=copy.deepcopy(self.m)
-            d={'root':m,'function':m['functions'][0],'range':m['functions'][0]['ranges'][0],'table':m['table']}[target]
+            d={'root':m,'function':m['functions'][0],'range':m['functions'][0]['ranges'][0],'table':m['table'],'binding':m['bindings'][0]}[target]
             d['extra']=1;self.rejected(m)
     def test_coverage(self):
         for change in ('missing','duplicate','unknown'):
@@ -56,6 +60,32 @@ class ResourceTests(unittest.TestCase):
         self.blobs[0x5f49d4]=struct.pack('<I',0x796471);self.rejected(self.m)
     def test_duplicate_json(self):
         with self.assertRaises(ValueError):json.loads('{"version":1,"version":1}',object_pairs_hook=v.unique_object)
+    def test_initializer_function_coverage(self):
+        for rva in ('0x394350','0x3949a0','0x394000','0x3d8a20','0x25ef50'):
+            m=copy.deepcopy(self.m)
+            m['functions']=[f for f in m['functions'] if f['rva']!=rva]
+            self.rejected(m)
+    def test_binding_coverage(self):
+        for change in ('missing','duplicate','unknown'):
+            m=copy.deepcopy(self.m)
+            if change=='missing':m['bindings'].pop()
+            elif change=='duplicate':m['bindings'][1]=m['bindings'][0]
+            else:m['bindings'][0]['name']='unknown'
+            self.rejected(m)
+    def test_binding_extent(self):
+        for key,value in [('rva','0x395e40'),('length',True),('length',0),('length',22)]:
+            m=copy.deepcopy(self.m);m['bindings'][0][key]=value;self.rejected(m)
+    def test_binding_mutation(self):
+        for binding in self.m['bindings']:
+            rva=int(binding['rva'],16); original=self.blobs[rva]
+            self.blobs[rva]=b'C'*len(original);self.rejected(self.m)
+            self.blobs[rva]=original
+        m=copy.deepcopy(self.m);m['bindings'][0]['sha256']='g'*64;self.rejected(m)
+    def test_binding_reader_contract(self):
+        first=int(self.m['bindings'][0]['rva'],16)
+        for result in (b'',bytearray(b'B'*21),None):
+            with self.assertRaises(ValueError):
+                v.verify(self.m,lambda r,n: result if r==first else self.read(r,n))
     def test_unknown_binary_cli(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/'fake.exe';p.write_bytes(b'not a PE')
