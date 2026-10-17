@@ -68,3 +68,7 @@ wurde gestartet oder bestaetigt. Keine Remote-/Branchschutz-Einstellungen wurden
 Keine Original-Exe/DLL-Ausfuehrung, Rohdaten-/Installations-/Ghidra-Aenderung, Spielaufnahme, Pose-Ersetzung oder
 Performanceaussage. Naechster getrennter Forschungsauftrag bleibt die tatsaechliche H-Container-Allokation hinter
 `0x38D500`; keine weitere allgemeine Nachhaertungsrunde ist Voraussetzung dafuer.
+
+Nachfolgender Forschungsstand: [Allokation/Transfer](HPOSE_ALLOCATION_2026-10-17.md) ergaenzt zehn native
+Byteanforderungs-Grenzfaelle. Die aktuelle Pruefanzahl ist damit6393; das Schema bleibt Version1 und akzeptiert
+bewusst wachsende positive Pruefanzahlen. Die6383 oben sind das Ergebnis dieses frueheren Abnahmeblocks.

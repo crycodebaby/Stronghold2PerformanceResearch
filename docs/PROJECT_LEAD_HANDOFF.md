@@ -16,8 +16,10 @@ Der nächste Forschungsauftrag bleibt unverändert: Besitz und Lebensdauer der E
 
 Fortschritt 2026-10-17: [ein Erzeugungs-/Auswahlpfad](evidence/HPOSE_CREATION_2026-10-17.md) ist statisch
 belegt (F154/F155), mit unabhaengiger Bytepruefung und eigener begrenzter C++-Adressarithmetik. Vollstaendige
-Kapazitaet/Besitz/Freigabe/Reuse fehlen weiter. Der aktuelle HANDOFF grenzt als naechsten Schritt den Allokatorpfad
-hinter RVA `0x38D500` ein; die untenstehende historische Erstauftragsliste nicht neu starten.
+Kapazitaet/Besitz/Freigabe/Reuse waren dabei noch offen. Der nachfolgende
+[Allokations-/Transferbaustein](evidence/HPOSE_ALLOCATION_2026-10-17.md) belegt jetzt die 20*n-Byteanforderung und
+Containerstores; physische Heapreserve und Poselebensdauer fehlen weiter. Aktueller naechster Schritt ist der
+Cleanup-Kandidat `0x38E3C0` im HANDOFF; die untenstehende historische Erstauftragsliste nicht neu starten.
 
 ## 1. Rolle und Ziel
 

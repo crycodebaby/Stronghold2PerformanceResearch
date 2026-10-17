@@ -13,11 +13,16 @@ ordered begin/end address IDs, byte difference at most `INT32_MAX`, a whole numb
 index below the count. It performs no allocations, I/O, original calls or memory reads. It returns a status, count and
 selected numeric address. Even an accepted address of zero proves no pointer validity.
 
-`python -I tools/hpose_native.py` builds/runs it in a separate MSVC Win32 Release host: 6,383 explicit checks pass,
+`python -I tools/hpose_native.py` builds/runs it in a separate MSVC Win32 Release host: 6,393 explicit checks pass,
 including literal boundary cases and exhaustive small valid ranges. Logs/source/host hashes are in ignored
 `build/hpose-native/`. The signed extent restriction follows the original count-arithmetic domain; invalid inputs are
 our rejected cases. The game's geometric fallback for an excluded index is deliberately outside this model. These
 are own-contract tests, not differential execution of the game or evidence of speedup. No sanitizer run is claimed.
+
+The [allocation follow-up](../evidence/HPOSE_ALLOCATION_2026-10-17.md) adds `allocation_request.h`: no allocation
+for zero, exact 20*n requested bytes for 1..0x0CCCCCCC, own status rejection above that limit. Ten literal witnesses
+cover both sides of the signed selection limit and the unsigned allocation limit. This is not a Grow-policy,
+CRT-exception or heap implementation; numerical request validity does not imply a possible/live allocation.
 
 Follow-up: the [native acceptance contract](../evidence/HPOSE_NATIVE_ACCEPTANCE_2026-10-17.md) now validates a
 versioned JSON host report before atomically persisting success. The independent runner uses CMake on PATH or

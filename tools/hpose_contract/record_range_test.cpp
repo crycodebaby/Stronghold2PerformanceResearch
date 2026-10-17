@@ -1,4 +1,5 @@
 #include "record_range.h"
+#include "allocation_request.h"
 #include <cstdio>
 
 namespace {
@@ -61,6 +62,31 @@ int main() {
         const auto invalid = hpose_contract::select_record(0x2000, end, count);
         check(invalid.status == Status::index_out_of_range && invalid.address == 0,
               "first excluded index is rejected");
+    }
+    // Allocation-byte requests have a wider numerical domain than the signed
+    // selection extent. Neither accepted request bytes nor an address ID prove
+    // a possible/live heap allocation. Literal witnesses cover both limits.
+    using hpose_contract::RequestStatus;
+    struct RequestCase {
+        std::uint32_t records;
+        RequestStatus status;
+        std::uint32_t bytes;
+    };
+    const RequestCase requests[] = {
+        {0, RequestStatus::no_allocation, 0},
+        {1, RequestStatus::byte_request, 20},
+        {2, RequestStatus::byte_request, 40},
+        {3, RequestStatus::byte_request, 60},
+        {0x06666666, RequestStatus::byte_request, 0x7ffffff8},
+        {0x06666667, RequestStatus::byte_request, 0x8000000c},
+        {0x0ccccccb, RequestStatus::byte_request, 0xffffffdc},
+        {0x0ccccccc, RequestStatus::byte_request, 0xfffffff0},
+        {0x0ccccccd, RequestStatus::exceeds_native_limit, 0},
+        {0xffffffff, RequestStatus::exceeds_native_limit, 0},
+    };
+    for (const auto& item : requests) {
+        const auto result = hpose_contract::allocation_request(item.records);
+        check(result.status == item.status && result.bytes == item.bytes, "allocation request boundary");
     }
     std::printf("{\"schema\":\"sh2perf.hpose-range-test\",\"version\":1,\"completed\":true,\"checks\":%u,\"failures\":%u}\n", checks, failures);
     return failures ? 1 : 0;

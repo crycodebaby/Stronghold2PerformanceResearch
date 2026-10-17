@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "exe_sha256": "f3ccdf9bb41158202dffc000e5f2036a82f4c1ce8c5c89462f6140000f32d34b",
+  "dll_sha256": "94d56fd7e9ef8adde51425da339722a584e28e71235bc8a89d8175c2276050fd",
+  "functions": [
+    {
+      "rva": "0x38cf30",
+      "label": "copy-fields",
+      "ranges": [
+        {
+          "rva": "0x38cf30",
+          "length": 62
+        }
+      ],
+      "sha256": "d1c16d56dccd9a7ded54de198236b153a0f3120be9889fd146945cc834e27780"
+    },
+    {
+      "rva": "0x38d040",
+      "label": "zero-fields",
+      "ranges": [
+        {
+          "rva": "0x38d040",
+          "length": 44
+        }
+      ],
+      "sha256": "e26fb99748395ba8d10e0259f8359129b3d214b13624df6d30d71761284104cb"
+    },
+    {
+      "rva": "0x38d500",
+      "label": "reserve-and-transfer",
+      "ranges": [
+        {
+          "rva": "0x38d500",
+          "length": 220
+        }
+      ],
+      "sha256": "a707815d0347820df7bd67c41dd2103dd594db4b1fd7cdb40459baee92f0fbd6"
+    },
+    {
+      "rva": "0x38d6d0",
+      "label": "grow-request",
+      "ranges": [
+        {
+          "rva": "0x38d6d0",
+          "length": 121
+        }
+      ],
+      "sha256": "41c2592812074afef98fff9df9bdaae624def7988335c239558568fa937a0874"
+    },
+    {
+      "rva": "0x38dc70",
+      "label": "resize",
+      "ranges": [
+        {
+          "rva": "0x38dc70",
+          "length": 178
+        }
+      ],
+      "sha256": "ea4bc0625e0de08063012cc80f9fa019c15d412dc222292edf86da1c464c0ed6"
+    },
+    {
+      "rva": "0x39a840",
+      "label": "allocate-records",
+      "ranges": [
+        {
+          "rva": "0x39a840",
+          "length": 90
+        }
+      ],
+      "sha256": "3c00dfa57286d8de801179fbbcb509a2e58c3f75fa3114c73aefa67d5a252339"
+    },
+    {
+      "rva": "0x40fb8c",
+      "label": "delete-import-thunk",
+      "ranges": [
+        {
+          "rva": "0x40fb8c",
+          "length": 6
+        }
+      ],
+      "sha256": "e05f59cd279fa05da53b604a2eb0c93882be1796667866b01cb3ed869010dd22"
+    },
+    {
+      "rva": "0x40fbb6",
+      "label": "new-import-thunk",
+      "ranges": [
+        {
+          "rva": "0x40fbb6",
+          "length": 6
+        }
+      ],
+      "sha256": "fd2aaa957b8dae102a070cce0a6d1cf24f468ced0f8f2b2dd846724c8918f1fd"
+    },
+    {
+      "rva": "0x40fbbc",
+      "label": "throw-import-thunk",
+      "ranges": [
+        {
+          "rva": "0x40fbbc",
+          "length": 6
+        }
+      ],
+      "sha256": "e80f8741c273134ce1d63fd58c5495edeb94dd10eef7f4369682e286c61f197d"
+    }
+  ]
+}

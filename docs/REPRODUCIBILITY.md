@@ -26,6 +26,11 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Local allocation follow-up: [H-container byte request/transfer](evidence/HPOSE_ALLOCATION_2026-10-17.md) adds seven
+compiler-free tests to normal checks, nine function/five import checks against matching own game files (read-only),
+and ten own native byte-arithmetic witnesses. Native total is now6393; earlier6383 results below retain their dated
+acceptance meaning. No original function execution or additional game capture.
+
 Local native-acceptance follow-up: [result contract and failure tests](evidence/HPOSE_NATIVE_ACCEPTANCE_2026-10-17.md).
 `test_hpose_native.py` is part of normal Python checks (ten tests, no compiler). `hpose_native.py` is an additional
 mandatory Win32 workflow step; standalone source-copy run passed locally. This workflow change is not yet pushed or

@@ -31,6 +31,7 @@ Run every tool as `python -I tools/<name>.py` from the repo root; `--help`/no ar
 | `granny_pose.py`, `granny_pose/`, `test_granny_pose.py` | isolated Win32 real-DLL pose contract + independent affine helper/differential host; hash/ABI gates, own data, guard pages, exact rounding witness; no game start/install; results under build/knowledge-pose |
 | `recheck_granny_audit.py` | pinned external audit re-run in ignored copy; --audit-root required; reference and production inputs unchanged |
 | `hpose_creation_verify.py` | read-only Exe/DLL identity, IAT and H-record creation/selection fingerprints; own game paths explicit, no binary execution |
+| `hpose_allocation_verify.py`, `test_hpose_allocation.py` | read-only capacity/new/transfer function and import checks; synthetic rejection tests, no game execution |
 | `hpose_native.py`, `hpose_contract/` | own C++17 Win32 range/index contract; strict versioned JSON result and atomic success report, isolated build, CMake on PATH or --cmake; no target memory/Hub/Granny input |
 | `test_hpose_native.py` | game/compiler-free runner tests with real own child processes, strict JSON, stale reports, timeouts and injected write failures |
 

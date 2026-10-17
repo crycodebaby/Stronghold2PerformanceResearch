@@ -1,12 +1,18 @@
 # HANDOFF
 
-> Kurzfassung: Ein Erzeugungs-/Auswahlpfad der H-Pose-Datensaetze ist jetzt belegt. Naechster begrenzter Schritt: Allokationsbytes/Kapazitaetsstores hinter Exe RVA 0x38D500. Besitz/Freigabe/Reuse bleiben offen; keine neue Spielaufnahme oder Installation.
+> Kurzfassung: Erzeugung/Auswahl und ein Kapazitaet-zu-Byte-/Transferpfad sind belegt. Naechster begrenzter Schritt: Cleanup-Kandidat Exe RVA 0x38E3C0 mit drei Free-Imports. Posebesitz/Freigabe/Reuse bleiben offen; keine neue Aufnahme oder Installation.
 
-Updated: 2026-10-17 (bounded creation/selection result). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
+Updated: 2026-10-17 (bounded allocation/transfer result). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
 
 Only the first section below is a current order. Every later section is a historical operations log (game-run sequences, user guides, way-back instructions) kept as evidence; do not execute it.
 
 ## Current order — Exe H-pose ownership/lifetime
+
+- Completed F156/F157: [capacity, allocator argument and transfer](evidence/HPOSE_ALLOCATION_2026-10-17.md).
+  `0x38D500` -> `0x39A840` -> nominal CRT new requests 20*n, not measured heap reserve. Five-word H transfer,
+  old-array delete and capacity/end/begin stores are distinct from Granny pose construction/destruction.
+  Reproduce: `python -I tools/hpose_allocation_verify.py --exe <exe> --dll <dll>`; synthetic verifier:
+  `python -I tools/test_hpose_allocation.py`. Own native byte model adds ten literal cases; now6393 checks total.
 
 - Tooling acceptance follow-up: [native JSON/process/report gates](evidence/HPOSE_NATIVE_ACCEPTANCE_2026-10-17.md)
   completed locally, ten runner tests normal/-O plus standalone Win32 run. Workflow now includes the native step;
@@ -28,7 +34,7 @@ Only the first section below is a current order. Every later section is a histor
 
 - Completed block: [contract, audit corrections, exact limits and reproduction](evidence/POSE_CONTRACT_2026-10-16.md), F148–F153. Real-DLL host: 142 layout cases, 1,620 differential cases, 238,768 components; 0 criterion failures. Own affine helper is numerically close but differs in 443 cases; no universal bit identity or replacement permission. Nine audit model tests + two integration tests pass.
 - Reproduce from repo root: `python -I tools/granny_pose.py`, then `python -I tools/test_granny_pose.py`; audit: `python -I tools/recheck_granny_audit.py --audit-root <local-audit-root>`; docs: `python -I tools/lint_docs.py`. MSVC/CMake/Win32 required; writes only isolated ignored build outputs. Reports include identities/source hashes and a float counterexample.
-- **Exactly one next experiment:** follow `0x38D500` and its immediate allocation/store helper from growth path `0x38D6D0`: prove requested capacity to actual bytes and begin/end/capacity stores in the same container. Full C/list-count origin and release/reuse remain separate open questions. Same hashes and read-only separate Ghidra copy; prove each claimed edge with RVA/bytes. Do not infer a soldier identity.
+- **Exactly one next experiment:** trace FreeModelInstance/FreeWorldPose/FreeLocalPose references `0x38E3F9`/`0x38E403`/`0x38E40D` in candidate `0x38E3C0` to exact H arguments, traversal and callers, including selected-H handling. These are inventory references, not a completed lifecycle proof. Full list origin/heap reserve remain separate gaps. Same hashes and isolated read-only copy; prove edges by RVA/bytes, no actor identity or UAF inference from addresses alone.
 - Acceptance/result decisions are in the evidence's final section. Library ownership is established in own valid hosts; the particular game-side owner/lifetime is not yet fully proven. Unresolved indirect transfers remain an explicit boundary. No output observer implementation is claimed.
 - Do not resume G2, install a build or request a recording. Original/TEST, Hub source/builds, captures, audit reference and original Ghidra DB stay unchanged. SH2-Perf own code/docs only. New agents update STATE and this section after the next result.
 - Publication (2026-10-17): both repositories are public ([STATE.md](STATE.md) "Published state"). Work in a clone of the published research history with normal commits and pull requests; no re-export, no rewrite of published or hub ids. Push or open a PR only when the task asks for it. Publication changes nothing in this order.
