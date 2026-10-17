@@ -19,9 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-Scope: this license covers the project's own code, documentation and derived
-data in this repository. It grants no rights to Stronghold 2, granny2.dll or
-any other third-party product; none of their files are included. Names,
-hashes, addresses and counts of such products appear only as facts needed to
-identify what was measured.

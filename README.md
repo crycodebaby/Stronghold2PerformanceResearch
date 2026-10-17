@@ -128,6 +128,6 @@ GitHub CI run yet.
 ## Contributing, legal
 
 See [CONTRIBUTING.md](CONTRIBUTING.md); agents read [AGENTS.md](AGENTS.md) first. Our own code and documentation are
-under the MIT license ([LICENSE](LICENSE)). Stronghold 2 is a game by Firefly Studios; Granny is a runtime by RAD Game
+under the MIT license ([LICENSE](LICENSE); scope of the license: [NOTICE.md](NOTICE.md)). Stronghold 2 is a game by Firefly Studios; Granny is a runtime by RAD Game
 Tools. This project is not affiliated with either and contains none of their files, assets or decompiled code; you
 need your own copy of the game for anything that runs against it.
