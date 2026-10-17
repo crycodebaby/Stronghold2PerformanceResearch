@@ -1,6 +1,6 @@
 # REPRODUCIBILITY — what an outside developer can re-check
 
-> Kurzfassung: Which checks run without the game, which need your own Stronghold 2 installation, and which results depend on unpublished local raw data or the Ghidra database. Status as checked from fresh clones on 2026-10-16 (local runs only, no GitHub CI run yet).
+> Kurzfassung: Which checks run without the game, which need your own Stronghold 2 installation, and which results depend on unpublished local raw data or the Ghidra database. Local results from fresh clones on 2026-10-16/17; GitHub CI runs of the first published state (2026-10-17) in their own section.
 
 ## Three classes of checks
 
@@ -9,6 +9,20 @@
 | **A — no game** | Windows, Python ≥ 3.12, for the hub VS 2022 Build Tools + CMake | everything needed is in the two repositories |
 | **B — own game** | your own Stronghold 2 **Steam 1.5** installation (exe SHA-256 `f3ccdf9bb41158202dffc000e5f2036a82f4c1ce8c5c89462f6140000f32d34b`, `granny2.dll` `94d56fd7e9ef8adde51425da339722a584e28e71235bc8a89d8175c2276050fd`), a TEST copy of it, optionally Ghidra 12.1.4 | game files are never published; you bring them |
 | **C — local raw data** | the original recordings in `captures/`, the project's Ghidra database, the audit's `work/` exports | not published (personal paths in logs, game-derived disassembly, size) |
+
+## First published state (2026-10-17): what ran where
+
+Research `main` `46b14eb2cefa`, hub `main` `d3a763a33777` (runtime sources equal to `32ebc38`).
+
+| Kind | What | Result |
+|---|---|---|
+| GitHub CI, game-free | research `checks` = `tools/run_checks.py` without `--audit`/`--e2e`: [run 38983278177](https://github.com/crycodebaby/Stronghold2PerformanceResearch/actions/runs/38983278177) | 9/9 check groups OK. Inside `test_audit_workdir` 1 case skipped: `test_observer_model_writes_only_into_work` needs the hub source `../Stronghold2AnalyseHub/Stronghold2AnalyseHub/core/granny_observer.cpp`, and the workflow checks out this repository only |
+| GitHub CI, game-free | hub `build-test` (Win32 build, `ctest -LE timing`): [push 621a9d6](https://github.com/crycodebaby/Stronghold2AnalyseHub/actions/runs/38983295967), [PR #1](https://github.com/crycodebaby/Stronghold2AnalyseHub/actions/runs/38983296023), [`main` d3a763a](https://github.com/crycodebaby/Stronghold2AnalyseHub/actions/runs/38983478344) | build OK; 4/4 gating tests OK in each run |
+| Local, extra inputs (hub sibling, desktop) | fresh clones of both published states side by side: `run_checks.py --audit --e2e` | 11/11 OK, including the case skipped in CI (6/6 in `test_audit_workdir`), audit model equal to the reference, stand-in end-to-end run OK |
+| Not run (inputs not published) | `audit_data.py --snapshot before` · `recheck_granny_audit.py` · `test_granny_pose.py` | stop with "Missing local input" · "Original history required" · "Run tools/granny_pose.py first" (needs your own `granny2.dll`); these are not passes |
+| Non-gating overhead test | hub `sampler_overhead` (label `timing`) | CI step green in all three runs, no number in the log (`ctest --output-on-failure` prints output only on failure); local fresh clone 2026-10-17: **5.5 %, above the 5 % threshold, failed**. Not a performance acceptance |
+
+None of these runs touches the game. They show neither a performance change nor behaviour inside Stronghold 2.
 
 ## Checks and their last result
 

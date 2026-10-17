@@ -2,7 +2,7 @@
 
 > Kurzfassung: Auditkorrekturen und erster nativer Pose-Wissensbaustein abgeschlossen. Nächster begrenzter Auftrag: Besitz/Lebensdauer der Exe-H-Poseobjekte statisch nachweisen. Keine neue Spielaufnahme; alle alten G2-/Installationssequenzen sind ausgesetzt.
 
-Updated: 2026-10-16. Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
+Updated: 2026-10-17 (publication note only; the order is unchanged). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
 
 Only the first section below is a current order. Every later section is a historical operations log (game-run sequences, user guides, way-back instructions) kept as evidence; do not execute it.
 
@@ -12,7 +12,8 @@ Only the first section below is a current order. Every later section is a histor
 - Reproduce from repo root: `python -I tools/granny_pose.py`, then `python -I tools/test_granny_pose.py`; audit: `python -I tools/recheck_granny_audit.py --audit-root <local-audit-root>`; docs: `python -I tools/lint_docs.py`. MSVC/CMake/Win32 required; writes only isolated ignored build outputs. Reports include identities/source hashes and a float counterexample.
 - **Exactly one next experiment:** trace allocation, capacity source, transfers/reuse and freeing of the 20-byte H records used by Exe RVA `0x38E4D0`. Start from IAT uses of New/FreeWorldPose, New/FreeLocalPose and InstantiateModel; resolve stores to O+0x18/+0x1c/+0x4c. Same hashes and read-only separate Ghidra copy; prove each claimed edge with RVA/bytes. Do not infer a soldier identity.
 - Acceptance/result decisions are in the evidence's final section. Library ownership is established in own valid hosts; the particular game-side owner/lifetime is not yet fully proven. Unresolved indirect transfers remain an explicit boundary. No output observer implementation is claimed.
-- Do not resume G2, install a build or request a recording. Original/TEST, Hub source/builds, captures, audit reference and original Ghidra DB stay unchanged. SH2-Perf own code/docs only; no push/publication. New agents update STATE and this section after the next result.
+- Do not resume G2, install a build or request a recording. Original/TEST, Hub source/builds, captures, audit reference and original Ghidra DB stay unchanged. SH2-Perf own code/docs only. New agents update STATE and this section after the next result.
+- Publication (2026-10-17): both repositories are public ([STATE.md](STATE.md) "Published state"). Work in a clone of the published research history with normal commits and pull requests; no re-export, no rewrite of published or hub ids. Push or open a PR only when the task asks for it. Publication changes nothing in this order.
 
 ## Historical checkpoint — EXP-008R, corrected observer (superseded)
 

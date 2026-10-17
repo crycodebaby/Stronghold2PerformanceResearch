@@ -103,16 +103,28 @@ assignment is in [docs/STATE.md](docs/STATE.md) ("Current status") and
 [docs/PROJECT_LEAD_HANDOFF.md](docs/PROJECT_LEAD_HANDOFF.md). [docs/HANDOFF.md](docs/HANDOFF.md) is a historical log of
 earlier game-run orders; do not execute it.
 
-## Verified version pair
+## Published state and version pair
 
-| Repository | Version | Meaning |
+Both repositories were first published on 2026-10-17. This is the verified starting point:
+
+| Repository | First published `main` | Meaning |
 |---|---|---|
-| Stronghold2PerformanceResearch | the commit that contains this table (branch `publish-prep`, includes `main` `160f141`) | docs, tools, audit copy and pose block checked on 2026-10-16 |
-| Stronghold2AnalyseHub | branch `publish-prep` `621a9d6`; runtime sources (`Stronghold2AnalyseHub/`, `proxy/`, `launcher/`) identical to `perf-metrics` `32ebc38a05ea`, earlier commit ids kept | `32ebc38a05ea` is the hub build of the latest in-game recordings (EXP-008R-A1/G1) |
+| Stronghold2PerformanceResearch | `46b14eb2cefa` (40 commits) | docs, tools, audit copy and pose block as checked on 2026-10-16/17 |
+| [Stronghold2AnalyseHub](https://github.com/crycodebaby/Stronghold2AnalyseHub) | merge commit `d3a763a3377709eb5c0c71a53ea2e63b6b6ca5c7` of [PR #1](https://github.com/crycodebaby/Stronghold2AnalyseHub/pull/1) (parents `be102cd`, `621a9d6`) | runtime sources (`Stronghold2AnalyseHub/`, `proxy/`, `launcher/`) identical to `32ebc38a05ea`, the hub build of the latest in-game recordings (EXP-008R-A1/G1) |
 
-Checked together on 2026-10-16 from fresh clones: hub build and native tests, all game-free Python checks, the audit
-model and the stand-in end-to-end run (results in [REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md)). Locally only; no
-GitHub CI run yet.
+Later commits on either `main` change only what their own messages say; check `git log` against this table.
+
+- **Research history.** This repository's history is a cleaned copy of the local development history: author identity
+  replaced, and absolute user paths replaced in four early file versions. Commit ids cited in the docs (e.g. `160f141`,
+  `02bce97`) are the local ids; [docs/export/EXPORT_MAP.tsv](docs/export/EXPORT_MAP.tsv) maps each to its published id.
+  Work continues on this published history with normal commits and pull requests. The one-time export script
+  (`make_export.sh`, kept outside the repository) is not used again for normal follow-up changes: re-running it would
+  replace the mapping commit and would not fast-forward the published `main`.
+- **Hub history.** The hub keeps its original commit ids (merged without squash or rebase), because recording
+  manifests and these docs name them as provenance (e.g. `32ebc38a05ea`, `e3ea53e`, `7a9e511`).
+- **Checks.** Local checks from fresh clones and the GitHub CI runs of the published state are listed with their
+  limits in [REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md). A green CI run covers game-free checks only; it says nothing
+  about performance or behaviour inside the game.
 
 ## Repository layout
 
