@@ -1,5 +1,6 @@
 # Game-free checks: Python test suites (temp folders only) and the docs linter. No game files or raw recordings.
-# Prepared and run locally with the same command (python -I tools/run_checks.py); a GitHub run has not happened yet.
+# Same command as locally (python -I tools/run_checks.py); first GitHub run 2026-10-17, see docs/REPRODUCIBILITY.md.
+# Only this repository is checked out: the hub-dependent case in test_audit_workdir is skipped, --audit/--e2e run locally.
 name: checks
 
 on:
