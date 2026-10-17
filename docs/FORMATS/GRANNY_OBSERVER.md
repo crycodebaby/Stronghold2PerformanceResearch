@@ -60,3 +60,30 @@ A recording with the observer active but without its files is `capture_ok = fals
 - `grannyobs.py` suppresses per-instance conclusions for incomplete detail. Boundary call counters are incremented before table lookups; object counts can be partial. Missing frame rows also limit phase call totals.
 - Audit correction (F148): `End` does not emit the pending last `t.cur`. `owner_detail_complete`/zero frame drops do **not** prove all observed calls have a frame row. G1 metadata minus rows = 372 clock + 187 sample + 25 deform + 25 composite = 609 unassigned final calls. Completed-frame sums, recording totals and object-marker sums have distinct scopes. See [reproduced audit and pose contract](../evidence/POSE_CONTRACT_2026-10-16.md).
 - The last linked-instance pointer in a deformer row is not a historical model assignment. No per-model deformer count is derived from it. Vertex min/max do not establish the total number of processed vertices.
+
+## Reader call accounting (T2, 2026-10-17)
+
+`python -I tools/grannyobs.py <stem> [--markers 1,3]` first reconciles all six recording call totals against **all**
+saved frame rows, including the first partial row and every marker. The marker filter changes only phase statistics.
+Frame call counters are read as integers, avoiding float rounding in this accounting. Versions 1 and 2 are supported.
+These recording totals cover the owner thread; foreign-thread counts remain separate.
+
+Example with synthetic data (the 609 distribution mirrors F148; this is not a new raw-data recount):
+
+```text
+frame-call accounting: partial; unframed tail: 609 calls (no reported frame-row drops)
+  per-function difference: clock=372, sample=187, deform=25, composite=25, free_instance=0, free_deformer=0
+```
+
+- `balanced`: all six differences are zero. This is call-count agreement, not complete observer coverage or file integrity.
+- `partial`: positive differences are printed. With a known zero `frame_rows_dropped`, the label is `unframed tail`
+  (no **reported** frame-row drops). With nonzero, missing or invalid drop information it is `unframed/unassigned calls`:
+  missing rows may contribute, so the difference is not exclusively an end-of-recording tail. No marker is inferred.
+- `unknown`: schema/version, totals or required counters are absent or invalid. Missing columns are not interpreted as
+  zero. `inconsistent`: at least one frame sum exceeds its recording total, even if other differences are positive.
+  These two statuses suppress phase statistics and exit nonzero; neither establishes the cause of the bad input.
+
+This accounting is separate from `quality(meta)`, `owner_detail_complete` and Silver's existing suitability checks,
+which are unchanged. A partial call-to-frame balance does not rewrite an owner-aggregation flag. The report does not
+restore lost details, repair the native observer, compare pose outputs or permit caching/skipping. Tests and baseline
+CLI counterexample: [T2 evidence](../evidence/T2_FRAME_ACCOUNTING_2026-10-17.md).

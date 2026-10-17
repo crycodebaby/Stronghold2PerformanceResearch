@@ -22,6 +22,12 @@ reported. Add the new suite to `SUITES` in `tools/run_checks.py`.
 
 ## T2 — Report the unframed tail in `grannyobs.py` (no game)
 
+**Completed locally 2026-10-17:** global six-function reconciliation, integer counters, explicit partial/unknown/
+inconsistent states, and synthetic tests including a CLI regression against the old reader. No new capture or Hub
+change. [Evidence and reproduction](evidence/T2_FRAME_ACCOUNTING_2026-10-17.md). When frame rows were dropped or drop
+information is unknown, the difference is reported as unassigned calls, not exclusively a tail. The original task
+description below records its motivation; its implementation does not change the current H-pose research priority.
+
 **Why**: an observer recording can count calls in its totals (`<stem>_granny.json`) that never reach a frame row, and
 today's reader does not show it. In EXP-008R-G1 these were 609 calls (clock 372, sample 187, deform 25, composite 25;
 F148, audit `data_results.json` → `captures.G1.unframed_boundary_tail`) while frame drops read 0

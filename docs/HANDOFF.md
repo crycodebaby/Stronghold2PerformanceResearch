@@ -8,6 +8,10 @@ Only the first section below is a current order. Every later section is a histor
 
 ## Current order — Exe H-pose ownership/lifetime
 
+- Tooling follow-up 2026-10-17: T2 now reports global call-to-frame accounting with synthetic tests and an old-CLI
+  counterexample ([evidence](evidence/T2_FRAME_ACCOUNTING_2026-10-17.md)). Owner-detail/Silver quality and native
+  observer unchanged. This closes a reporting gap, not the losses or pose lifetime question. No new capture or push.
+
 - Completed block: [contract, audit corrections, exact limits and reproduction](evidence/POSE_CONTRACT_2026-10-16.md), F148–F153. Real-DLL host: 142 layout cases, 1,620 differential cases, 238,768 components; 0 criterion failures. Own affine helper is numerically close but differs in 443 cases; no universal bit identity or replacement permission. Nine audit model tests + two integration tests pass.
 - Reproduce from repo root: `python -I tools/granny_pose.py`, then `python -I tools/test_granny_pose.py`; audit: `python -I tools/recheck_granny_audit.py --audit-root <local-audit-root>`; docs: `python -I tools/lint_docs.py`. MSVC/CMake/Win32 required; writes only isolated ignored build outputs. Reports include identities/source hashes and a float counterexample.
 - **Exactly one next experiment:** trace allocation, capacity source, transfers/reuse and freeing of the 20-byte H records used by Exe RVA `0x38E4D0`. Start from IAT uses of New/FreeWorldPose, New/FreeLocalPose and InstantiateModel; resolve stores to O+0x18/+0x1c/+0x4c. Same hashes and read-only separate Ghidra copy; prove each claimed edge with RVA/bytes. Do not infer a soldier identity.
