@@ -53,6 +53,12 @@ Win32 build/run step is prepared in the workflow; no new GitHub run has been cla
   an invalid input that original machine arithmetic would wrap; label that as a safety restriction, not equivalence.
 - An address alone is not a generation. Cross-call comparisons need observed lifetime/reuse boundaries and explicit
   gaps. Equal matrices would still not establish equal hidden state or permission to skip the original call.
+- The [bounded cleanup path](../evidence/HPOSE_CLEANUP_2026-10-17.md) clears O+0x4C only after its pose-release
+  calls and further helpers. A nonzero selected-H field is therefore insufficient evidence of live referents.
+  For a future observer, invalidate an observed generation at the relevant release boundary, before forwarding the
+  original release; do not wait for this later null store. This is an engineering requirement, not an implemented hook
+  or a proof that all release paths, reentrant calls and threads have been covered. Missing lifecycle events must
+  make a comparison unknown. No own deleter or ownership transfer follows from this static sequence.
 - Invalid/unknown inputs yield an explicit result and preserve output state; do not turn them into zero-sized valid
   observations. In a later observer, retain the original call and account for skipped observation separately.
 

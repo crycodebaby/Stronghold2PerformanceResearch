@@ -1,12 +1,19 @@
 # HANDOFF
 
-> Kurzfassung: Erzeugung/Auswahl und ein Kapazitaet-zu-Byte-/Transferpfad sind belegt. Naechster begrenzter Schritt: Cleanup-Kandidat Exe RVA 0x38E3C0 mit drei Free-Imports. Posebesitz/Freigabe/Reuse bleiben offen; keine neue Aufnahme oder Installation.
+> Kurzfassung: Erzeugung, Transfer und ein normaler Cleanup-/Abbaupfad sind belegt. Naechster begrenzter Schritt: indirekter Ressourcenaufruf Exe RVA 0x38E428. Vollstaendige Generationen/Reuse und Ausgabegueltigkeit bleiben offen; keine neue Aufnahme oder Installation.
 
-Updated: 2026-10-17 (bounded allocation/transfer result). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
+Updated: 2026-10-17 (bounded cleanup result). Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
 
 Only the first section below is a current order. Every later section is a historical operations log (game-run sequences, user guides, way-back instructions) kept as evidence; do not execute it.
 
 ## Current order — Exe H-pose ownership/lifetime
+
+- Completed F158/F159: [cleanup and outer teardown](evidence/HPOSE_CLEANUP_2026-10-17.md).
+  Three Free arguments are H+0/+4/+8; logical emptying, selected-H nulling and later array delete are separate.
+  O+0x4C becomes null only after additional indirect calls. Normal-return result; no general generation/reentrancy
+  or output-initialization proof. Six function/six import gates, eight tests normal/-O and independent review.
+  Reproduce: `python -I tools/hpose_cleanup_verify.py --exe <exe> --dll <dll>` and
+  `python -I tools/test_hpose_cleanup.py`. No native source/observer/runtime change.
 
 - Completed F156/F157: [capacity, allocator argument and transfer](evidence/HPOSE_ALLOCATION_2026-10-17.md).
   `0x38D500` -> `0x39A840` -> nominal CRT new requests 20*n, not measured heap reserve. Five-word H transfer,
@@ -34,7 +41,7 @@ Only the first section below is a current order. Every later section is a histor
 
 - Completed block: [contract, audit corrections, exact limits and reproduction](evidence/POSE_CONTRACT_2026-10-16.md), F148–F153. Real-DLL host: 142 layout cases, 1,620 differential cases, 238,768 components; 0 criterion failures. Own affine helper is numerically close but differs in 443 cases; no universal bit identity or replacement permission. Nine audit model tests + two integration tests pass.
 - Reproduce from repo root: `python -I tools/granny_pose.py`, then `python -I tools/test_granny_pose.py`; audit: `python -I tools/recheck_granny_audit.py --audit-root <local-audit-root>`; docs: `python -I tools/lint_docs.py`. MSVC/CMake/Win32 required; writes only isolated ignored build outputs. Reports include identities/source hashes and a float counterexample.
-- **Exactly one next experiment:** trace FreeModelInstance/FreeWorldPose/FreeLocalPose references `0x38E3F9`/`0x38E403`/`0x38E40D` in candidate `0x38E3C0` to exact H arguments, traversal and callers, including selected-H handling. These are inventory references, not a completed lifecycle proof. Full list origin/heap reserve remain separate gaps. Same hashes and isolated read-only copy; prove edges by RVA/bytes, no actor identity or UAF inference from addresses alone.
+- **Exactly one next experiment:** resolve indirect call `0x38E428` from the known R=*(H+0xC) provenance to table slot 0. It receives R and argument 1 only after decrementing R+4 to zero, after the three Granny-Frees and before selection reset. Establish this one resource-release/reentrancy boundary; unresolved targets are explicit results. Same hashes and isolated read-only copy; no general caller/heap expansion or UAF inference from addresses alone.
 - Acceptance/result decisions are in the evidence's final section. Library ownership is established in own valid hosts; the particular game-side owner/lifetime is not yet fully proven. Unresolved indirect transfers remain an explicit boundary. No output observer implementation is claimed.
 - Do not resume G2, install a build or request a recording. Original/TEST, Hub source/builds, captures, audit reference and original Ghidra DB stay unchanged. SH2-Perf own code/docs only. New agents update STATE and this section after the next result.
 - Publication (2026-10-17): both repositories are public ([STATE.md](STATE.md) "Published state"). Work in a clone of the published research history with normal commits and pull requests; no re-export, no rewrite of published or hub ids. Push or open a PR only when the task asks for it. Publication changes nothing in this order.

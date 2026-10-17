@@ -18,8 +18,12 @@ Fortschritt 2026-10-17: [ein Erzeugungs-/Auswahlpfad](evidence/HPOSE_CREATION_20
 belegt (F154/F155), mit unabhaengiger Bytepruefung und eigener begrenzter C++-Adressarithmetik. Vollstaendige
 Kapazitaet/Besitz/Freigabe/Reuse waren dabei noch offen. Der nachfolgende
 [Allokations-/Transferbaustein](evidence/HPOSE_ALLOCATION_2026-10-17.md) belegt jetzt die 20*n-Byteanforderung und
-Containerstores; physische Heapreserve und Poselebensdauer fehlen weiter. Aktueller naechster Schritt ist der
-Cleanup-Kandidat `0x38E3C0` im HANDOFF; die untenstehende historische Erstauftragsliste nicht neu starten.
+Containerstores; physische Heapreserve und vollstaendige Poselebensdauer fehlen weiter. Der
+Cleanup-Kandidat `0x38E3C0` ist inzwischen ebenfalls begrenzt untersucht:
+[Freigabefelder, spaeter Auswahl-Reset und ein direkter Abbaupfad](evidence/HPOSE_CLEANUP_2026-10-17.md), F158/F159.
+Der normale Rueckkehrpfad ist statisch belegt; indirekte Ressourcenaufrufe und durchgaengige Generationen bleiben offen.
+Aktueller naechster Schritt ist ausschliesslich deren Call `0x38E428` im HANDOFF;
+die untenstehende historische Erstauftragsliste nicht neu starten.
 
 ## 1. Rolle und Ziel
 

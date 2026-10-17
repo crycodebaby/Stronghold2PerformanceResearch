@@ -26,6 +26,12 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Local cleanup follow-up: [H-record Free fields and teardown](evidence/HPOSE_CLEANUP_2026-10-17.md) adds eight
+compiler-free tests, passed normally and with `-O`. Read-only checks against matching own Exe/DLL files pass
+six function/six import gates in both modes. An independent reviewer checked all 403 exported instruction bytes
+and the bounded normal-return interpretation. The final integrated ordinary checks pass 13/13 groups.
+No original execution, native source change or new online CI run.
+
 Local allocation follow-up: [H-container byte request/transfer](evidence/HPOSE_ALLOCATION_2026-10-17.md) adds seven
 compiler-free tests to normal checks, nine function/five import checks against matching own game files (read-only),
 and ten own native byte-arithmetic witnesses. Native total is now6393; earlier6383 results below retain their dated
