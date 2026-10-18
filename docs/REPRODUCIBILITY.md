@@ -26,6 +26,13 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Local first-bone follow-up: [three fast routes, destination bytes and source boundary](evidence/POSE_FIRST_BONE_FAST_2026-10-18.md).
+Existing sample verifier stays schema 2: four new source bodies, 58 entries/71 ranges total, six import/six export
+bindings unchanged. Thirteen tests and original-file gates pass normal/-O; independent final-byte review covers
+578 Exe/3054 DLL lines. Parent audit reader independently confirms every manifest range. Destination byte coverage
+is not complete source/value semantics. Integrated `run_checks.py` passes 15/15 groups.
+No original execution, new native/Hub code or GitHub CI run.
+
 Local special-callback follow-up: [descriptor provenance and conditional prefix](evidence/POSE_SPECIAL_CALLBACK_2026-10-17.md).
 Existing sample verifier schema 2 retains the earlier 33 entries and adds 21: 54 entries/67 ranges, six import/six
 export bindings. Twelve synthetic tests and original-file gates pass normal/-O. Independent review confirms final

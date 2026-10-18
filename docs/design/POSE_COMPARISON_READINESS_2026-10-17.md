@@ -84,3 +84,21 @@ Aktuelle Folgeprioritaet ist die kleine bekannte Schnellroute `0x1C8DB -> 0x44F4
 ersten Matrixziele und Countinteraktion mit dem Restloop. Die vorherigen Folgeauftraege oben beschreiben ihre
 jeweiligen Zwischenstaende. Keine automatische Komplettrekonstruktion aller Controls/Tracks. Die Fragen nach
 gueltigen Quellen, beobachteten Generationen und Leseintervall werden dadurch nicht aufgehoben.
+
+## Fortschritt Schnellroute: Byteabdeckung ist nicht Wertegueltigkeit
+
+[F175–F177](../evidence/POSE_FIRST_BONE_FAST_2026-10-18.md) belegen fuer alle drei Fastzweige volle 64 Zielbytes
+je World0/Composite0, bei bekannten Writerzielen und normal beendeter Ausfuehrung mit zulaessigen Speicherbereichen.
+Route B hat den engen Parent-/InverseBind-Wertevertrag. Fuer A/C ist die Initialisierung gelesener lokaler
+Transformkomponenten nicht geschlossen; daraus folgt weder ein Enginefehler noch eine ungeschriebene Zielmatrix.
+
+Diese Unterscheidung praezisiert Punkt 2 des Vergleichsvertrags: Ein reiner Vergleich real erzeugter **Bytes**
+braucht einen nachgewiesenen Schreibumfang, aber keinen vollstaendigen mathematischen Nachbau des Producers.
+Semantisch gueltige Transformwerte und Ersetzbarkeit sind zusaetzliche Aussagen. Ein Vergleich nur der ersten
+Matrix liefert zudem keine Gleichheitsaussage ueber die gesamte Pose oder den versteckten Zustand.
+
+Aktuelle naechste Prioritaet ist deshalb ein begrenzter Gueltigkeitsvertrag fuer die erste World-/Composite-
+Matrixbeobachtung: welche konkrete lebende Generation/Kapazitaet ist zuordenbar, welches Leseintervall sicher,
+welche fehlenden Ereignisse/Reentrancy-/Threadfragen verhindern einen Zugriff? Nichtnull Zeiger und einfache
+Vorher-/Nachherchecks genuegen weiter nicht. Noch keine Observer-/Hookimplementierung oder Aufnahme.
+Die offenen A/C-Producer und Track+8 bleiben dokumentiert; keine automatische Rekonstruktion aller Formate.

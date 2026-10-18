@@ -60,6 +60,10 @@ Win32 build/run step is prepared in the workflow; no new GitHub run has been cla
 - The [special callback](../evidence/POSE_SPECIAL_CALLBACK_2026-10-17.md) has an optional first-matrix fast route
   before its loop guard. A zero loop count alone cannot authorize an empty whole-call observation. Known helper
   writes cover a conditional prefix bounded additionally by the binding count; do not substitute HeaderN for it.
+- The [first-bone follow-up](../evidence/POSE_FIRST_BONE_FAST_2026-10-18.md) separates complete destination byte
+  coverage from valid transform-value provenance. A future raw-byte comparator must preserve this distinction,
+  handle matrix0 equality as a matrix0-only result and prove live capacity/generation/read interval independently.
+  A/C source uncertainty cannot be converted into replacement correctness or an engine-defect claim.
 - The [bounded cleanup path](../evidence/HPOSE_CLEANUP_2026-10-17.md) clears O+0x4C only after its pose-release
   calls and further helpers. A nonzero selected-H field is therefore insufficient evidence of live referents.
   For a future observer, invalidate an observed generation at the relevant release boundary, before forwarding the

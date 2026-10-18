@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from hpose_creation_verify import checked_pe, EXE_SHA, DLL_SHA
 from pe_info import PE
 
-MANIFEST_SHA = 'c06dbf7b1a4a579f9bc45885b18e5df7c0403024292e858fd1e178087c12a4a5'
+MANIFEST_SHA = '6d92c36ec9f6eaddf2d85e16a746ec3b2a0d3f6f2834c64ca11757bf5a3da27f'
 MODULES = {'exe': (EXE_SHA, 0x400000), 'dll': (DLL_SHA, 0x50000000)}
 IMPORTS = {0x500a98: '_GrannySampleModelAnimationsAccelerated@20',
            0x500b10: '_GrannyGetSourceSkeleton@4', 0x500aac: '_GrannyInstantiateModel@4',
@@ -137,7 +137,8 @@ def verify(exe, dll, manifest):
     if any(exports.get(symbol) != rva for symbol, rva in EXPORTS.items()):
         raise ValueError('export identity mismatch')
     ranges = sum(verify_bytes(mod, readers[mod['module']]) for mod in manifest['modules'])
-    return {'identity': 'verified', 'modules': 2, 'evidence_entries': 54, 'ranges': ranges,
+    return {'identity': 'verified', 'modules': 2,
+            'evidence_entries': sum(len(mod['evidence']) for mod in manifest['modules']), 'ranges': ranges,
             'imports': len(IMPORTS), 'exports': len(EXPORTS), 'game_executed': False,
             'unconditional_sample_initialized_span_proven': False}
 

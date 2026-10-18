@@ -47,6 +47,12 @@ bekannten direkten Helfern ist dessen vollstaendiger Matrixpraefix bedingt beleg
 Naechste Prioritaet ist der kleine bereits zielgebundene Schnellweg `0x1C8DB -> 0x44F40`; Track+8 und konkrete
 Lebensdauer/Leseintervalle bleiben offen. Keine automatische Rekonstruktion aller Track-/Controltypen.
 
+Fortschritt erste-Matrix-Schnellroute 2026-10-18: [drei Quellzweige und Zielbyteabdeckung](evidence/POSE_FIRST_BONE_FAST_2026-10-18.md),
+F175–F177. Alle drei Routen schreiben bedingt volle World0-/Composite0-Bytes. Nur Route B hat zudem den engen
+gueltigen Wertevertrag; A/C-Tempinitialisierung ist offen, kein Enginefehler bewiesen. Naechste Prioritaet:
+Generation/Kapazitaet/Leseintervall fuer einen begrenzten reinen Bytevergleich beurteilen. Keine Implementierung
+eines Observers, kein Messlauf und keine automatische Komplettrekonstruktion aller Kurventypen.
+
 ## 1. Rolle und Ziel
 
 Übernimm die technische Projektleitung als Senior Reverse Engineer und Software Architect. Arbeite kritisch, selbstständig und ergebnisoffen. Frühere Agentenberichte sind zu überprüfende Aussagen; Nutzerbeobachtungen sind Kontext und teilweise bestätigte Abläufe, nicht automatisch gemessene Ursachen.

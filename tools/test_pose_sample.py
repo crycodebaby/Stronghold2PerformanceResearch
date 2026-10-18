@@ -18,7 +18,7 @@ class PoseSampleTests(unittest.TestCase):
 
     def test_complete_pinned_manifest(self):
         self.assertEqual(len(self.m['modules']), 2)
-        self.assertEqual(sum(len(m['evidence']) for m in self.m['modules']), 54)
+        self.assertEqual(sum(len(m['evidence']) for m in self.m['modules']), 58)
 
     def test_missing_duplicate_module_or_entry(self):
         mutations = [lambda m: m['modules'].pop(),
@@ -143,6 +143,22 @@ class PoseSampleTests(unittest.TestCase):
             entry['ranges'][0]['length'] += delta
             with self.assertRaises(ValueError):
                 v.validate_manifest(m)
+
+    def test_first_bone_source_predicates_and_producers_required(self):
+        required = {'f-500033e0', 'f-50003410', 'f-50003de0', 'f-50044ac0'}
+        dll = next(mod for mod in self.m['modules'] if mod['module'] == 'dll')
+        self.assertTrue(required <= {entry['id'] for entry in dll['evidence']})
+        for entry_id in required:
+            for mutation in ['remove', 'digest']:
+                m = copy.deepcopy(self.m)
+                mod = next(mod for mod in m['modules'] if mod['module'] == 'dll')
+                entry = next(entry for entry in mod['evidence'] if entry['id'] == entry_id)
+                if mutation == 'remove':
+                    mod['evidence'].remove(entry)
+                else:
+                    entry['ranges'][0]['sha256'] = '0' * 64
+                with self.assertRaises(ValueError):
+                    v.validate_manifest(m)
 
 
 if __name__ == '__main__':

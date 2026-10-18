@@ -2,7 +2,7 @@
 
 > Kurzfassung: Verstaendlicher Einstieg in den bisher belegten Animationspfad: Erzeugen, Speichern, Auswaehlen, Berechnen und Freigeben. Jede Station verlinkt Fakten und Nachweise; Bedingungen und offene Verbindungen bleiben sichtbar. Diese Karte ersetzt weder Evidenz noch den aktuellen Auftrag in STATE.
 
-Aktualisiert: 2026-10-18. Forschungsbasis: `3c82728`, F148–F174. Diese Karte ordnet vorhandenes Wissen;
+Aktualisiert: 2026-10-18. Forschungsstand: F148–F177, mit den jeweils verlinkten Evidenzstaenden. Diese Karte ordnet vorhandenes Wissen;
 sie fuegt keinen neuen Binaerbefund hinzu. Fuer den aktuellen Arbeitsauftrag zuerst [STATE.md](STATE.md) lesen.
 
 ## Der Ablauf auf einen Blick
@@ -19,7 +19,7 @@ flowchart TD
     Sample["4. Sample-Aufruf an Granny"]
     Direct["Direkte Writer: bedingter voller Matrixbereich"]
     Special["Spezialcallback: bedingter voller Praefix"]
-    Gaps["Offen: Schnellweg und Trackcallback"]
+    Gaps["Offen: indirekter Trackcallback"]
     Sources["Offen: Gueltigkeit vorgelagerter Quellen"]
     Output["5. World- und Composite-Matrizen"]
     Cleanup["6. Separater Abbau: Modellinstanz und Posen freigeben"]
@@ -85,12 +85,16 @@ Im untersuchten Granny-Pfad werden je nach Kontrollliste verschiedene Berechnung
 - **Spezialcallback:** Fuer einen Animations-Erzeugungspfad ist ein konkreter Descriptor mit Callbackkandidat
   `0x1C780` gefunden. Ohne Schnellroute und bei bekannten direkten Helfern in jeder Iteration ist ein voller
   Matrixpraefix belegt. Die tatsächliche lebende Zielbindung bleibt eine Bedingung.
-- **Weitere Grenzen:** Die erste-Matrix-Schnellroute und ein indirekter Trackcallback haben noch keinen
-  abgenommenen vollstaendigen Schreibvertrag. Ein zweiter gefundener Descriptor wurde nur inventarisiert.
+- **Schnellroute:** Alle drei Zweige schreiben die erste World-/Composite-Matrix vollstaendig. Ein Zweig
+  kopiert Parent und berechnet Composite mit bekanntem Wertevertrag. Bei den beiden anderen bleibt die
+  Initialisierung bestimmter Transform-Zwischenwerte offen; die Zielbytes werden trotzdem voll geschrieben.
+- **Weitere Grenzen:** Ein indirekter Trackcallback hat noch keinen abgenommenen Schreibvertrag.
+  Ein zweiter gefundener Descriptor wurde nur inventarisiert.
 
-**Belegt:** F167–F174. **Offen:** Ein allgemeiner Ausgabeumfang fuer jeden Sample-Aufruf und jede Kontrollart.
+**Belegt:** F167–F177. **Offen:** Ein allgemeiner Ausgabeumfang fuer jeden Sample-Aufruf und jede Kontrollart.
 [Direkte Writer](evidence/POSE_SAMPLE_EXTENT_2026-10-17.md),
-[Spezialcallback](evidence/POSE_SPECIAL_CALLBACK_2026-10-17.md).
+[Spezialcallback](evidence/POSE_SPECIAL_CALLBACK_2026-10-17.md),
+[erste-Matrix-Schnellroute](evidence/POSE_FIRST_BONE_FAST_2026-10-18.md).
 
 ### 5. Ausgabe: Was ist eine Pose-Matrix?
 
@@ -108,6 +112,11 @@ in ihren Nachweisen genannten Pfad-, Quell-, Kapazitaets- und Hierarchiebedingun
 Sample gueltig lesbar sind. Volle Stores beweisen keine gueltigen Werte aus ungeprueften Quellen.
 [Layout und eigener Helfer](evidence/POSE_CONTRACT_2026-10-16.md),
 [Voraussetzungen fuer einen Vergleich](design/POSE_COMPARISON_READINESS_2026-10-17.md).
+
+Seit F175–F177 unterscheiden wir genauer: **voll geschriebene Ausgabebytes** koennen fuer einen reinen
+Bytevergleich nuetzlich sein, auch wenn die Herkunft einzelner Rechenwerte noch offen ist. Dafuer muessen
+lebende Allokation, Kapazitaet und Lesezeitpunkt separat abgesichert sein. Gleiche erste Matrizen beweisen
+keine gleiche ganze Pose; ein mathematischer Nachbau hat zusaetzliche Quell-/Wertepflichten.
 
 ### 6. Freigeben: Zeiger verlieren ihre Gueltigkeit
 
@@ -165,5 +174,6 @@ Bei einem neuen Baustein zuerst dessen Befund und Evidenz erstellen, danach nur 
 Karte aktualisieren. Hier keine zweite Kopie aller Adressen, Testergebnisse oder historischen Zwischenstaende
 aufbauen. Wenn ein Beleg nur unter Bedingungen gilt, muessen diese auch in der Kurzfassung sichtbar bleiben.
 
-Aktuelle Prioritaet bei Erstellung dieser Karte: erster-Bone-Schnellweg **`0x1C8DB -> 0x44F40`** und dessen
-erste Matrixausgabe samt Zusammenspiel mit dem Restloop. Fuer spaetere Auftraege gilt immer [STATE.md](STATE.md).
+Aktuelle Folgeprioritaet: Gueltigkeitsvertrag fuer eine begrenzte reine Bytebeobachtung der ersten World-/
+Composite-Matrix; konkrete Generation und Leseintervall pruefen. Noch kein Observer oder Messlauf.
+Offene mathematische Quellfragen bleiben separat. Fuer spaetere Auftraege gilt immer [STATE.md](STATE.md).
