@@ -1,7 +1,7 @@
 # SH2-Perf
 
-Stronghold 2 (Steam, Win32/DX9) faster through **measurement → hooks → patches on the original**.
-Problem: 2×~100 knights ≈ 20 FPS, more troops/melee → 1–2 FPS. Cause unmeasured. Reimplementation = later vision.
+Stronghold 2 (Steam, Win32/DX9): bounded reverse engineering, reproducible evidence and own testable parts.
+Performance changes require separate measurements; no demonstrated speedup. Current scope is in STATE.
 
 Public entry: [README.md](README.md). Tool-neutral agent rules: [AGENTS.md](AGENTS.md). Current order: "Current status" in docs/STATE.md.
 
@@ -9,7 +9,7 @@ Public entry: [README.md](README.md). Tool-neutral agent rules: [AGENTS.md](AGEN
 
 | Task | Read / use |
 |---|---|
-| Start of any session | [docs/STATE.md](docs/STATE.md) |
+| Start of any session | [docs/STATE.md](docs/STATE.md), then [short leadership guide](docs/PROJECT_LEAD_HANDOFF.md); only linked task/evidence next |
 | Evaluate a new measurement | skill `messung-auswerten` → `tools/ingest.py` |
 | Analyse a function / address | skill `funktion-analysieren` → `tools/sym.py`, `tools/fbrief.py` |
 | Look up a fact | [docs/FINDINGS.md](docs/FINDINGS.md) |
@@ -36,7 +36,8 @@ Public entry: [README.md](README.md). Tool-neutral agent rules: [AGENTS.md](AGEN
 
 ## Sibling folders (relative to repo)
 
-`../Stronghold 2` original, read-only · `../Stronghold 2 - TEST` all experiments · `../Stronghold2AnalyseHub` hub (branch `perf-metrics`) · `../ghidra-projects/SH2` Ghidra DB.
+Standard layout only: see [WORKSPACE](docs/WORKSPACE.md). Actual local paths may be in ignored
+`build/project-lead-handoff/LOCAL_ENVIRONMENT.json`; verify branch/HEAD and project-copy paths before use.
 
 ## Rules
 

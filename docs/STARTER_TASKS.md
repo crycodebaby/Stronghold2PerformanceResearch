@@ -6,6 +6,9 @@ Each task is useful on its own, fits in a small pull request and has an acceptan
 repeat. Read [README.md](../README.md), [CONTRIBUTING.md](../CONTRIBUTING.md) and the "Current status" in
 [STATE.md](STATE.md) first. Claim a task by opening an issue before starting.
 
+These are dated contribution suggestions, not the project lead's current assignment. T2 was completed locally
+([evidence](evidence/T2_FRAME_ACCOUNTING_2026-10-17.md)); follow STATE before selecting or repeating any starter task.
+
 ## T1 — Guard against dangling fact references in the docs linter (no game)
 
 **Why**: findings (F###) and decisions (D###) are cited across the docs, the README and audits. Today

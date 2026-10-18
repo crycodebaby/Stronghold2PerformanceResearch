@@ -26,6 +26,11 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Context maintenance 2026-10-18: [smaller project-lead entry and cold-start reading check](evidence/PROJECT_CONTEXT_REFRESH_2026-10-18.md).
+Historical canonical texts retained; three core entry files reduced from 7565 to 1286 whitespace words (not
+token counts). Fresh agent without chat history derives current task, limits and local routing correctly.
+No research/analysis/runtime code changed; previous scientific acceptance remains tied to `38d7e79`.
+
 Local internal-provenance follow-up: [two own New spills, Free reloads and callback context limit](evidence/POSE_INTERNAL_PROVENANCE_2026-10-18.md).
 Schema-2 verifier retains previous evidence and now has 85 entries/98 ranges, 14 exports/twelve direct edges;
 allocator/heap/census gates retained. Bounded frame-MOV/loop checks and 21 verifier tests pass normal/-O,
