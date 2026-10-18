@@ -1,14 +1,22 @@
 # HANDOFF
 
-> Kurzfassung: Allocator-Default, Wechsel und Heapweiterleitung sind eingegrenzt; Getterpaare beweisen keine stabile Lebensdauer. Naechster Schritt: Poseherkunft des internen New-/Free-Bypasses pruefen. Selektive Ereignisabdeckung und sicheres Lesen bleiben offen. Kein Observer oder Messlauf.
+> Kurzfassung: Der interne Bypass gibt lokal seine eigenen zwei New-Returns weiter, bedingt auf unveraenderte Framefelder. Offen ist der Contextvertrag eines indirekten Trackcalls. Keine uneingeschraenkte H-Pose-/Lebensdauer-/Lesegarantie; kein Observer oder Messlauf.
 
-Updated: 2026-10-18 (allocator binding and getter alias boundary).
+Updated: 2026-10-18 (internal pose provenance and callback context boundary).
 Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
 Use the [animation knowledge map](ANIMATION_KNOWLEDGE_MAP.md) for the connected path and evidence links.
 
 Only the first section below is a current order. Every later section is a historical operations log (game-run sequences, user guides, way-back instructions) kept as evidence; do not execute it.
 
 ## Current order — Exe H-pose ownership/lifetime
+
+- F183–F185: [internal New/Free provenance](evidence/POSE_INTERNAL_PROVENANCE_2026-10-18.md).
+  E080 stores two New returns in F-44/F-40 (hex offsets); Free reloads those fields, under unmodified frame/ABI
+  conditions. N=*(parameter1+0x20); two calls do not prove two successful/disjoint live allocations.
+  Known context forwarding 44DAB -> 2F5D0 is an empty return in this DLL. Indirect E30C -> Track+8 receives
+  arg1=F-80; its context writes remain open. No universal H-pose disjointness, selected coverage or safe read.
+  Current verifier: 85 entries/98 ranges, 21 tests normal/-O, 14 exports/twelve direct edges. Old counts below
+  describe their previous revisions. Do not mistake byte-gate acceptance for general Ghidra/REA correctness.
 
 - F180–F182: [allocator defaults, change and forwarding](evidence/POSE_ALLOCATOR_BINDING_2026-10-18.md).
   Initial file slots bind 0x31150/0x31220; Setter stores two arguments separately, Getter reads/stores separately.
@@ -97,10 +105,10 @@ Only the first section below is a current order. Every later section is a histor
 
 - Completed block: [contract, audit corrections, exact limits and reproduction](evidence/POSE_CONTRACT_2026-10-16.md), F148–F153. Real-DLL host: 142 layout cases, 1,620 differential cases, 238,768 components; 0 criterion failures. Own affine helper is numerically close but differs in 443 cases; no universal bit identity or replacement permission. Nine audit model tests + two integration tests pass.
 - Reproduce from repo root: `python -I tools/granny_pose.py`, then `python -I tools/test_granny_pose.py`; audit: `python -I tools/recheck_granny_audit.py --audit-root <local-audit-root>`; docs: `python -I tools/lint_docs.py`. MSVC/CMake/Win32 required; writes only isolated ignored build outputs. Reports include identities/source hashes and a float counterexample.
-- **Exactly one next proof:** DLL context 0xE080, New/Free calls 0xE165/0xE54D: trace only the WorldPose
-  argument from birth/entry to Free. Distinguish its own New result from an incoming pose that might alias
-  selected H storage; document unresolved aliases precisely. No complete heap reconstruction. Protected
-  writer/read interval remains separate; consistent metadata or an active call is no synchronization proof.
+- **Exactly one next proof:** at DLL indirect track call 0xE30C -> Track+8, bind one concrete callback candidate
+  and the read/write/forwarding extent of arg1 (context F-0x80). No whole curve/heap reconstruction. Conditional
+  own New/Free provenance is no universal frame/lifetime/nonalias guarantee. Protected read interval remains
+  separate; consistent metadata or an active call is no synchronization proof.
   No observer/hooks, original execution, recording, cache/skip or automatic curve-family reconstruction.
 - Acceptance/result decisions are in the evidence's final section. Library ownership is established in own valid hosts; the particular game-side owner/lifetime is not yet fully proven. Unresolved indirect transfers remain an explicit boundary. No output observer implementation is claimed.
 - Do not resume G2, install a build or request a recording. Original/TEST, Hub source/builds, captures, audit reference and original Ghidra DB stay unchanged. SH2-Perf own code/docs only. New agents update STATE and this section after the next result.

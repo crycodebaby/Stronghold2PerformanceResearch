@@ -19,7 +19,7 @@ class PoseSampleTests(unittest.TestCase):
 
     def test_complete_pinned_manifest(self):
         self.assertEqual(len(self.m['modules']), 2)
-        self.assertEqual(sum(len(m['evidence']) for m in self.m['modules']), 80)
+        self.assertEqual(sum(len(m['evidence']) for m in self.m['modules']), 85)
 
     def test_missing_duplicate_module_or_entry(self):
         mutations = [lambda m: m['modules'].pop(),
@@ -218,6 +218,47 @@ class PoseSampleTests(unittest.TestCase):
         # Matching a constant in arbitrary data is not itself a semantic read/write reference.
         for changed in ([], sections, [(0x1000, bytes(32))]):
             with self.assertRaises(ValueError): v.verify_allocator_literals(changed)
+
+    def test_internal_context_caller_and_stub_entries_required(self):
+        required = {'f-5000e080', 'f-5004ff60', 'f-5004ff80', 'f-5000e5a0', 'f-5002f5d0'}
+        dll = next(mod for mod in self.m['modules'] if mod['module'] == 'dll')
+        self.assertTrue(required <= {entry['id'] for entry in dll['evidence']})
+        for entry_id in required:
+            m = copy.deepcopy(self.m)
+            mod = next(mod for mod in m['modules'] if mod['module'] == 'dll')
+            mod['evidence'] = [entry for entry in mod['evidence'] if entry['id'] != entry_id]
+            with self.assertRaises(ValueError): v.validate_manifest(m)
+
+    def test_bounded_frame_decoder_signed_displacements_sib_and_unsupported_forms(self):
+        self.assertEqual(v.decode_frame_mov(b'\x89\x45\x9c'),
+                         {'write': True, 'register': 0, 'index': None, 'scale': 1, 'displacement': -100})
+        fixture = b'\x8b\x94\x95' + struct.pack('<i', 1024)
+        self.assertEqual(v.decode_frame_mov(fixture),
+                         {'write': False, 'register': 2, 'index': 2, 'scale': 4, 'displacement': 1024})
+        for bad in [fixture[:n] for n in range(len(fixture))] + [b'\x90\x45\x9c', b'\x89\xc0\x00',
+                    b'\x89\x40\x00', b'\x89\x44\x24\x00']:
+            with self.assertRaises(ValueError): v.decode_frame_mov(bad)
+
+    def test_internal_spill_and_two_iteration_loop_gates_reject_changed_dataflow(self):
+        data = {0xe16a: b'\x89\x44\x3d\xbc'+bytes(3),
+                0xe548: b'\x8b\x54\x35\xbc'+bytes(3), 0xe54c: b'\x52'}
+        for zero, advance, compare, branch, target, reg in [(0xe152, 0xe16e, 0xe174, 0xe177, 0xe154, 7),
+                                                          (0xe546, 0xe55c, 0xe562, 0xe565, 0xe548, 6)]:
+            data[zero] = bytes([0x33, 0xc0+9*reg])
+            data[advance] = bytes([0x83, 0xc0+reg, 4])
+            data[compare] = bytes([0x83, 0xf8+reg, 8])
+            data[branch] = bytes([0x7c]) + struct.pack('b', target-branch-2)
+        v.verify_internal_pose_spills(lambda r,n: data[r][:n])
+        for site, fixture in data.items():
+            # Frame moves consume four bytes; the seven-byte read includes following instructions.
+            consumed = 4 if site in (0xe16a, 0xe548) else len(fixture)
+            truncated = fixture[:consumed-1]
+            mutations = [fixture[:i]+bytes([fixture[i] ^ 1])+fixture[i+1:] for i in range(consumed)]
+            if consumed == 4: mutations.append(fixture[:3]+bytes([fixture[3] ^ 0x80])+fixture[4:])
+            for wrong in [b'', bytes(len(fixture)), truncated, *mutations]:
+                with self.subTest(site=site):
+                    with self.assertRaises(ValueError):
+                        v.verify_internal_pose_spills(lambda r,n: wrong if r==site else data[r][:n])
 
 
 if __name__ == '__main__':

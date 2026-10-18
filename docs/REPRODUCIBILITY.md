@@ -26,6 +26,14 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Local internal-provenance follow-up: [two own New spills, Free reloads and callback context limit](evidence/POSE_INTERNAL_PROVENANCE_2026-10-18.md).
+Schema-2 verifier retains previous evidence and now has 85 entries/98 ranges, 14 exports/twelve direct edges;
+allocator/heap/census gates retained. Bounded frame-MOV/loop checks and 21 verifier tests pass normal/-O,
+as do original-file gates. Independent review confirms six canonical files/538 byte lines and conditional
+local provenance. Parent audit PE reader checks all ranges/exports. Frame mutation, indirect callback context,
+successful allocation and lifetime remain distinct obligations. Integrated local checks pass 16/16 groups;
+independent final-document review has no substantive blocker. No original execution or native/Hub change.
+
 Local allocator follow-up: [default binding, switches, getter aliases and heap forwarding](evidence/POSE_ALLOCATOR_BINDING_2026-10-18.md).
 Existing schema-2 verifier: 80 entries/93 ranges, seven Exe imports/twelve exports, three DLL heap imports,
 eight direct/two allocator-slot/four heap calls; literal census 88/128. New read-only Ghidra reference inventory

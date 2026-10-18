@@ -129,3 +129,15 @@ Der bekannte WorldPose-Free-Eintritt bleibt vor Weiterleitung eine konservative 
 Naechster Beweis: Poseherkunft im internen New-/Free-Bypass 0xE080, Calls 0xE165/0xE54D. Das prueft die
 selektive Relevanz fuer H-Posen, bevor die Fragestellung auf den ganzen Heap ausgeweitet wuerde.
 Ein geschuetztes Kopierintervall und lueckenlose relevante Ereignisse sind weiterhin nicht nachgewiesen.
+
+## Fortschritt interner Bypass und Contextgrenze
+
+[F183–F185](../evidence/POSE_INTERNAL_PROVENANCE_2026-10-18.md) belegen die bedingte lokale Zuordnung zweier
+New-Returns zu den Free-Argumenten im Kontext 0xE080. Unter unveraendertem Frame/Calling-Convention-Vertrag
+ist dies ein eigener New-/Free-Pfad, keine direkte lokale Auswahl einer eingehenden H-Pose.
+Erfolg, verschiedene lebende Allokationen und allgemeine Frame-/Referentenaliasfreiheit sind damit nicht bewiesen.
+
+Bekannte Contextweitergabe 0x44DAB -> 0x2F5D0 hat in diesem Build keine eigenen Datenstores. Indirekt erhaelt
+Track+8 an 0xE30C aber arg1=F-0x80 mit noch offenem Schreib-/Weitergabevertrag. Genau dieser Contextumfang
+fuer einen konkreten Kandidaten ist der naechste begrenzte Beweis; keine komplette Trackmathematik.
+Das sicher geschuetzte Lesen ausgewaehlter H-Posen bleibt eine separate Voraussetzung.

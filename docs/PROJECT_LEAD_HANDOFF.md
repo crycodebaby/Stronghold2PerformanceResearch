@@ -64,6 +64,11 @@ F180–F182. Setter/Getterschritte, konkrete Aliasgrenze und bekannte Default-He
 Dateidefaults noch Getterpaare beweisen dauerhafte Laufzeitbindung. Neueste Prioritaet: Im internen Kontext
 0xE080 die New-/Free-Posezuordnung pruefen, um die selektive Relevanz des Export-Bypasses einzugrenzen.
 
+Fortschritt interner Bypass 2026-10-18: [lokale New-/Free-Herkunft](evidence/POSE_INTERNAL_PROVENANCE_2026-10-18.md),
+F183–F185. Zwei eigene New-Returns sind bedingte lokale Freequellen, keine uneingeschraenkte Lifetime-/
+Nichtaliasgarantie. Ein bekannter Contextcallee ist leer; naechste Prioritaet ist der Contextvertrag an
+0xE30C -> Track+8 fuer einen konkreten Callbackkandidaten. Kein allgemeiner Ghidra-/REA-Korrektheitsbeweis.
+
 ## 1. Rolle und Ziel
 
 Übernimm die technische Projektleitung als Senior Reverse Engineer und Software Architect. Arbeite kritisch, selbstständig und ergebnisoffen. Frühere Agentenberichte sind zu überprüfende Aussagen; Nutzerbeobachtungen sind Kontext und teilweise bestätigte Abläufe, nicht automatisch gemessene Ursachen.

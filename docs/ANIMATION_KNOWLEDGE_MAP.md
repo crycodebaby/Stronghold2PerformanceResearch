@@ -2,7 +2,7 @@
 
 > Kurzfassung: Verstaendlicher Einstieg in den bisher belegten Animationspfad: Erzeugen, Speichern, Auswaehlen, Berechnen und Freigeben. Jede Station verlinkt Fakten und Nachweise; Bedingungen und offene Verbindungen bleiben sichtbar. Diese Karte ersetzt weder Evidenz noch den aktuellen Auftrag in STATE.
 
-Aktualisiert: 2026-10-18. Forschungsstand: F148–F182, mit den jeweils verlinkten Evidenzstaenden. Diese Karte ordnet vorhandenes Wissen;
+Aktualisiert: 2026-10-18. Forschungsstand: F148–F185, mit den jeweils verlinkten Evidenzstaenden. Diese Karte ordnet vorhandenes Wissen;
 sie fuegt keinen neuen Binaerbefund hinzu. Fuer den aktuellen Arbeitsauftrag zuerst [STATE.md](STATE.md) lesen.
 
 ## Der Ablauf auf einen Blick
@@ -135,7 +135,12 @@ Ein Getterpaar ist kein atomarer Lifetimebeweis; Ausgabealiase koennen sogar die
 Konfigurationswechsel bedeutet verlorene Beobachtergewissheit, nicht automatisch eine echte Posefreigabe.
 [Allocatorbindung, Wechsel und konkrete Gegenbeispiele](evidence/POSE_ALLOCATOR_BINDING_2026-10-18.md).
 
-**Belegt:** F158/F159, F178–F182. **Offen:** Vollstaendige relevante Freigabe-/Reuse-Ereignisse und Ausschluss konkurrierender oder
+Der gefundene interne Bypass speichert zwei eigene New-Returns und benutzt lokal dieselben Felder fuer Free.
+Das grenzt den Pfad ein, solange keine fremde Aenderung dieser Felder stattfindet. Ein indirekter Trackcallback
+bekommt jedoch eine lokale Contextadresse: dessen Schreibvertrag ist noch offen. Eine direkte Freigabe einer
+eingehenden H-Pose ist hier nicht belegt. [Interne Poseherkunft](evidence/POSE_INTERNAL_PROVENANCE_2026-10-18.md).
+
+**Belegt:** F158/F159, F178–F185. **Offen:** Vollstaendige relevante Freigabe-/Reuse-Ereignisse und Ausschluss konkurrierender oder
 verschachtelter Veraenderungen waehrend einer spaeteren eigenen Lesung.
 [Cleanup und aeusserer Abbau](evidence/HPOSE_CLEANUP_2026-10-17.md).
 
@@ -185,7 +190,7 @@ Bei einem neuen Baustein zuerst dessen Befund und Evidenz erstellen, danach nur 
 Karte aktualisieren. Hier keine zweite Kopie aller Adressen, Testergebnisse oder historischen Zwischenstaende
 aufbauen. Wenn ein Beleg nur unter Bedingungen gilt, muessen diese auch in der Kurzfassung sichtbar bleiben.
 
-Aktuelle Folgeprioritaet: Den gefundenen internen New-/Free-Bypass auf seinen Posezeiger zurueckverfolgen.
-Erst dessen Herkunft zeigt, ob er ausgewaehlte H-Posen betreffen kann. Ein sicheres Leseintervall bleibt separat.
+Aktuelle Folgeprioritaet: Den Contextvertrag der offenen indirekten Trackkante fuer einen konkreten Kandidaten
+pruefen. Die lokale eigene New-/Free-Zuordnung ist bedingt belegt; ein sicheres Leseintervall bleibt separat.
 Noch kein Observer oder Messlauf.
 Offene mathematische Quellfragen bleiben separat. Fuer spaetere Auftraege gilt immer [STATE.md](STATE.md).
