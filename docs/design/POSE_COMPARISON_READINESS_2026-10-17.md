@@ -102,3 +102,17 @@ Matrixbeobachtung: welche konkrete lebende Generation/Kapazitaet ist zuordenbar,
 welche fehlenden Ereignisse/Reentrancy-/Threadfragen verhindern einen Zugriff? Nichtnull Zeiger und einfache
 Vorher-/Nachherchecks genuegen weiter nicht. Noch keine Observer-/Hookimplementierung oder Aufnahme.
 Die offenen A/C-Producer und Track+8 bleiben dokumentiert; keine automatische Rekonstruktion aller Formate.
+
+## Fortschritt Generation und aktuelle verbleibende Grenze
+
+[F178/F179](../evidence/POSE_GENERATION_READ_WINDOW_2026-10-18.md) binden New/Free an gemeinsame Worker und
+konfigurierbare Allocatorslots. Konkrete interne Calls umgehen die Exportwrapper; globale Export-only-Coverage
+ist damit widerlegt, nicht aber automatisch eine Luecke fuer jede ausgewaehlte Exe-H-Pose bewiesen.
+Ein eigenes begrenztes synthetisches Modell prueft Generationen, gemeldete Luecken/ABA und Widersprueche.
+Es erlaubt keine Live-Lesung und beweist keine echte Ereignisvollstaendigkeit. Quarantaene bewahrt mehrdeutige
+Birthbereiche bis zum Epochwechsel; ein einzelnes Free macht sie nicht wieder vertrauenswuerdig.
+
+Naechster begrenzter Beweis: Veraenderungs-/Weiterleitungspfade der Slots 0x64B48/0x64B4C fuer ausgewaehlte
+NewWorldPose-Provenienz. Danach ist das Writer-/Lesefenster weiterhin separat zu schliessen: aktive Calls,
+Metadatenlocks und abschliessende Generationstests allein schuetzen Originalspeicher nicht vor Free/Reuse
+waehrend der Kopie. Keine Observerimplementierung, Aufnahme oder automatische Ausweitung auf den gesamten Heap.

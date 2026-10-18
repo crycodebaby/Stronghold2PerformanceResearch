@@ -13,16 +13,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from hpose_creation_verify import checked_pe, EXE_SHA, DLL_SHA
 from pe_info import PE
 
-MANIFEST_SHA = '6d92c36ec9f6eaddf2d85e16a746ec3b2a0d3f6f2834c64ca11757bf5a3da27f'
+MANIFEST_SHA = 'fb6fde3d0c50899adfda195868a2c89cb072a1f29e57e4bbdf8ca1593325b832'
 MODULES = {'exe': (EXE_SHA, 0x400000), 'dll': (DLL_SHA, 0x50000000)}
 IMPORTS = {0x500a98: '_GrannySampleModelAnimationsAccelerated@20',
            0x500b10: '_GrannyGetSourceSkeleton@4', 0x500aac: '_GrannyInstantiateModel@4',
            0x500ab0: '_GrannyNewWorldPose@4', 0x500ab4: '_GrannyNewLocalPose@4',
-           0x500ad4: '_GrannyPlayControlledAnimation@12'}
+           0x500ad4: '_GrannyPlayControlledAnimation@12', 0x500aa4: '_GrannyFreeWorldPose@4'}
 EXPORTS = {'_GrannySampleModelAnimationsAccelerated@20': 0x4f6d0,
            '_GrannyGetSourceSkeleton@4': 0x4f4d0, '_GrannyInstantiateModel@4': 0x4f4b0,
            '_GrannyPlayControlledAnimation@12': 0x50f70,
-           '_GrannyEndControlledAnimation@4': 0x50fd0, '_GrannyPlayControlledPose@20': 0x51130}
+           '_GrannyEndControlledAnimation@4': 0x50fd0, '_GrannyPlayControlledPose@20': 0x51130,
+           '_GrannyNewWorldPose@4': 0x54400, '_GrannyFreeWorldPose@4': 0x54410,
+           '_GrannyGetResultingWorldPoseSize@4': 0x54420, '_GrannyNewWorldPoseInPlace@8': 0x54430}
+LIFETIME_CALLS = {0xe165: 0x46790, 0xe54d: 0x467c0, 0x46796: 0x467e0, 0x467ad: 0x46840}
+ALLOCATOR_CALLS = {0x467a5: 0x64b48, 0x467cc: 0x64b4c}
 
 
 def unique_object(pairs):
@@ -122,6 +126,17 @@ def named_exports(path, read):
     return result
 
 
+def verify_lifetime_edges(read, base):
+    """Pin selected direct-worker bypasses and allocator-slot calls, not all aliases/callers."""
+    for site, target in LIFETIME_CALLS.items():
+        data = read(site, 5)
+        if len(data) != 5 or data[0] != 0xe8 or site + 5 + struct.unpack('<i', data[1:])[0] != target:
+            raise ValueError('lifetime direct edge mismatch')
+    for site, slot in ALLOCATOR_CALLS.items():
+        if read(site, 6) != b'\xff\x15' + struct.pack('<I', base + slot):
+            raise ValueError('allocator slot edge mismatch')
+
+
 def verify(exe, dll, manifest):
     validate_manifest(manifest)
     readers = {}
@@ -137,9 +152,11 @@ def verify(exe, dll, manifest):
     if any(exports.get(symbol) != rva for symbol, rva in EXPORTS.items()):
         raise ValueError('export identity mismatch')
     ranges = sum(verify_bytes(mod, readers[mod['module']]) for mod in manifest['modules'])
+    verify_lifetime_edges(readers['dll'], MODULES['dll'][1])
     return {'identity': 'verified', 'modules': 2,
             'evidence_entries': sum(len(mod['evidence']) for mod in manifest['modules']), 'ranges': ranges,
             'imports': len(IMPORTS), 'exports': len(EXPORTS), 'game_executed': False,
+            'lifetime_direct_edges': len(LIFETIME_CALLS), 'allocator_slot_edges': len(ALLOCATOR_CALLS),
             'unconditional_sample_initialized_span_proven': False}
 
 

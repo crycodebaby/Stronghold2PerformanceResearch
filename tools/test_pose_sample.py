@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import struct
 import sys
 import tempfile
 import unittest
@@ -18,7 +19,7 @@ class PoseSampleTests(unittest.TestCase):
 
     def test_complete_pinned_manifest(self):
         self.assertEqual(len(self.m['modules']), 2)
-        self.assertEqual(sum(len(m['evidence']) for m in self.m['modules']), 58)
+        self.assertEqual(sum(len(m['evidence']) for m in self.m['modules']), 70)
 
     def test_missing_duplicate_module_or_entry(self):
         mutations = [lambda m: m['modules'].pop(),
@@ -159,6 +160,30 @@ class PoseSampleTests(unittest.TestCase):
                     entry['ranges'][0]['sha256'] = '0' * 64
                 with self.assertRaises(ValueError):
                     v.validate_manifest(m)
+
+    def test_lifetime_evidence_required(self):
+        required = {'f-50054400', 'f-50054410', 'f-50054420', 'f-50054430',
+                    'f-50046790', 'f-500467c0', 'f-500467e0', 'f-50046800', 'f-50046840',
+                    'r-5000e165-5000e169', 'r-5000e54d-5000e551', 'd-50064b48-8'}
+        dll = next(mod for mod in self.m['modules'] if mod['module'] == 'dll')
+        self.assertTrue(required <= {entry['id'] for entry in dll['evidence']})
+        for entry_id in required:
+            m = copy.deepcopy(self.m)
+            mod = next(mod for mod in m['modules'] if mod['module'] == 'dll')
+            mod['evidence'] = [entry for entry in mod['evidence'] if entry['id'] != entry_id]
+            with self.assertRaises(ValueError): v.validate_manifest(m)
+
+    def test_worker_bypass_and_allocator_call_identity_gates(self):
+        base = 0x50000000
+        data = {site: b'\xe8' + struct.pack('<i', target-site-5) for site,target in v.LIFETIME_CALLS.items()}
+        data.update({site: b'\xff\x15' + struct.pack('<I',base+slot) for site,slot in v.ALLOCATOR_CALLS.items()})
+        v.verify_lifetime_edges(lambda r,n: data[r][:n], base)
+        for site in data:
+            for wrong in (b'', data[site][:-1], bytes(len(data[site])),
+                          data[site][:-1] + bytes([data[site][-1] ^ 1])):
+                with self.subTest(site=site,wrong=wrong):
+                    with self.assertRaises(ValueError):
+                        v.verify_lifetime_edges(lambda r,n: wrong if r==site else data[r][:n], base)
 
 
 if __name__ == '__main__':

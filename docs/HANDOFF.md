@@ -1,14 +1,21 @@
 # HANDOFF
 
-> Kurzfassung: Alle drei erste-Matrix-Schnellzweige haben volle Zielbyteabdeckung; Wertegueltigkeit ist nur fuer Route B eng geschlossen, A/C-Tempquellen bleiben offen. Naechster Schritt: Generation/Leseintervall fuer begrenzten Bytevergleich beurteilen. Kein Observer oder Messlauf.
+> Kurzfassung: Generationen sind spielfrei modelliert; interne New-/Free-Aufrufe umgehen Exporte. Konkrete Ereignisabdeckung und sicheres Leseintervall bleiben offen. Naechster Schritt: Allocatorslot-Veraenderung und Weiterleitung fuer ausgewaehlte Posen. Kein Observer oder Messlauf.
 
-Updated: 2026-10-18 (first-bone fast byte/value distinction).
+Updated: 2026-10-18 (generation model and allocator boundary).
 Read [STATE.md](STATE.md) and [PROJECT_LEAD_HANDOFF.md](PROJECT_LEAD_HANDOFF.md).
 Use the [animation knowledge map](ANIMATION_KNOWLEDGE_MAP.md) for the connected path and evidence links.
 
 Only the first section below is a current order. Every later section is a historical operations log (game-run sequences, user guides, way-back instructions) kept as evidence; do not execute it.
 
 ## Current order — Exe H-pose ownership/lifetime
+
+- F178/F179: [generation, lifecycle boundaries and read window](evidence/POSE_GENERATION_READ_WINDOW_2026-10-18.md).
+  New/Free workers delegate to configurable slots 0x64B48/0x64B4C. Concrete DLL calls bypass exports;
+  whether selected H poses use these paths is separate. Own 17-test model handles delivered ABA/gaps/overlap
+  with bounded quarantine, but cannot detect silent missing events or authorize memory reads. Independent
+  review found and verified correction of one model-history bug. Current verifier: 70 entries/83 ranges,
+  seven imports/ten exports, 15 tests normal/-O. Earlier counts below describe their earlier revisions.
 
 - F175–F177: [first-bone fast](evidence/POSE_FIRST_BONE_FAST_2026-10-18.md). All three source branches pass
   World0/Composite0 to known full-store slots; 64 bytes each, conditional on normal calls/live memory/dispatch.
@@ -82,13 +89,11 @@ Only the first section below is a current order. Every later section is a histor
 
 - Completed block: [contract, audit corrections, exact limits and reproduction](evidence/POSE_CONTRACT_2026-10-16.md), F148–F153. Real-DLL host: 142 layout cases, 1,620 differential cases, 238,768 components; 0 criterion failures. Own affine helper is numerically close but differs in 443 cases; no universal bit identity or replacement permission. Nine audit model tests + two integration tests pass.
 - Reproduce from repo root: `python -I tools/granny_pose.py`, then `python -I tools/test_granny_pose.py`; audit: `python -I tools/recheck_granny_audit.py --audit-root <local-audit-root>`; docs: `python -I tools/lint_docs.py`. MSVC/CMake/Win32 required; writes only isolated ignored build outputs. Reports include identities/source hashes and a float counterexample.
-- **Exactly one next proof:** establish or delimit a validity contract for copying the first World/Composite
-  matrix bytes on the known fast path. Identify the concrete observed allocation generation/capacity and a safe
-  interval with no unhandled free, reuse or concurrent/reentrant modification. Reuse existing New/Free/caller
-  evidence; missing lifecycle events or unproven intervals must remain unknown. A raw byte comparison need not
-  reconstruct all transform mathematics, but it cannot claim valid replacement semantics or whole-pose equality
-  from matrix0 alone. Deliver the bounded contract and smallest missing proof. No observer/hook implementation,
-  original execution, recording or automatic curve/track-family reconstruction in this follow-up.
+- **Exactly one next proof:** delimit change/forwarding paths of DLL allocator slots 0x64B48/0x64B4C for
+  selected NewWorldPose provenance. Which concrete unhandled free/reuse path could end that generation and
+  which event boundary would detect it? No complete heap reconstruction. Safe writer/read interval remains a
+  separate obligation; consistent ledger metadata or an active original call is no synchronization proof.
+  No observer/hooks, original execution, recording, cache/skip or automatic curve-family reconstruction.
 - Acceptance/result decisions are in the evidence's final section. Library ownership is established in own valid hosts; the particular game-side owner/lifetime is not yet fully proven. Unresolved indirect transfers remain an explicit boundary. No output observer implementation is claimed.
 - Do not resume G2, install a build or request a recording. Original/TEST, Hub source/builds, captures, audit reference and original Ghidra DB stay unchanged. SH2-Perf own code/docs only. New agents update STATE and this section after the next result.
 - Publication (2026-10-17): both repositories are public ([STATE.md](STATE.md) "Published state"). Work in a clone of the published research history with normal commits and pull requests; no re-export, no rewrite of published or hub ids. Push or open a PR only when the task asks for it. Publication changes nothing in this order.

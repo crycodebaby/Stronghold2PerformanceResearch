@@ -26,6 +26,16 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Local generation follow-up: [New/Free boundaries, own lifecycle model and read-window limit](evidence/POSE_GENERATION_READ_WINDOW_2026-10-18.md).
+Existing sample verifier remains schema 2: 70 entries/83 ranges, seven imports/ten exports, four direct edges
+and two allocator-slot calls. Fifteen verifier tests and matching-original-file gates pass normal/-O.
+Restarted independent review checks 3176 DLL/578 Exe byte lines and finds an own overlap-history model bug;
+a red regression precedes its correction and 17 model tests pass normal/-O. Reproduce class A with
+`python -I tools/test_pose_generation.py` and `python -I tools/pose_generation_model.py`; IDs are synthetic,
+no original memory is accessed, and every result grants no live-read permission. Silent missing events and a
+protected copy interval remain external obligations. Integrated `run_checks.py`: 16/16 groups passed locally;
+independent final-document review has no substantive blocker. No new native/Hub build or original execution.
+
 Local first-bone follow-up: [three fast routes, destination bytes and source boundary](evidence/POSE_FIRST_BONE_FAST_2026-10-18.md).
 Existing sample verifier stays schema 2: four new source bodies, 58 entries/71 ranges total, six import/six export
 bindings unchanged. Thirteen tests and original-file gates pass normal/-O; independent final-byte review covers

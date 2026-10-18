@@ -53,6 +53,12 @@ gueltigen Wertevertrag; A/C-Tempinitialisierung ist offen, kein Enginefehler bew
 Generation/Kapazitaet/Leseintervall fuer einen begrenzten reinen Bytevergleich beurteilen. Keine Implementierung
 eines Observers, kein Messlauf und keine automatische Komplettrekonstruktion aller Kurventypen.
 
+Fortschritt Generation 2026-10-18: [New-/Free-Ereignisgrenzen und eigenes Modell](evidence/POSE_GENERATION_READ_WINDOW_2026-10-18.md),
+F178/F179. Konfigurierbare Allocatorcallbacks und konkrete interne Export-Bypaesse sind belegt. Das eigene
+synthetische Modell unterscheidet gemeldetes ABA/Luecken/Widersprueche, keine still fehlenden Ereignisse und
+kein sicheres Leseintervall. Neueste Prioritaet: Veraenderungs-/Weiterleitungspfade der Allocatorslots fuer
+ausgewaehlte NewWorldPose-Generationen abgrenzen. Noch kein Livezugriff oder Observer.
+
 ## 1. Rolle und Ziel
 
 Übernimm die technische Projektleitung als Senior Reverse Engineer und Software Architect. Arbeite kritisch, selbstständig und ergebnisoffen. Frühere Agentenberichte sind zu überprüfende Aussagen; Nutzerbeobachtungen sind Kontext und teilweise bestätigte Abläufe, nicht automatisch gemessene Ursachen.
