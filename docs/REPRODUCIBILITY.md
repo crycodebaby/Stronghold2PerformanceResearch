@@ -26,6 +26,15 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Local allocator follow-up: [default binding, switches, getter aliases and heap forwarding](evidence/POSE_ALLOCATOR_BINDING_2026-10-18.md).
+Existing schema-2 verifier: 80 entries/93 ranges, seven Exe imports/twelve exports, three DLL heap imports,
+eight direct/two allocator-slot/four heap calls; literal census 88/128. New read-only Ghidra reference inventory
+matches 216 saved exact refs, not arbitrary aliases. Independent byte/argument/code review checks 11 canonical
+files/163 byte lines. Eighteen verifier and nineteen model tests plus original-file gates pass normal/-O.
+Own allocator-switch/getter-alias schedules are synthetic contract counterexamples, not observed game defects.
+Reproduce with the same verifier/model commands below. Integrated local checks pass 16/16 groups; final
+independent document review has no substantive blocker. No original execution, native/Hub build or online CI.
+
 Local generation follow-up: [New/Free boundaries, own lifecycle model and read-window limit](evidence/POSE_GENERATION_READ_WINDOW_2026-10-18.md).
 Existing sample verifier remains schema 2: 70 entries/83 ranges, seven imports/ten exports, four direct edges
 and two allocator-slot calls. Fifteen verifier tests and matching-original-file gates pass normal/-O.

@@ -7,7 +7,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pose_generation_model import Ledger, demonstrations
+from pose_generation_model import Ledger, demonstrations, allocator_witnesses
 
 
 class GenerationTests(unittest.TestCase):
@@ -178,6 +178,20 @@ class GenerationTests(unittest.TestCase):
             tickets.append(ticket)
             ledger.free_enter(0x1000)
         self.assertEqual(ledger.serial,32)
+
+    def test_allocator_change_can_separate_birth_and_release_and_escape_snapshots(self):
+        witness = allocator_witnesses()
+        self.assertEqual(witness['birth_callback'], 'A.allocate')
+        self.assertEqual(witness['later_free_callback'], 'B.free')
+        self.assertEqual(witness['between_setter_stores'], {'allocate': 'B.allocate', 'free': 'A.free'})
+        self.assertEqual(witness['getter_across_change'], ('A.allocate', 'B.free'))
+        self.assertTrue(witness['same_before_after_despite_intervening_change'])
+        self.assertFalse(witness['live_read_authorized'])
+
+    def test_getter_outparam_alias_can_modify_the_later_source(self):
+        witness = allocator_witnesses()
+        self.assertEqual(witness['getter_alias_second_output'], 'A.allocate')
+        self.assertFalse(witness['live_read_authorized'])
 
     def test_executable_counterexamples_normal_and_optimized(self):
         path=Path(__file__).with_name('pose_generation_model.py')

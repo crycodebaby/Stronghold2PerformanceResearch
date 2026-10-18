@@ -59,6 +59,11 @@ synthetische Modell unterscheidet gemeldetes ABA/Luecken/Widersprueche, keine st
 kein sicheres Leseintervall. Neueste Prioritaet: Veraenderungs-/Weiterleitungspfade der Allocatorslots fuer
 ausgewaehlte NewWorldPose-Generationen abgrenzen. Noch kein Livezugriff oder Observer.
 
+Fortschritt Allocator 2026-10-18: [Defaultbindung, Wechsel und Weiterleitung](evidence/POSE_ALLOCATOR_BINDING_2026-10-18.md),
+F180–F182. Setter/Getterschritte, konkrete Aliasgrenze und bekannte Default-Heapbridges sind belegt. Weder
+Dateidefaults noch Getterpaare beweisen dauerhafte Laufzeitbindung. Neueste Prioritaet: Im internen Kontext
+0xE080 die New-/Free-Posezuordnung pruefen, um die selektive Relevanz des Export-Bypasses einzugrenzen.
+
 ## 1. Rolle und Ziel
 
 Übernimm die technische Projektleitung als Senior Reverse Engineer und Software Architect. Arbeite kritisch, selbstständig und ergebnisoffen. Frühere Agentenberichte sind zu überprüfende Aussagen; Nutzerbeobachtungen sind Kontext und teilweise bestätigte Abläufe, nicht automatisch gemessene Ursachen.

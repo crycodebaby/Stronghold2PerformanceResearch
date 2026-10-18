@@ -19,7 +19,7 @@ class PoseSampleTests(unittest.TestCase):
 
     def test_complete_pinned_manifest(self):
         self.assertEqual(len(self.m['modules']), 2)
-        self.assertEqual(sum(len(m['evidence']) for m in self.m['modules']), 70)
+        self.assertEqual(sum(len(m['evidence']) for m in self.m['modules']), 80)
 
     def test_missing_duplicate_module_or_entry(self):
         mutations = [lambda m: m['modules'].pop(),
@@ -177,6 +177,7 @@ class PoseSampleTests(unittest.TestCase):
         base = 0x50000000
         data = {site: b'\xe8' + struct.pack('<i', target-site-5) for site,target in v.LIFETIME_CALLS.items()}
         data.update({site: b'\xff\x15' + struct.pack('<I',base+slot) for site,slot in v.ALLOCATOR_CALLS.items()})
+        data.update({site: b'\xff\x15' + struct.pack('<I',base+slot) for site,slot in v.HEAP_CALLS.items()})
         v.verify_lifetime_edges(lambda r,n: data[r][:n], base)
         for site in data:
             for wrong in (b'', data[site][:-1], bytes(len(data[site])),
@@ -184,6 +185,39 @@ class PoseSampleTests(unittest.TestCase):
                 with self.subTest(site=site,wrong=wrong):
                     with self.assertRaises(ValueError):
                         v.verify_lifetime_edges(lambda r,n: wrong if r==site else data[r][:n], base)
+
+    def test_allocator_workers_and_heap_forwarding_evidence_required(self):
+        required = {'f-50052870', 'f-50052890', 'f-500318e0', 'f-50031900', 'f-50031150',
+                    'f-50031220', 'f-50031920', 'f-50031940', 'f-50031210', 'f-50031290'}
+        dll = next(mod for mod in self.m['modules'] if mod['module'] == 'dll')
+        self.assertTrue(required <= {entry['id'] for entry in dll['evidence']})
+        for entry_id in required:
+            m = copy.deepcopy(self.m)
+            mod = next(mod for mod in m['modules'] if mod['module'] == 'dll')
+            mod['evidence'] = [entry for entry in mod['evidence'] if entry['id'] != entry_id]
+            with self.assertRaises(ValueError): v.validate_manifest(m)
+
+    def test_default_slot_pair_valid_changed_swapped_and_truncated(self):
+        base = 0x50000000
+        data = {slot: struct.pack('<I', base+target) for slot, target in v.ALLOCATOR_DEFAULTS.items()}
+        v.verify_allocator_defaults(lambda r,n: data[r][:n], base)
+        for slot in data:
+            other = next(key for key in data if key != slot)
+            for wrong in (b'', data[slot][:-1], data[other], bytes(4)):
+                with self.assertRaises(ValueError):
+                    v.verify_allocator_defaults(lambda r,n: wrong if r==slot else data[r][:n], base)
+
+    def test_literal_census_counts_unaligned_data_without_decoding_and_never_crosses_sections(self):
+        allocate = struct.pack('<I', 0x50064b48)
+        release = struct.pack('<I', 0x50064b4c)
+        sections = [(0x1000, b'x'+allocate+allocate), (0x2000, release),
+                    (0x3000, allocate[:2]), (0x3002, allocate[2:])]
+        expected = {'0x64b48': {'count': 2, 'literal_field_rvas': ['0x1001', '0x1005']},
+                    '0x64b4c': {'count': 1, 'literal_field_rvas': ['0x2000']}}
+        self.assertEqual(v.allocator_literals(iter(sections)), expected)
+        # Matching a constant in arbitrary data is not itself a semantic read/write reference.
+        for changed in ([], sections, [(0x1000, bytes(32))]):
+            with self.assertRaises(ValueError): v.verify_allocator_literals(changed)
 
 
 if __name__ == '__main__':

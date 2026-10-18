@@ -116,3 +116,16 @@ Naechster begrenzter Beweis: Veraenderungs-/Weiterleitungspfade der Slots 0x64B4
 NewWorldPose-Provenienz. Danach ist das Writer-/Lesefenster weiterhin separat zu schliessen: aktive Calls,
 Metadatenlocks und abschliessende Generationstests allein schuetzen Originalspeicher nicht vor Free/Reuse
 waehrend der Kopie. Keine Observerimplementierung, Aufnahme oder automatische Ausweitung auf den gesamten Heap.
+
+## Fortschritt Allocator und selektive Folgefrage
+
+[F180–F182](../evidence/POSE_ALLOCATOR_BINDING_2026-10-18.md) klaeren Dateidefaults, getrennte Setterstores/
+Getterreads und Default-Heapweiterleitung. Ein API-Getter ist wegen moeglicher Ausgabealiase nicht generell
+nebenwirkungsfrei; gleiche Vorher-/Nachherwerte schliessen Zwischenwechsel nicht aus. Ein Wechsel selbst
+ist kein bewiesenes Free und beweist keine Inkompatibilitaet der Callbacks. Die eigene Beobachterzuordnung
+benoetigt deshalb einen separaten Konfigurations-/Nichtaliasvertrag statt einer angenommenen festen Bindung.
+
+Der bekannte WorldPose-Free-Eintritt bleibt vor Weiterleitung eine konservative Invalidierungsgrenze.
+Naechster Beweis: Poseherkunft im internen New-/Free-Bypass 0xE080, Calls 0xE165/0xE54D. Das prueft die
+selektive Relevanz fuer H-Posen, bevor die Fragestellung auf den ganzen Heap ausgeweitet wuerde.
+Ein geschuetztes Kopierintervall und lueckenlose relevante Ereignisse sind weiterhin nicht nachgewiesen.

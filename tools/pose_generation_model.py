@@ -160,6 +160,40 @@ class Ledger:
                       world0=(world, world + 64), composite0=(composite, composite + 64))
 
 
+def allocator_witnesses():
+    """Own sequential/interleaved event schedules, not observed game executions.
+
+    Names identify synthetic callbacks; no function is called or memory dereferenced.
+    Aliased output is a contract counterexample, not an assertion of valid API usage.
+    """
+    slots = {'allocate': 'A.allocate', 'free': 'A.free'}
+    birth_callback = slots['allocate']
+    before = dict(slots)
+    slots['allocate'] = 'B.allocate'
+    between_stores = dict(slots)
+    slots['free'] = 'B.free'
+    release_callback = slots['free']
+    slots.update(before)
+    after = dict(slots)
+
+    getter_slots = dict(before)
+    getter_first_read = getter_slots['allocate']
+    getter_slots.update({'allocate': 'B.allocate', 'free': 'B.free'})
+    getter_second_read = getter_slots['free']
+
+    aliased_slots = dict(before)
+    # Own output1 deliberately aliases the synthetic free slot.
+    aliased_slots['free'] = aliased_slots['allocate']
+    second_output = aliased_slots['free']
+    return {'source': 'own synthetic schedules, not game observations',
+            'birth_callback': birth_callback, 'later_free_callback': release_callback,
+            'between_setter_stores': between_stores,
+            'getter_across_change': (getter_first_read, getter_second_read),
+            'same_before_after_despite_intervening_change': before == after,
+            'getter_alias_second_output': second_output,
+            'live_read_authorized': False}
+
+
 def demonstrations():
     good = Ledger()
     good.birth(0x1000, 2)
@@ -182,6 +216,7 @@ def demonstrations():
     return {'source': 'own synthetic events only', 'matching_sequence': matching,
             'aba_same_address_before_after': True, 'aba_ticket': stale,
             'lost_history': gap.finish(lost, 1), 'silent_missing_events': blind.finish(unseen, 1),
+            'allocator_witnesses': allocator_witnesses(),
             'live_read_authorized': False}
 
 

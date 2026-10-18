@@ -2,7 +2,7 @@
 
 > Kurzfassung: Verstaendlicher Einstieg in den bisher belegten Animationspfad: Erzeugen, Speichern, Auswaehlen, Berechnen und Freigeben. Jede Station verlinkt Fakten und Nachweise; Bedingungen und offene Verbindungen bleiben sichtbar. Diese Karte ersetzt weder Evidenz noch den aktuellen Auftrag in STATE.
 
-Aktualisiert: 2026-10-18. Forschungsstand: F148–F179, mit den jeweils verlinkten Evidenzstaenden. Diese Karte ordnet vorhandenes Wissen;
+Aktualisiert: 2026-10-18. Forschungsstand: F148–F182, mit den jeweils verlinkten Evidenzstaenden. Diese Karte ordnet vorhandenes Wissen;
 sie fuegt keinen neuen Binaerbefund hinzu. Fuer den aktuellen Arbeitsauftrag zuerst [STATE.md](STATE.md) lesen.
 
 ## Der Ablauf auf einen Blick
@@ -130,7 +130,12 @@ Ob die ausgewaehlten H-Posen diese weiteren Wege verwenden, ist separat offen. E
 erkennt gemeldetes Free/Reuse, Luecken und Widersprueche; es erkennt keine still fehlenden Ereignisse und erlaubt
 keinen Livezugriff. [Generation, Gegenbeispiele und Lesegrenze](evidence/POSE_GENERATION_READ_WINDOW_2026-10-18.md).
 
-**Belegt:** F158/F159, F178/F179. **Offen:** Vollstaendige relevante Freigabe-/Reuse-Ereignisse und Ausschluss konkurrierender oder
+Die beiden Speicher-Callbacks haben Defaultziele zum Prozessheap, koennen aber separat umgeschaltet werden.
+Ein Getterpaar ist kein atomarer Lifetimebeweis; Ausgabealiase koennen sogar die Bindung beeinflussen.
+Konfigurationswechsel bedeutet verlorene Beobachtergewissheit, nicht automatisch eine echte Posefreigabe.
+[Allocatorbindung, Wechsel und konkrete Gegenbeispiele](evidence/POSE_ALLOCATOR_BINDING_2026-10-18.md).
+
+**Belegt:** F158/F159, F178–F182. **Offen:** Vollstaendige relevante Freigabe-/Reuse-Ereignisse und Ausschluss konkurrierender oder
 verschachtelter Veraenderungen waehrend einer spaeteren eigenen Lesung.
 [Cleanup und aeusserer Abbau](evidence/HPOSE_CLEANUP_2026-10-17.md).
 
@@ -180,6 +185,7 @@ Bei einem neuen Baustein zuerst dessen Befund und Evidenz erstellen, danach nur 
 Karte aktualisieren. Hier keine zweite Kopie aller Adressen, Testergebnisse oder historischen Zwischenstaende
 aufbauen. Wenn ein Beleg nur unter Bedingungen gilt, muessen diese auch in der Kurzfassung sichtbar bleiben.
 
-Aktuelle Folgeprioritaet: Veraenderungs-/Weiterleitungspfade der beiden Allocatorslots fuer ausgewaehlte
-NewWorldPose-Generationen abgrenzen. Ein sicheres Leseintervall bleibt ein separater Nachweis. Noch kein Observer oder Messlauf.
+Aktuelle Folgeprioritaet: Den gefundenen internen New-/Free-Bypass auf seinen Posezeiger zurueckverfolgen.
+Erst dessen Herkunft zeigt, ob er ausgewaehlte H-Posen betreffen kann. Ein sicheres Leseintervall bleibt separat.
+Noch kein Observer oder Messlauf.
 Offene mathematische Quellfragen bleiben separat. Fuer spaetere Auftraege gilt immer [STATE.md](STATE.md).
