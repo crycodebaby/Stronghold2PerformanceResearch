@@ -2,7 +2,7 @@
 
 > Kurzfassung: Einziger aktueller Forschungsauftrag, letzter Nachweis und naechste Abnahme. Historische Fortschrittsberichte werden nicht zum Sitzungsstart geladen.
 
-Stand: 2026-10-18. Letzter Forschungscheckpoint `38d7e79`, Branch zuletzt `hpose-allocation-proof`.
+Stand: 2026-10-20. Letzter Forschungscheckpoint `38d7e79`, Veroeffentlichungsbranch `hpose-allocation-proof`.
 HEAD/Arbeitsbaum am Start selbst pruefen; Dokumentpflege kann danach committed sein. Kein Performancegewinn nachgewiesen.
 
 ## Current status (the only current order)
@@ -47,8 +47,10 @@ Nachweis, Grenzen, genau einen Folgebeweis und diesen aktuellen Stand aktualisie
 
 ## Arbeitsstand und Navigation
 
-- Forschungsrepo und Hub sind oeffentlich; juengste Forschung ist nur lokal. Kein Push/PR in diesem Auftrag.
-  [Veroeffentlichung/Reproduktion](REPRODUCIBILITY.md) enthaelt datierte Remote-/CI-Staende, keine Liveabfrage.
+- Forschungscheckpoint `e47a59e` (F185 und Kontextpflege) ist auf dem Forschungsbranch veroeffentlicht und ueber
+  [PR #4](https://github.com/crycodebaby/Stronghold2PerformanceResearch/pull/4) zur Integration gestellt.
+  [Veroeffentlichungsabnahme](evidence/RESEARCH_CHECKPOINT_PUBLICATION_2026-10-20.md): lokale Checks und
+  GitHub-Pruefungen unterscheiden; endgueltigen Merge-/CI-Stand am PR pruefen. Nutzerauftrag dafuer am 2026-10-20.
 - Bereinigte oeffentliche Forschungshistorie normal fortsetzen; kein Neuexport/Rewrite oder Merge des alten Archivs.
 - Lokale Pfade aus `build/project-lead-handoff/LOCAL_ENVIRONMENT.json`, falls vorhanden, selbst validieren.
   [WORKSPACE](WORKSPACE.md) und tools/paths.py beschreiben ein Standardlayout, nicht jeden lokalen Checkout.

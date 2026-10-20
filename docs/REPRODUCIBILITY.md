@@ -26,6 +26,11 @@ None of these runs touches the game. They show neither a performance change nor 
 
 ## Checks and their last result
 
+Research publication 2026-10-20: [F185 checkpoint and publication acceptance](evidence/RESEARCH_CHECKPOINT_PUBLICATION_2026-10-20.md),
+[PR #4](https://github.com/crycodebaby/Stronghold2PerformanceResearch/pull/4). Local game-free checks freshly
+pass 16/16; own Win32 Release host passes 6393 conditions with zero failures. Final PR-head CI must pass
+Python/docs and the native host before merge. The first-publication table above describes its 2026-10-17 state.
+
 Context maintenance 2026-10-18: [smaller project-lead entry and cold-start reading check](evidence/PROJECT_CONTEXT_REFRESH_2026-10-18.md).
 Historical canonical texts retained; three core entry files reduced from 7565 to 1286 whitespace words (not
 token counts). Fresh agent without chat history derives current task, limits and local routing correctly.
