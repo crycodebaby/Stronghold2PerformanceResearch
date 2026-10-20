@@ -6,7 +6,7 @@
 
 | Class | Needs | Published? |
 |---|---|---|
-| **A — no game** | Windows, Python ≥ 3.12, for the hub VS 2022 Build Tools + CMake | everything needed is in the two repositories |
+| **A — no game** | Windows, Python ≥ 3.12; native hosts/hub also VS 2022 Build Tools + CMake | own H-record host needs this research repo only; hub checks need its separate repo |
 | **B — own game** | your own Stronghold 2 **Steam 1.5** installation (exe SHA-256 `f3ccdf9bb41158202dffc000e5f2036a82f4c1ce8c5c89462f6140000f32d34b`, `granny2.dll` `94d56fd7e9ef8adde51425da339722a584e28e71235bc8a89d8175c2276050fd`), a TEST copy of it, optionally Ghidra 12.1.4 | game files are never published; you bring them |
 | **C — local raw data** | the original recordings in `captures/`, the project's Ghidra database, the audit's `work/` exports | not published (personal paths in logs, game-derived disassembly, size) |
 
@@ -25,6 +25,102 @@ Research `main` `46b14eb2cefa`, hub `main` `d3a763a33777` (runtime sources equal
 None of these runs touches the game. They show neither a performance change nor behaviour inside Stronghold 2.
 
 ## Checks and their last result
+
+Research publication 2026-10-20: [F185 checkpoint and publication acceptance](evidence/RESEARCH_CHECKPOINT_PUBLICATION_2026-10-20.md),
+[PR #4](https://github.com/crycodebaby/Stronghold2PerformanceResearch/pull/4). Local game-free checks freshly
+pass 16/16; own Win32 Release host passes 6393 conditions with zero failures. Final PR-head CI must pass
+Python/docs and the native host before merge. The first-publication table above describes its 2026-10-17 state.
+
+Context maintenance 2026-10-18: [smaller project-lead entry and cold-start reading check](evidence/PROJECT_CONTEXT_REFRESH_2026-10-18.md).
+Historical canonical texts retained; three core entry files reduced from 7565 to 1286 whitespace words (not
+token counts). Fresh agent without chat history derives current task, limits and local routing correctly.
+No research/analysis/runtime code changed; previous scientific acceptance remains tied to `38d7e79`.
+
+Local internal-provenance follow-up: [two own New spills, Free reloads and callback context limit](evidence/POSE_INTERNAL_PROVENANCE_2026-10-18.md).
+Schema-2 verifier retains previous evidence and now has 85 entries/98 ranges, 14 exports/twelve direct edges;
+allocator/heap/census gates retained. Bounded frame-MOV/loop checks and 21 verifier tests pass normal/-O,
+as do original-file gates. Independent review confirms six canonical files/538 byte lines and conditional
+local provenance. Parent audit PE reader checks all ranges/exports. Frame mutation, indirect callback context,
+successful allocation and lifetime remain distinct obligations. Integrated local checks pass 16/16 groups;
+independent final-document review has no substantive blocker. No original execution or native/Hub change.
+
+Local allocator follow-up: [default binding, switches, getter aliases and heap forwarding](evidence/POSE_ALLOCATOR_BINDING_2026-10-18.md).
+Existing schema-2 verifier: 80 entries/93 ranges, seven Exe imports/twelve exports, three DLL heap imports,
+eight direct/two allocator-slot/four heap calls; literal census 88/128. New read-only Ghidra reference inventory
+matches 216 saved exact refs, not arbitrary aliases. Independent byte/argument/code review checks 11 canonical
+files/163 byte lines. Eighteen verifier and nineteen model tests plus original-file gates pass normal/-O.
+Own allocator-switch/getter-alias schedules are synthetic contract counterexamples, not observed game defects.
+Reproduce with the same verifier/model commands below. Integrated local checks pass 16/16 groups; final
+independent document review has no substantive blocker. No original execution, native/Hub build or online CI.
+
+Local generation follow-up: [New/Free boundaries, own lifecycle model and read-window limit](evidence/POSE_GENERATION_READ_WINDOW_2026-10-18.md).
+Existing sample verifier remains schema 2: 70 entries/83 ranges, seven imports/ten exports, four direct edges
+and two allocator-slot calls. Fifteen verifier tests and matching-original-file gates pass normal/-O.
+Restarted independent review checks 3176 DLL/578 Exe byte lines and finds an own overlap-history model bug;
+a red regression precedes its correction and 17 model tests pass normal/-O. Reproduce class A with
+`python -I tools/test_pose_generation.py` and `python -I tools/pose_generation_model.py`; IDs are synthetic,
+no original memory is accessed, and every result grants no live-read permission. Silent missing events and a
+protected copy interval remain external obligations. Integrated `run_checks.py`: 16/16 groups passed locally;
+independent final-document review has no substantive blocker. No new native/Hub build or original execution.
+
+Local first-bone follow-up: [three fast routes, destination bytes and source boundary](evidence/POSE_FIRST_BONE_FAST_2026-10-18.md).
+Existing sample verifier stays schema 2: four new source bodies, 58 entries/71 ranges total, six import/six export
+bindings unchanged. Thirteen tests and original-file gates pass normal/-O; independent final-byte review covers
+578 Exe/3054 DLL lines. Parent audit reader independently confirms every manifest range. Destination byte coverage
+is not complete source/value semantics. Integrated `run_checks.py` passes 15/15 groups.
+No original execution, new native/Hub code or GitHub CI run.
+
+Local special-callback follow-up: [descriptor provenance and conditional prefix](evidence/POSE_SPECIAL_CALLBACK_2026-10-17.md).
+Existing sample verifier schema 2 retains the earlier 33 entries and adds 21: 54 entries/67 ranges, six import/six
+export bindings. Twelve synthetic tests and original-file gates pass normal/-O. Independent review confirms final
+578 Exe/2886 DLL byte lines and semantic bindings; parent audit PE reader separately checks all manifest ranges.
+Integrated `run_checks.py` passes 15/15 groups. No original execution, new native/Hub code or GitHub CI run.
+Commands below remain the same.
+
+Local sample follow-up: [conditional World/Composite write extent](evidence/POSE_SAMPLE_EXTENT_2026-10-17.md),
+33 pinned entries/46 ranges, five import/three export bindings. Nine synthetic tests and matching-original-file
+verifier normal/-O pass; integrated `run_checks.py` passes 15/15 groups. Independent review confirms final exports and eight candidate target/store bindings.
+Parent independently rechecks every manifest range with the audit PE reader. Original code was not executed.
+Reproduce: `python -I tools/test_pose_sample.py` (class A) and
+`python -I tools/pose_sample_verify.py --exe <exe> --dll <dll>` (class B, read-only). No unconditional initialized
+Sample-output span, native/Hub change or new GitHub CI run. Earlier results below retain their own revisions.
+
+Local initializer follow-up: [bounded resource effects](evidence/HPOSE_INITIALIZER_EFFECTS_2026-10-17.md) reuses
+the resource verifier with schema 2: 20 functions/24 ranges, nine imports, one table slot and 16 new bindings.
+Fifteen tests and the original-file verifier pass normally and with `-O`; independent review and parent recheck
+confirm all 2907 exported instructions. The prior schema-1 resource counts below are historical (`12b8050`).
+The Java reference ceiling changed from 10000 to 100000 after a documented tool-limit failure; the final common
+export compiled/ran with this version. Final integrated ordinary checks pass 14/14 groups.
+No original execution, native source change or new GitHub CI run.
+
+Local resource follow-up: [constructor-bound release candidate](evidence/HPOSE_RESOURCE_RELEASE_2026-10-17.md),
+15 function fingerprints/18 ranges, six Exe import identities and one pinned table slot against matching game files,
+read-only. Ten new game/compiler-free tests and the original-file verifier pass normally and with `-O`.
+Independent review checks all 1925 exported instructions and the bounded interpretation. Actual dynamic target
+at 0x38E428 remains unresolved. Final integrated ordinary checks pass 14/14 groups;
+no game/Granny execution or native source change in this step, and no new GitHub CI run.
+
+Local cleanup follow-up: [H-record Free fields and teardown](evidence/HPOSE_CLEANUP_2026-10-17.md) adds eight
+compiler-free tests, passed normally and with `-O`. Read-only checks against matching own Exe/DLL files pass
+six function/six import gates in both modes. An independent reviewer checked all 403 exported instruction bytes
+and the bounded normal-return interpretation. The final integrated ordinary checks pass 13/13 groups.
+No original execution, native source change or new online CI run.
+
+Local allocation follow-up: [H-container byte request/transfer](evidence/HPOSE_ALLOCATION_2026-10-17.md) adds seven
+compiler-free tests to normal checks, nine function/five import checks against matching own game files (read-only),
+and ten own native byte-arithmetic witnesses. Native total is now6393; earlier6383 results below retain their dated
+acceptance meaning. No original function execution or additional game capture.
+
+Local native-acceptance follow-up: [result contract and failure tests](evidence/HPOSE_NATIVE_ACCEPTANCE_2026-10-17.md).
+`test_hpose_native.py` is part of normal Python checks (ten tests, no compiler). `hpose_native.py` is an additional
+mandatory Win32 workflow step; standalone source-copy run passed locally. This workflow change is not yet pushed or
+verified on GitHub. The original published-state CI results below remain historical.
+
+Local follow-up 2026-10-17, not published: the [H-record creation block](evidence/HPOSE_CREATION_2026-10-17.md)
+adds `tools/test_hpose_creation.py` (class A: six synthetic verifier tests), `tools/hpose_native.py` (class A:
+MSVC Win32 own range/layout host, no game inputs), and `tools/hpose_creation_verify.py --exe <exe> --dll <dll>`
+(class B: read-only matching original files). New static Ghidra checks use a separate project copy; no game run.
+The result counts in the dated tables below describe their earlier revisions, not these new local checks.
 
 All class A rows were run on 2026-10-16 from fresh clones without build folders or databases (Windows 10, Python
 3.14.3, CMake 4.4.4, MSVC 19.44, hub `publish-prep` whose runtime sources equal `32ebc38`).

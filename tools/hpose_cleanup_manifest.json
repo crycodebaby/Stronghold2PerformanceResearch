@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "exe_sha256": "f3ccdf9bb41158202dffc000e5f2036a82f4c1ce8c5c89462f6140000f32d34b",
+  "dll_sha256": "94d56fd7e9ef8adde51425da339722a584e28e71235bc8a89d8175c2276050fd",
+  "functions": [
+    {
+      "rva": "0x38d070",
+      "ranges": [
+        {
+          "rva": "0x38d070",
+          "length": 92
+        }
+      ],
+      "sha256": "446e8d3ed33ac165aa3083ff868fb22c5cbc5eb5e507d785206f87e93df540ea"
+    },
+    {
+      "rva": "0x38d8c0",
+      "ranges": [
+        {
+          "rva": "0x38d8c0",
+          "length": 221
+        },
+        {
+          "rva": "0x38d9a0",
+          "length": 171
+        }
+      ],
+      "sha256": "2aa7c448cd709687ffc412d069092b5bfa60c06b9470acdb0219b01d9d6758ee"
+    },
+    {
+      "rva": "0x38e3c0",
+      "ranges": [
+        {
+          "rva": "0x38e3c0",
+          "length": 261
+        }
+      ],
+      "sha256": "787e24a628ab205661091f6df341ed713a48c877b8342ca4e66b97960ff467cb"
+    },
+    {
+      "rva": "0x38ec30",
+      "ranges": [
+        {
+          "rva": "0x38ec30",
+          "length": 246
+        }
+      ],
+      "sha256": "620132b2c38d0b3e8c425f7d4ec483503a08db167aa5b8b233b7ef74162289d4"
+    },
+    {
+      "rva": "0x38eef0",
+      "ranges": [
+        {
+          "rva": "0x38eef0",
+          "length": 33
+        }
+      ],
+      "sha256": "aaee93cd968383b575ddae0fa31b7f808122d6e40b26832df0e8e2e360ffd832"
+    },
+    {
+      "rva": "0x40fb8c",
+      "ranges": [
+        {
+          "rva": "0x40fb8c",
+          "length": 6
+        }
+      ],
+      "sha256": "e05f59cd279fa05da53b604a2eb0c93882be1796667866b01cb3ed869010dd22"
+    }
+  ]
+}

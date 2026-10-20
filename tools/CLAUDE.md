@@ -12,7 +12,7 @@ Run every tool as `python -I tools/<name>.py` from the repo root; `--help`/no ar
 | `analyze_frames.py` | metrics for one CSV / marker range (library: `summarize()`); `--timeline [--window 5]` = 5 s windows (FPS, DIP, triangles, render CPU) |
 | `samples.py` | sampler output: module groups per marker, top functions (`SH2Perf_*_samples.csv`) |
 | `funcsamples.py` | function-mode samples → Ghidra function bodies (`captures/functions/<module>_functions.csv` from `ExportFunctions.java`), est. ms/frame per marker; unresolved addresses stay unresolved; `--check <rva> --module exe\|granny2`; `--delta-counts --module exe` = counts behind running-only statements (F135) |
-| `grannyobs.py` | Granny observer files of one recording (EXP-008): calls/objects per frame, same vs changed clock and inputs, link classes, losses; per marker (docs/FORMATS/GRANNY_OBSERVER.md) |
+| `grannyobs.py` | Granny observer files (EXP-008): global integer call-to-frame reconciliation first (T2), then calls/objects, clock/input comparisons, links and losses per marker; FORMATS/GRANNY_OBSERVER.md |
 | `ab_compare.py` | frame-time distributions of several captures side by side (A/B/repeat), long frames per minute, 1 s clock share vs random control; compares only columns valid in every hub mode |
 | `test_ab_compare.py` | unit tests for `ab_compare.py` (synthetic series) |
 | `test_ingest.py` | unit tests for the recording choice of `ingest.py` and the module groups |
@@ -30,6 +30,14 @@ Run every tool as `python -I tools/<name>.py` from the repo root; `--help`/no ar
 | `granny_raw/` | GR2 → Granny raw dump via the game's DLL (local only) |
 | `granny_pose.py`, `granny_pose/`, `test_granny_pose.py` | isolated Win32 real-DLL pose contract + independent affine helper/differential host; hash/ABI gates, own data, guard pages, exact rounding witness; no game start/install; results under build/knowledge-pose |
 | `recheck_granny_audit.py` | pinned external audit re-run in ignored copy; --audit-root required; reference and production inputs unchanged |
+| `hpose_creation_verify.py` | read-only Exe/DLL identity, IAT and H-record creation/selection fingerprints; own game paths explicit, no binary execution |
+| `hpose_allocation_verify.py`, `test_hpose_allocation.py` | read-only capacity/new/transfer function and import checks; synthetic rejection tests, no game execution |
+| `hpose_cleanup_verify.py`, `test_hpose_cleanup.py` | read-only cleanup/direct destruction-chain function and import checks; synthetic rejection tests, no game execution |
+| `hpose_resource_verify.py`, `test_hpose_resource.py` | schema-2 read-only resource/initializer fingerprints, argument/store/name bindings and pinned table slot; rejects incomplete/changed evidence, does not resolve all dynamic H-resource targets |
+| `pose_sample_verify.py`, `test_pose_sample.py` | schema-2 sample/lifecycle/allocator fingerprints, bounded frame-spill/loop gates, heap bindings and literal census; no alias-completeness, original execution or unconditional initialized Sample-output claim |
+| `pose_generation_model.py`, `test_pose_generation.py` | bounded own synthetic generation/epoch/operation reconciliation, ABA/gap/overlap and allocator-switch/getter-alias counterexamples; numeric IDs only, no process memory or live-read authorization |
+| `hpose_native.py`, `hpose_contract/` | own C++17 Win32 range/index contract; strict versioned JSON result and atomic success report, isolated build, CMake on PATH or --cmake; no target memory/Hub/Granny input |
+| `test_hpose_native.py` | game/compiler-free runner tests with real own child processes, strict JSON, stale reports, timeouts and injected write failures |
 
 Conventions:
 - Output ≤ 30 lines; longer results go to a file under `captures/` and the tool prints the path.

@@ -19,7 +19,11 @@ Thanks for helping. This project values a correct "we do not know yet" over an a
 python -I tools/run_checks.py            # all game-free Python suites + docs lint (what CI runs)
 python -I tools/run_checks.py --audit    # + audit observer model (needs the hub source at 32ebc38)
 python -I tools/run_checks.py --e2e      # + real proxy/hub against the D3D9 stand-in (needs a hub build, a desktop)
+python -I tools/hpose_native.py         # own Win32 H-record contract, validated JSON; MSVC/CMake, no game or hub
 ```
+
+The research workflow also runs the native H-record command as a mandatory step. Its runner failure tests are part
+of the compiler-free Python suite. Use `--cmake <executable>` if CMake is not on PATH.
 
 Hub tests: see the hub's CONTRIBUTING.md (`ctest -C Release -LE timing`). Tests use temporary folders only; they must
 never touch `Stronghold 2`, `Stronghold 2 - TEST`, `captures/` or `data/`. A new tool comes with a test in

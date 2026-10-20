@@ -41,6 +41,12 @@ SH2Perf_out/ ── tools/ingest.py (verify → stage → atomic import) ──�
 
 The detailed documentation is partly German; entry documents are English. Facts keep their IDs across languages.
 
+For a readable map of the current animation/pose knowledge, start with
+[Animation knowledge map](docs/ANIMATION_KNOWLEDGE_MAP.md) (German): creation, selection, matrix output and
+cleanup, with evidence links, explicit conditions and unresolved connections. The current assignment remains in STATE.
+Fresh project-lead chats: [AGENTS.md](AGENTS.md) -> [current STATE](docs/STATE.md) ->
+[short leadership guide](docs/PROJECT_LEAD_HANDOFF.md); load detailed evidence only for the assigned question.
+
 ## What is known (verified, with evidence)
 
 | Topic | Finding |
@@ -99,8 +105,8 @@ installation to `Stronghold 2 - TEST` next to the repositories, never modify the
 [EXPERIMENTS.md](docs/EXPERIMENTS.md). Folder layout: [WORKSPACE.md](docs/WORKSPACE.md).
 
 **3. Pick a task**: [docs/STARTER_TASKS.md](docs/STARTER_TASKS.md) has three small, checkable tasks. The current research
-assignment is in [docs/STATE.md](docs/STATE.md) ("Current status") and
-[docs/PROJECT_LEAD_HANDOFF.md](docs/PROJECT_LEAD_HANDOFF.md). [docs/HANDOFF.md](docs/HANDOFF.md) is a historical log of
+assignment is only in [docs/STATE.md](docs/STATE.md) ("Current status");
+[docs/PROJECT_LEAD_HANDOFF.md](docs/PROJECT_LEAD_HANDOFF.md) provides the context guide. [docs/HANDOFF.md](docs/HANDOFF.md) indexes historical logs of
 earlier game-run orders; do not execute it.
 
 ## Published state and version pair

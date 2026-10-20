@@ -2,14 +2,19 @@
 
 > Kurzfassung: Erwartete Ordnerstruktur neben diesem Repository (Hub, Spielkopien, Ghidra-Projekt), Zuständigkeiten, Weg einer Messung und Bauen/Prüfen. Übernommen aus der lokalen Übersicht `RE-Projects/README.md` (Stand 2026-10-15), für die Veröffentlichung verallgemeinert.
 
-Die Werkzeuge (`tools/paths.py`) erwarten die Geschwister dieses Repositorys in einem gemeinsamen Elternordner, hier `RE-Projects` genannt. Der Elternordner ist selbst **kein** Git-Repository. Lokal heißt dieses Repository `SH2-Perf`; der vorgeschlagene öffentliche Name ist `Stronghold2PerformanceResearch` (der Ordnername darf abweichen, `paths.py` leitet alles aus der Lage des Repositorys ab).
+Die folgende Struktur ist das **Standardlayout**, keine Garantie fuer jeden lokalen Checkout. Die Werkzeuge
+(`tools/paths.py`) leiten Geschwister vom Repositoryort ab; die aktuelle Forschungskopie kann ausserhalb von
+`RE-Projects` liegen, waehrend Originalspiel und Ghidra-Projekt an ihren alten Orten bleiben. Falls vorhanden,
+`build/project-lead-handoff/LOCAL_ENVIRONMENT.json` als lokale Wegbeschreibung lesen und selbst pruefen.
+Persoenliche Pfade bleiben ignoriert, nicht in Git. Projektname historisch `SH2-Perf`, oeffentlich
+`Stronghold2PerformanceResearch`; [STATE](STATE.md) bestimmt den aktuellen Forschungsauftrag.
 
 ## Ordner
 
 | Ordner | Zuständigkeit | Git | Ändern? |
 |---|---|---|---|
 | `SH2-Perf/` (dieses Repo) | Dokumentation (`docs/`), Auswertungswerkzeuge (`tools/`), Ghidra-Skripte (`ghidra_scripts/`), Audit-Kopien (`audits/`), Rohaufnahmen (`captures/`, nicht in Git) und Kennzahlen (`data/`) | ja | ja |
-| `Stronghold2AnalyseHub/` | Messbibliothek (Hub-DLL), d3d9-Proxy, Launcher, native Tests. Upstream `github.com/crycodebaby/Stronghold2AnalyseHub`; unsere Arbeit auf Branch `perf-metrics` | ja | ja, auf einem eigenen Branch |
+| `Stronghold2AnalyseHub/` | Messbibliothek (Hub-DLL), d3d9-Proxy, Launcher, native Tests. Branch/HEAD je Auftrag selbst pruefen | ja | ja, auf einem zugeordneten Branch |
 | `Stronghold 2/` | eigene **Originalinstallation** (Steam, Version 1.5) | nein | **nie** (schreibgeschützt behandeln) |
 | `Stronghold 2 - TEST/` | Kopie des Originals für alle Experimente: Proxy `d3d9.dll`, `Stronghold2AnalyseHub.dll`, `SH2Proxy.ini`, optional DXVK/LAA-Exe; Ausgabeordner `SH2Perf_out/` | nein | ja, nur über `tools/variant.py` |
 | `ghidra-projects/` | Ghidra-Projekt `SH2` (Analyse von `Stronghold2.exe`, `dragonfly.dll`, `granny2.dll`) | nein | nur durch Ghidra; Analysen bevorzugt in einer Arbeitskopie; Sicherungen des geschlossenen Projekts als ZIP + `SHA256SUMS.txt` |

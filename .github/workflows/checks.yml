@@ -1,4 +1,4 @@
-# Game-free checks: Python test suites (temp folders only) and the docs linter. No game files or raw recordings.
+# Game-free checks: Python suites/docs lint and the own Win32 H-record contract. No game files or raw recordings.
 # Same command as locally (python -I tools/run_checks.py); first GitHub run 2026-10-17, see docs/REPRODUCIBILITY.md.
 # Only this repository is checked out: the hub-dependent case in test_audit_workdir is skipped, --audit/--e2e run locally.
 name: checks
@@ -21,3 +21,5 @@ jobs:
           python-version: "3.14"   # verified locally with 3.14.3; 3.11 fails (os.path.isjunction)
       - name: Game-free checks
         run: python -I tools/run_checks.py
+      - name: H-pose native contract (Win32 Release)
+        run: python -I tools/hpose_native.py
